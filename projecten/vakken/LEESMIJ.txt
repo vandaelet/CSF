@@ -1,0 +1,2 @@
+In deze map komen de echte CSF-projecten, één bestand per project.
+Kopieer projecten/_sjabloon.js, geef het een naam zoals wiskunde-fractals.js en voeg het toe in projecten/lijst.js.

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coachfiches versleutelen · CSF</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Play:wght@700&family=Varela+Round&display=swap">
+<style>
+  body { margin:0; font-family:'Varela Round', Arial, sans-serif; color:#1d1d1b; background:#fff; line-height:1.6; }
+  .wrap { max-width:720px; margin:0 auto; padding:0 18px 40px; }
+  h1 { font-family:'Play', Arial, sans-serif; background:#f9b000; color:#fff; text-transform:uppercase; letter-spacing:.08em; text-align:center; padding:12px; margin:18px 0; font-size:1.3rem; }
+  label { display:block; font-weight:700; margin-top:14px; }
+  input { font:inherit; padding:8px 10px; border:1.5px solid #55595b; width:100%; box-sizing:border-box; }
+  button { font:inherit; font-weight:700; background:#f9b000; border:2px solid #f9b000; padding:10px 16px; margin-top:18px; cursor:pointer; }
+  ol li { margin-bottom:6px; }
+  #melding { margin-top:14px; font-weight:700; color:#17808a; }
+  #melding.fout { color:#c4441a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Coachfiches versleutelen</h1>
+<p>Met deze pagina maak je van de leesbare coachfiches (<b>coach-bron.js</b>, privé) het versleutelde bestand <b>coachfiches.js</b> voor de site. Alles gebeurt in je eigen browser: er wordt niets verstuurd.</p>
+<ol>
+  <li>Kies het bestand <b>coach-bron.js</b>.</li>
+  <li>Typ de coachcode twee keer. Wil je een nieuwe code? Typ dan gewoon de nieuwe.</li>
+  <li>Klik op <b>Versleutelen</b>. Het bestand <b>coachfiches.js</b> wordt gedownload.</li>
+  <li>Upload het op GitHub in de map <b>coach/</b> en vervang het oude bestand.</li>
+</ol>
+<form id="f">
+  <label for="bron">Bestand coach-bron.js</label><input type="file" id="bron" accept=".js,.txt" required>
+  <label for="c1">Coachcode</label><input type="password" id="c1" autocomplete="new-password" required minlength="8">
+  <label for="c2">Coachcode nog eens</label><input type="password" id="c2" autocomplete="new-password" required>
+  <button type="submit">Versleutelen</button>
+</form>
+<p id="melding" aria-live="polite"></p>
+</div>
+<script>
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+document.getElementById('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const m = document.getElementById('melding'); m.className = ''; m.textContent = '';
+  const c1 = document.getElementById('c1').value, c2 = document.getElementById('c2').value;
+  if (c1 !== c2) { m.className = 'fout'; m.textContent = 'De twee codes zijn niet gelijk.'; return; }
+  try {
+    const tekst = await document.getElementById('bron').files[0].text();
+    const data = new Function('var CSF_COACH; ' + tekst + '; return CSF_COACH;')();
+    if (!data || typeof data !== 'object') throw new Error('Geen CSF_COACH gevonden in het bestand.');
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 250000;
+    const basis = await crypto.subtle.importKey('raw', new TextEncoder().encode(c1), 'PBKDF2', false, ['deriveKey']);
+    const sleutel = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, basis, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, sleutel, new TextEncoder().encode(JSON.stringify(data)));
+    const uit = '/* Versleutelde coachfiches. Gemaakt met tools/coach-versleutelen.html. Niet met de hand aanpassen. */\n' +
+      'CSF.coachData = ' + JSON.stringify({ v: 1, iter, salt: b64(salt), iv: b64(iv), data: b64(ct) }) + ';\n';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([uit], { type: 'text/javascript' }));
+    a.download = 'coachfiches.js'; document.body.appendChild(a); a.click(); a.remove();
+    m.textContent = 'Klaar: coachfiches.js is gedownload (' + Object.keys(data).length + ' onderdelen). Upload het nu naar de map coach/ op GitHub.';
+  } catch (err) { m.className = 'fout'; m.textContent = 'Dat lukte niet: ' + err.message; }
+});
+</script>
+</body>
+</html>
