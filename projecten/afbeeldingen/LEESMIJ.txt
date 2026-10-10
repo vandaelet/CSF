@@ -1,0 +1,3 @@
+Hier staan de afbeeldingen van de projecten (png of jpg).
+In een projectbestand gebruik je ze met:  ${h.beeld("projecten/afbeeldingen/naam.png", "uitleg", 300)}
+Ontbreekt het bestand, dan toont de werkbundel een kader "tekening volgt".
