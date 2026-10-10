@@ -29,6 +29,8 @@
     domein: "Creatief · muziek",
     jaar: "1e jaar",
     tijd: "3 lesuren",
+    sterren: 2,
+    voorWie: "Voor leerlingen die ritme voelen en zelf muziek willen maken.",
     naam: "Beatmaker: componeer je eigen ritme",
     kort: "Ontdek puls, maat en notenschrift en componeer een eigen beat die iemand anders kan naspelen.",
     omschrijving: "Elk nummer dat je kent, draait op een beat. In dit project leer je hoe muzikanten ritme opschrijven: met noten en met een raster zoals op een drumcomputer. Je leest en speelt bekende ritmes, je componeert een beat van vier maten en je bouwt hem na in een online beatmaker. Een ander moet je beat kunnen naspelen met alleen jouw partituur.",

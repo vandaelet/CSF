@@ -7,6 +7,8 @@
     domein: "Talen",
     jaar: "1e jaar",
     tijd: "3 lesuren",
+    sterren: 3,
+    voorWie: "Voor leerlingen die nieuwsgierig zijn naar hoe talen in elkaar zitten.",
     naam: "Taalbouwers: ontwerp je eigen taal",
     kort: "Kraak een onbekende taal en bouw daarna een mini-taal met eigen klanken, woorden en regels.",
     omschrijving: "Klingon, Elfs en Esperanto zijn talen die iemand ooit bedacht heeft. Jij kraakt eerst een onbekende taal met alleen vijf voorbeeldzinnen. Daarna bouw je zelf een mini-taal voor een volk of wezen naar keuze. Werkt je taal? Dat bewijs je met de Babel-test.",

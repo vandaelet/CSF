@@ -15,6 +15,30 @@ CSF.lijst = [
   "projecten/oefen/stem.js",
   "projecten/oefen/cultuur.js",
 
-  // Projectenoverzicht (1e en 2e jaar), ingedeeld per vak
-  // "projecten/vakken/voorbeeld-wiskunde.js",
+  // Projectenoverzicht (1e en 2e jaar), ingedeeld per vak.
+  // Volledig uitgewerkt:
+  "projecten/vakken/natuurwetenschappen-botten.js",
+
+  // Projectfiches uit de presentatie (werkbundel volgt):
+  "projecten/vakken/aardrijkskunde-geocaching.js",
+  "projecten/vakken/aardrijkskunde-3d-rondom-je.js",
+  "projecten/vakken/astronomie-to-the-stars-and-back.js",
+  "projecten/vakken/beeld-vince-en-vinie-komen-tot-leven.js",
+  "projecten/vakken/engels-all-about-movies.js",
+  "projecten/vakken/frans-le-francais-dans-le-monde.js",
+  "projecten/vakken/latijn-levend-latijn.js",
+  "projecten/vakken/latijn-het-ontstaan-van-het-alfabet.js",
+  "projecten/vakken/lichamelijke-opvoeding-een-gezonde-geest.js",
+  "projecten/vakken/muziek-sing-us-a-song.js",
+  "projecten/vakken/nederlands-gezelschapsspel.js",
+  "projecten/vakken/nederlands-start-to-podcast.js",
+  "projecten/vakken/nederlands-schimmige-schaduwen.js",
+  "projecten/vakken/stem-sport-en-wetenschap-hand-in-hand.js",
+  "projecten/vakken/techniek-spintronics-mechanische-circuit.js",
+  "projecten/vakken/techniek-kraak-de-knikkercode.js",
+  "projecten/vakken/techniek-tinkercad.js",
+  "projecten/vakken/wiskunde-abracadabra.js",
+  "projecten/vakken/wiskunde-regelmaat-en-formules-dankzij-e.js",
+  "projecten/vakken/stem-biomimicry.js",
+  "projecten/vakken/vakoverschrijdend-maak-een-escape-room.js",
 ];

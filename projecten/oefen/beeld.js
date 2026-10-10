@@ -23,6 +23,8 @@
     domein: "Creatief · beeld",
     jaar: "1e jaar",
     tijd: "3 lesuren",
+    sterren: 2,
+    voorWie: "Voor leerlingen die graag tekenen en kunst willen leren kijken.",
     naam: "Zelfportret in vijf stijlen: word een kunstenaar",
     kort: "Ontdek vijf kunststromingen, leer een gezicht in de juiste verhoudingen tekenen en maak een zelfportret in jouw stijl.",
     omschrijving: "Monet, Ensor, Picasso, Magritte en Warhol schilderden allemaal mensen, maar telkens op een totaal andere manier. Jij wordt stijldetective: je ontdekt wat elke stroming typisch maakt. Je leert de verhoudingen van een gezicht en maakt daarna een zelfportret in de stijl die jou het meest aanspreekt.",

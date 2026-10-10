@@ -8,6 +8,8 @@
     domein: "STEM",
     jaar: "1e jaar",
     tijd: "3 lesuren",
+    sterren: 3,
+    voorWie: "Voor leerlingen die graag rekenen aan een echt probleem.",
     naam: "Overleven op Mars: plan een basis voor vier astronauten",
     kort: "Reken uit hoeveel zuurstof, water, voedsel en energie vier astronauten nodig hebben en ontwerp hun basis.",
     omschrijving: "Mars is koud, heeft bijna geen zuurstof en ligt maanden reizen van de aarde. Vier astronauten moeten er 30 dagen overleven. Jij bent de missieplanner: je vergelijkt Mars met de aarde, je rekent de voorraden uit en je tekent een basis op schaal. Je eindproduct is een missieposter.",

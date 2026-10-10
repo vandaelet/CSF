@@ -14,6 +14,8 @@
     domein: "Cultuur",
     jaar: "1e jaar",
     tijd: "3 lesuren",
+    sterren: 2,
+    voorWie: "Voor leerlingen die verhalen in kunst willen ontdekken.",
     naam: "Curator voor één dag: het Lam Gods ontcijferd",
     kort: "Leer symbolen in een schilderij lezen en maak een mini-tentoonstelling over het Lam Gods.",
     omschrijving: "Het Lam Gods (1432) van de gebroeders Van Eyck in de Gentse Sint-Baafskathedraal zit vol verborgen betekenissen, en één paneel is sinds 1934 spoorloos. Je zoomt in op het schilderij tot op de penseelstreek, je ontcijfert symbolen en je wordt curator: je maakt een folder voor een mini-tentoonstelling.",

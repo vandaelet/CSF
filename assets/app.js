@@ -21,11 +21,35 @@
     },
     // Een leerkaart-kader
     leerkaart: function (titel, html) { return '<div class="kader leer"><div class="titel">' + titel + "</div>" + html + "</div>"; },
-    kader: function (titel, html) { return '<div class="kader"><div class="titel">' + titel + "</div>" + html + "</div>"; }
+    kader: function (titel, html) { return '<div class="kader"><div class="titel">' + titel + "</div>" + html + "</div>"; },
+    // Een afbeelding uit de projectmap. Ontbreekt het bestand nog, dan verschijnt een kader "tekening volgt".
+    beeld: function (bestand, uitleg, hoogte) {
+      var hgt = hoogte || 220;
+      return '<figure class="beeld" style="min-height:' + hgt + 'px"><img src="' + bestand + '" alt="' + (uitleg || "") + '" style="max-height:' + hgt + 'px" onerror="this.parentNode.classList.add(\'ontbreekt\');this.remove()">' +
+        '<span class="volgt">Tekening volgt: ' + (uitleg || bestand) + "</span></figure>";
+    }
+  };
+
+  /* Lesplanning met een vrij aantal lesuren. o.midden = [{ titel, werk }, …] */
+  CSF.lessenN = function (o) {
+    var logStart = "Vul de datumbalk in je logboek in. Lees wat je vorige keer deed en kies wat je vandaag eerst doet.";
+    var eind = "Ben je tevreden over je werk van vandaag? Vertel in 3 zinnen aan een medeleerling (of schrijf het op) wat je deed. Vul je logboek in.";
+    var out = [{ titel: o.t1, stappen: [
+      ["5'", "Logboek", "Vul de bovenkant van je logboek in: projectnaam, voorziene tijd, motivatie en afgesproken evaluatie (zie het laatste blad)."],
+      ["10'", "Wat weet ik?", o.weet], ["5'", "Wat is de opdracht?", o.opdracht], ["10'", "Ideeën en het beste idee", o.ideeen],
+      ["15'", "Uitwerking", o.start], ["5'", "Resultaat en logboek", "Kijk terug: wat lukte al, wat nog niet? Schat in je logboek hoe lang je project duurt."]] }];
+    (o.midden || []).forEach(function (m) { out.push({ titel: m.titel, stappen: [["5'", "Logboek", logStart], ["35'", "Uitwerking", m.werk], ["10'", "Resultaat en logboek", eind]] }); });
+    out.push({ titel: o.laatste.titel, stappen: [["5'", "Logboek", logStart], ["20'", "Uitwerking en resultaat", o.laatste.werk], ["10'", "Presenteren!", o.laatste.presenteer],
+      ["15'", "Wat heb ik geleerd?", "Vul het evaluatierooster in (laatste blad) en daarna in je logboek de evaluatie en het reflectieblad."]] });
+    return out;
   };
 
   /* Standaard lesplanning van 3 lesuren. Elk lesuur doorloopt de TASC-stappen. */
   CSF.lessen3 = function (o) {
+    return CSF.lessenN({ t1: o.t1, weet: o.weet, opdracht: o.opdracht, ideeen: o.ideeen, start: o.start,
+      midden: [{ titel: o.t2, werk: o.werk2 }], laatste: { titel: o.t3, werk: o.werk3, presenteer: o.presenteer } });
+  };
+  CSF._oudLessen3 = function (o) {
     var logStart = "Vul de datumbalk in je logboek in. Lees wat je vorige keer deed en kies wat je vandaag eerst doet.";
     return [
       { titel: o.t1, stappen: [
@@ -63,6 +87,8 @@
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function lijst(xs) { return '<ul class="vink">' + (xs || []).map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul>"; }
   function label(p) { return p.soort === "vak" ? p.vak : p.domein; }
+  function sterren(p) { var n = +p.sterren || 0; return n ? '<span class="sterren" aria-label="Uitdagingsniveau ' + n + ' op 5">' + "★".repeat(n) + '<span class="leeg-ster">' + "★".repeat(5 - n) + "</span></span>" : ""; }
+  function isFiche(p) { return p.status === "fiche" || !(p.werkbundel && p.werkbundel.length); }
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -91,7 +117,8 @@
   function kaart(p) {
     var delen = p.naam.split(":"), naam = delen[0], sub = delen.slice(1).join(":").trim();
     return '<a class="kies" href="#p-' + p.id + '" style="--h:var(' + kleur(p) + ')"><span class="dom">' + esc(label(p)) + '</span><span class="pn">' + esc(naam) +
-      '</span><span class="pk">' + esc(sub) + '</span><span class="pp">' + p.kort + '</span><span class="pj">' + esc(p.jaar) + " · " + esc(p.tijd) + "</span></a>";
+      '</span><span class="pk">' + esc(sub) + '</span><span class="pp">' + p.kort + "</span>" + (p.voorWie ? '<span class="pw">' + p.voorWie + "</span>" : "") +
+      '<span class="pj">' + sterren(p) + "<span>" + esc(p.tijd) + "</span>" + (isFiche(p) ? '<span class="status">werkbundel volgt</span>' : "") + "</span></a>";
   }
 
   /* ---------- Weergaven ---------- */
@@ -142,7 +169,21 @@
       "</div>" + footer() + "</div>";
   }
 
+  function vFiche(p) {
+    var terug = p.soort === "vak" ? ["Projectenoverzicht", "#overzicht"] : ["Oefenproject", "#oefenproject"];
+    return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], terug, [label(p)]]) +
+      '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
+      '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + "</div>" +
+      '<p class="lead">' + p.kort + "</p>" +
+      '<div class="acties"><button type="button" class="btn donker" id="verwacht-knop">Wat wordt van mij verwacht?</button></div>' +
+      '<div class="kiesuit"><div><b>Inhoud</b><span>' + p.kort + "</span></div><div><b>Uitdagingsniveau</b><span>" + (sterren(p) || "–") + "</span></div><div><b>Voorziene tijd</b><span>" + esc(p.tijd) + "</span></div></div>" +
+      '<div class="blok"><h3 class="banner">Over dit project</h3>' + (p.voorWie ? '<p><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") + "<p>" + (p.omschrijving || "") + "</p></div>" +
+      '<div class="leeg"><b>De werkbundel van dit project volgt nog.</b><span>Wil je dit project kiezen? Bespreek het met je CSF-coach: die bezorgt je het materiaal.</span></div>' +
+      '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
+  }
+
   function vProject(p) {
+    if (isFiche(p)) return vFiche(p);
     var terug = p.soort === "vak" ? ["Projectenoverzicht", "#overzicht"] : ["Oefenproject", "#oefenproject"];
     var test = (p.test || []).map(function (q, i) {
       return '<div class="tvraag" data-uitleg="' + esc(q[3]) + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + p.test.length + "</span>" + q[0] + '</p><div class="opties">' +
@@ -165,8 +206,8 @@
     var links = (p.links || []).map(function (l) { return '<a class="btn licht" href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + " ↗</a>"; }).join("");
     return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], terug, [label(p)]]) +
       '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
-      '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + '</span><span class="tag">uitwerking op papier</span></div>' +
-      '<p class="lead">' + p.kort + "</p>" +
+      '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + '<span class="tag">uitwerking op papier</span></div>' +
+      '<p class="lead">' + p.kort + "</p>" + (p.voorWie ? '<p class="hint" style="margin-top:6px"><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") +
       '<div class="acties"><button type="button" class="btn donker" id="verwacht-knop">Wat wordt van mij verwacht?</button><a class="btn" href="#wb-' + p.id + '">Bekijk en druk de werkbundel af</a>' + links + "</div>" +
       '<div class="voortgang" aria-live="polite"><div class="balk"><span></span></div><span class="vtekst"></span></div>' +
       '<div class="grid2"><div class="blok"><h3 class="banner">Projectfiche</h3><dl>' +
@@ -201,7 +242,7 @@
     out.push(hoofding(p, "Werkbundel") + '<div class="domein">' + esc(label(p)) + "</div><h1>" + esc(p.naam) + "</h1><p>" + p.kort + "</p>" +
       '<table class="fiche">' + f("Projectnaam", "<b>" + esc(p.naam) + "</b>") + f("Omschrijving project", p.omschrijving) + f("Doel van het project", p.doel) +
       f("Bereikte vaardigheden", ul(p.bereikt)) + f("Vaardigheden die ik moet toepassen", ul(p.toepassen)) + f("Materiële benodigdheden", ul(p.materiaal)) +
-      f("Waar kan ik de oplossing vinden?", p.oplossing) + f("Voorziene tijd", esc(p.tijd)) + f("Eindproduct", p.product) + "</table>" +
+      f("Waar kan ik de oplossing vinden?", p.oplossing) + f("Voorziene tijd", esc(p.tijd)) + (p.sterren ? f("Uitdagingsniveau", "★".repeat(p.sterren) + "☆".repeat(5 - p.sterren)) : "") + (p.voorWie ? f("Voor wie?", p.voorWie) : "") + f("Eindproduct", p.product) + "</table>" +
       (p.invalshoek ? "<h2>Kies je invalshoek</h2><p>" + p.invalshoek.intro + " Kruis aan en noteer je keuze in je logboek bij motivatie.</p><table>" +
         p.invalshoek.keuzes.map(function (k) { return '<tr><td style="width:7%;text-align:center;font-size:13pt">&#9744;</td><td style="width:24%"><b>' + k[0] + "</b></td><td>" + k[1] + "</td></tr>"; }).join("") + "</table>" : ""));
     var gezien = {};
@@ -333,6 +374,7 @@
         c.querySelector(".cknop").addEventListener("click", test);
         inp.addEventListener("keydown", function (e) { if (e.key === "Enter") test(); });
       });
+      if (!app.querySelector(".balk")) return;
       var boxes = Array.prototype.slice.call(app.querySelectorAll(".klaar input"));
       var vg = function () { var n = boxes.filter(function (b) { return b.checked; }).length;
         app.querySelector(".balk span").style.width = (boxes.length ? 100 * n / boxes.length : 0) + "%";
@@ -368,6 +410,7 @@
   function teken() {
     var h = (location.hash || "#start").slice(1), app = document.getElementById("app"), p;
     if (h.indexOf("p-") === 0 && (p = zoek(h.slice(2)))) { app.innerHTML = vProject(p); koppel("project", p); document.title = p.naam + " · " + CSF.titel; }
+    else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && isFiche(p)) { location.replace("#p-" + p.id); return; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3)))) { app.innerHTML = vWerkbundel(p); koppel("werkbundel", p); document.title = "Werkbundel · " + p.naam; }
     else if (h === "oefenproject") { app.innerHTML = vOefen(); koppel("oefen"); document.title = "Oefenproject · " + CSF.titel; }
     else if (h === "coach") {

@@ -44,6 +44,8 @@
     domein: "Wetenschappen",
     jaar: "1e jaar",
     tijd: "3 lesuren",
+    sterren: 2,
+    voorWie: "Voor leerlingen die graag puzzelen met bewijs en nauwkeurig meten.",
     naam: "Forensisch lab: de zaak van de verdwenen trofee",
     kort: "Los een diefstal op: meet chromatogrammen, lees vingerafdrukken en trek een besluit uit bewijs.",
     omschrijving: "De trofee van de schoolquiz is verdwenen. In de kast ligt een briefje en op het glas staat een vingerafdruk. Vier verdachten, vier zwarte stiften. Jij bent de forensisch expert: je meet de chromatogrammen van het politielabo, je herkent vingerafdrukken en je controleert de alibi’s. Daarna verdedig je je besluit.",

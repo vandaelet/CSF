@@ -14,6 +14,10 @@
      ${h.tabel(["Kop 1","Kop 2"], 4)}  tabel met 4 lege rijen
      ${h.kader("Titel", "tekst")}      kader met titel
      ${h.leerkaart("Titel", "tekst")}  turquoise leerkaart
+     ${h.beeld("projecten/afbeeldingen/naam.png", "uitleg", 300)}   afbeelding (300 px hoog)
+
+   Nog geen werkbundel? Zet  status: "fiche"  en laat lessen/werkbundel weg:
+   dan toont de site enkel de projectfiche met ‘werkbundel volgt’.
    ===================================================================== */
 (function () {
   var h = CSF.h;
@@ -23,6 +27,8 @@
     vak: "Wiskunde",                         // het vak waaronder het project verschijnt
     jaar: "1e en 2e jaar",                   // "1e jaar", "2e jaar" of "1e en 2e jaar"
     tijd: "3 lesuren",
+    sterren: 3,                              // uitdagingsniveau van 1 tot 5
+    voorWie: "Voor leerlingen die …",
     naam: "Titel van het project: korte ondertitel",
     kort: "Eén zin die zegt wat de leerling gaat doen.",
     omschrijving: "Waar gaat het project over? (3 à 4 zinnen)",
@@ -56,6 +62,7 @@
     criteria: ["Logboek elk lesuur ingevuld", "Criterium 2", "Criterium 3", "Criterium 4"],
 
     // Lesplanning: elk lesuur volgt dezelfde TASC-opbouw. Vul enkel de teksten in.
+    // Meer of minder dan 3 lesuren? Gebruik CSF.lessenN (zie projecten/vakken/natuurwetenschappen-botten.js).
     lessen: CSF.lessen3({
       t1: "Titel lesuur 1",
       weet: "Wat weet ik al? (opdracht)",
