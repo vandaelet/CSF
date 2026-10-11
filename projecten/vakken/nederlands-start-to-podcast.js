@@ -12,7 +12,7 @@
     sterren: 5,
     naam: "Start to podcast",
     kort: "Ontwikkel zelf een podcast van A tot Z.",
-    voorWie: "Voor leerlingen die graag en vlot spreken over een zelfgekozen onderwerp.",
-    omschrijving: "Het podcastlandschap kent al enkele jaren een forse groei. Podcasts over de meest uiteenlopende onderwerpen schieten als paddenstoelen uit de grond. Voeg jij binnenkort aan dat rijtje “meest beluisterde” ook jouw eigen podcast toe? Kies een onderwerp waarover je je wilt buigen, doe research, nodig misschien zelfs een expert uit? Jouw podcast, jouw regels! Wij spelen alvast luisterend oor…"
+    voorWie: "Voor leerlingen met een vlotte babbel over een zelfgekozen onderwerp.",
+    omschrijving: "Het aantal podcasts groeit al jaren sterk. Podcasts over de meest uiteenlopende onderwerpen schieten als paddenstoelen uit de grond. Voeg jij binnenkort je eigen podcast toe aan dat rijtje? Kies een onderwerp. Doe research. Nodig misschien zelfs een expert uit. Jouw podcast, jouw regels! Wij luisteren alvast mee…"
   });
 })();

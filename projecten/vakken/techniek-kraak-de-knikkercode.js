@@ -11,8 +11,8 @@
     tijd: "kort tot lang",
     sterren: 5,
     naam: "Kraak de knikkercode",
-    kort: "Bouw met behulp van een Engelstalige handleiding je eigen mechanische circuits.",
-    voorWie: "Voor leerlingen houden van hersenkrakers, knikkers en futuristische verhaallijnen.",
-    omschrijving: "Vergeet wat je weet over knikkerbanen, deze Turing Tumble is onvergelijkbaar! Spring in een futuristisch stripverhaal waarmee je eigenhandig een knikkercomputer bouwt. Help jij Alia verder tijdens haar ruimteavontuur? 🚀"
+    kort: "Bouw je eigen mechanische circuits met een Engelstalige handleiding.",
+    voorWie: "Voor leerlingen met een voorliefde voor hersenkrakers, knikkers en futuristische verhalen.",
+    omschrijving: "Vergeet alles over knikkerbanen. Deze Turing Tumble is onvergelijkbaar! Spring in een futuristisch stripverhaal. Bouw eigenhandig een knikkercomputer. Help jij Alia verder tijdens haar ruimteavontuur? 🚀"
   });
 })();

@@ -11,8 +11,8 @@
     tijd: "7 à 10 lesuren",
     sterren: 4,
     naam: "Spintronics – mechanische circuits draaien door!",
-    kort: "Bouw met behulp van een handleiding in het Engels je eigen mechanische circuits.",
-    voorWie: "Voor leerlingen die interesse hebben in de mechanische kant van machines en zelf de handen uit de mouwen willen steken.",
-    omschrijving: "Kriebelen je vingers bij het zien van een schroevendraaier? Loopt de broodrooster thuis het gevaar uiteen gehaald en -hopelijk- weer in elkaar gedraaid te worden? Ga aan de slag met onze 2 bouwboxen en klus je eigen mechanische circuits in elkaar. Houd jij het hoofd koel of spatten de vonken er al gauw van af…?"
+    kort: "Bouw je eigen mechanische circuits met een Engelstalige handleiding.",
+    voorWie: "Voor leerlingen met interesse in de mechanica van machines en zin om zelf te bouwen.",
+    omschrijving: "Kriebelen je vingers bij het zien van een schroevendraaier? Haal jij thuis graag de broodrooster uit elkaar? Ga aan de slag met onze twee bouwdozen. Klus je eigen mechanische circuits in elkaar. Hou jij het hoofd koel? Of spatten de vonken er al snel af?"
   });
 })();

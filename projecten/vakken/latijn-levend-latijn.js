@@ -12,7 +12,7 @@
     sterren: 4,
     naam: "Levend Latijn",
     kort: "Ontdek de impact van Latijn op de wereld.",
-    voorWie: "Voor leerlingen die GEEN Latijn volgen, maar hierover graag meer te weten willen komen.",
-    omschrijving: "Latijn is nog steeds springlevend! Deze “dode taal” heeft zich doorheen de geschiedenis een weg gebaand tot in onze huidige samenleving. Ontdek de culturele en taalkundige invloed die de taal tot op heden biedt. Breid jij tenslotte je woordenschat ook uit met het aangeboden Latijnse lexicon?"
+    voorWie: "Voor leerlingen zonder Latijn in hun lessenpakket, met nieuwsgierigheid naar de taal.",
+    omschrijving: "Latijn is nog steeds springlevend! Deze ‘dode taal’ baande zich doorheen de geschiedenis een weg tot in onze samenleving. Ontdek de culturele en taalkundige invloed van het Latijn tot vandaag. Breid ten slotte je woordenschat uit met de Latijnse woordenlijst."
   });
 })();

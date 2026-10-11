@@ -12,7 +12,7 @@
     sterren: 4,
     naam: "Sing us a song",
     kort: "Schrijf je eigen song.",
-    voorWie: "Voor leerlingen die graag zelf muziek willen ontwikkelen.",
-    omschrijving: "Schuilt in jou de volgende nieuwe songwriter van de sterren? Giet jouw creativiteit in een zelfgeschreven muzieknummer en verbijster je toekomstige publiek! 🎶"
+    voorWie: "Voor leerlingen met zin om zelf muziek te maken.",
+    omschrijving: "Schuilt in jou de volgende grote songwriter? Giet je creativiteit in een eigen muzieknummer. Verbijster je toekomstige publiek! 🎶"
   });
 })();

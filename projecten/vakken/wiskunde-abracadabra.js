@@ -11,8 +11,8 @@
     tijd: "4 à 6 lesuren",
     sterren: 5,
     naam: "Abracadabra",
-    kort: "Ontsluier de geheimen van kaart- en goocheltrucs, met wiskunde natuurlijk.",
-    voorWie: "Voor leerlingen die houden van de magie van wiskunde, letterlijk!",
-    omschrijving: "Vingervlugge kaarttrucs en verdwijnacts zijn spectaculair. Ze zorgen voor OOOOOHs en AAAAHs bij het hele publiek! Wat als jij een blik achter de schermen mocht werpen? Wil jij weten met welke zorgvuldige berekeningen een goochelaar het publiek om de tuin leidt? Dan is deze opdracht voor jou! En wie weet tover jij op het volgende familiefeestje wel een konijn uit je hoed? 🪄🐇"
+    kort: "Ontsluier de geheimen van kaart- en goocheltrucs met wiskunde.",
+    voorWie: "Voor leerlingen met liefde voor de magie van wiskunde, letterlijk!",
+    omschrijving: "Vingervlugge kaarttrucs en verdwijnacts zijn spectaculair. Het publiek roept OOOOOH en AAAAH! Werp nu zelf een blik achter de schermen. Ontdek de berekeningen achter de trucs van een goochelaar. Is dat iets voor jou? Dan is deze opdracht op jouw maat! Misschien tover jij op het volgende familiefeest een konijn uit je hoed. 🪄🐇"
   });
 })();

@@ -12,7 +12,7 @@
     sterren: 4,
     naam: "All about movies",
     kort: "Verdiep je in films van alle genres en test je begrip in het Engels.",
-    voorWie: "Voor leerlingen die zich interesseren in een breed gamma aan filmgenres.",
-    omschrijving: "Onder een dekentje, met een kop warme choco of in de bioscoop, hand diep in een zak popcorn? Hoe bekijk jij het liefst films? Verdiep je voor deze opdracht in een heleboel films, van avontuur over romantiek en test jezelf: hoeveel heb ik begrepen van dit fragment? Nog beter, test niet alleen jezelf, maar stel ook een heuse filmquiz op! Lights, camera, ACTION! 🎬"
+    voorWie: "Voor leerlingen met interesse in een breed gamma aan filmgenres.",
+    omschrijving: "Kijk jij het liefst films onder een dekentje met warme choco? Of zit je liever in de bioscoop met een zak popcorn? Verdiep je in een heleboel films, van avontuur tot romantiek. Test jezelf na elk fragment. Hoeveel heb je begrepen? Stel daarna een echte filmquiz op voor anderen! Lights, camera, ACTION! 🎬"
   });
 })();

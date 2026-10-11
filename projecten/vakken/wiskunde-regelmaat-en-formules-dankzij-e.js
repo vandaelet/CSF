@@ -11,8 +11,8 @@
     tijd: "1 à 3 lesuren",
     sterren: 2,
     naam: "Regelmaat en formules: dankzij een duojob naar de top!",
-    kort: "Leer zelf redeneren om tot grafieken en formules te komen op basis van cijfermateriaal.",
-    voorWie: "Voor leerlingen die houden van hersenkrakers en samen out of the box denken.",
-    omschrijving: "Kan jij met je partner de nodige grafieken en formules afleiden uit de opgaves? Deze wiskundeoefeningen laten je hersenen kraken! 🧠 Ga samen de uitdaging aan en vorm een TOPteam!"
+    kort: "Leid zelf grafieken en formules af uit cijfermateriaal.",
+    voorWie: "Voor leerlingen met een voorliefde voor hersenkrakers en creatief denkwerk in duo.",
+    omschrijving: "Leid samen met je partner grafieken en formules af uit de opgaven. Deze wiskundeoefeningen laten je hersenen kraken! 🧠 Ga samen de uitdaging aan. Vorm een topteam!"
   });
 })();

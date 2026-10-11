@@ -12,7 +12,7 @@
     sterren: 3,
     naam: "3D rondom je",
     kort: "Vind de verborgen cache door codes te kraken.",
-    voorWie: "Voor leerlingen die interesse tonen in perspectief en de wereld.",
-    omschrijving: "Laat het Pegmannetje je mee op tocht nemen naar het Atomium! Ga daarna op zoek naar de mooiste uitzichten vanop de Eiffeltoren en krijg er een heleboel leuke weetjes zomaar bij. Weet jij trouwens al wat vlinders gemeenschappelijk hebben met kunstwerken van Escher? Tip: het gaat over S…….. 😉 Pas je nieuwe kennis toe en breng de architect in jezelf naar boven bij het ontwerpen van een gashaard. Deze opdracht is lekker gevarieerd, je vindt er zeker je gading!"
+    voorWie: "Voor leerlingen met interesse in perspectief en de wereld.",
+    omschrijving: "Laat het Pegmannetje je meenemen op tocht naar het Atomium! Zoek daarna de mooiste uitzichten vanop de Eiffeltoren. Onderweg leer je een heleboel leuke weetjes. Wat hebben vlinders gemeen met de kunstwerken van Escher? Tip: het begint met een S. 😉 Pas daarna je nieuwe kennis toe. Ontwerp als architect een gashaard. Deze opdracht is erg gevarieerd. Je vindt er zeker je gading!"
   });
 })();

@@ -7,6 +7,10 @@
         "projecten/vakken/wiskunde-fractals.js",
    Klaar: het project verschijnt in het Projectenoverzicht onder zijn vak.
 
+   Schrijfregels: gebruik enkelvoudige zinnen (één persoonsvorm per zin).
+   Begin elke opdracht met een gebiedende wijs: "Lees …", "Noteer …", "Kies …".
+   Spelling: minitentoonstelling, escaperoom, minitaal (zonder koppelteken).
+
    Opmaak in teksten: <b>vet</b>, <br> nieuwe regel, <sub>klein</sub>.
    Hulpjes in de werkbundel:
      ${h.lijnen(3)}                    3 schrijflijnen
@@ -28,9 +32,9 @@
     jaar: "1e en 2e jaar",                   // "1e jaar", "2e jaar" of "1e en 2e jaar"
     tijd: "3 lesuren",
     sterren: 3,                              // uitdagingsniveau van 1 tot 5
-    voorWie: "Voor leerlingen die …",
+    voorWie: "Voor leerlingen met interesse in …",
     naam: "Titel van het project: korte ondertitel",
-    kort: "Eén zin die zegt wat de leerling gaat doen.",
+    kort: "Ontdek … Maak …",                  // korte opdrachtzinnen
     omschrijving: "Waar gaat het project over? (3 à 4 zinnen)",
     doel: "Wat leert de leerling?",
     bereikt: ["Vaardigheid 1", "Vaardigheid 2", "Vaardigheid 3"],
@@ -45,7 +49,7 @@
       ["Titel leerkaart 2", "Uitleg in 2 à 4 zinnen."]
     ],
 
-    invalshoek: { intro: "In lesuur 1 kies je …", keuzes: [
+    invalshoek: { intro: "Kies in lesuur 1 …", keuzes: [
       ["Keuze 1", "Korte uitleg"], ["Keuze 2", "Korte uitleg"], ["Keuze 3", "Korte uitleg"]] },
     nogTijd: "Een kleine extra opdracht voor wie klaar is.",
 
@@ -65,15 +69,15 @@
     // Meer of minder dan 3 lesuren? Gebruik CSF.lessenN (zie projecten/vakken/natuurwetenschappen-botten.js).
     lessen: CSF.lessen3({
       t1: "Titel lesuur 1",
-      weet: "Wat weet ik al? (opdracht)",
-      opdracht: "Lees de opdracht …",
-      ideeen: "Bedenk minstens … en kies …",
-      start: "Eerste werk in lesuur 1",
+      weet: "Noteer je voorkennis over …",
+      opdracht: "Lees de opdracht. Noteer …",
+      ideeen: "Bedenk minstens … Kies er één.",
+      start: "Werkblad 1: …",
       t2: "Titel lesuur 2",
-      werk2: "Wat de leerling in lesuur 2 doet",
+      werk2: "Werkblad 2: …",
       t3: "Titel lesuur 3",
-      werk3: "Wat de leerling in lesuur 3 doet",
-      presenteer: "Hoe de leerling presenteert"
+      werk3: "Werk je eindproduct af.",
+      presenteer: "Stel je werk in 2 minuten voor aan een medeleerling."
     }),
 
     // Werkbundel: één item = één A4-blad. Met 'les: 1' komt het stappenplan van lesuur 1 automatisch bovenaan.

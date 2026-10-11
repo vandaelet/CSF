@@ -12,7 +12,7 @@
     sterren: 4,
     naam: "Sport en wetenschap hand in hand",
     kort: "Onderzoek de invloed van wetenschap op sportieve prestaties.",
-    voorWie: "Voor leerlingen die de link willen leggen tussen wetenschap, natuur en sport.",
-    omschrijving: "Zoals de otter door het water glijdt, de wesp de lucht doorklieft, de geit de berg op klautert… zo proberen atleten het hen al jarenlang na te doen. 🏃🏻‍♂️‍➡️ Veel van de spectaculaire sportieve prestaties die we kennen zijn te danken aan de wetenschap en zijn zelfs afgekeken van de dierenwereld. Zin om je hierin te verdiepen?"
+    voorWie: "Voor leerlingen met interesse in het verband tussen wetenschap, natuur en sport.",
+    omschrijving: "De otter glijdt door het water. De wesp doorklieft de lucht. De geit klautert de berg op. Atleten proberen dat al jaren na te doen. 🏃🏻‍♂️‍➡️ Veel spectaculaire sportprestaties danken we aan de wetenschap. Sommige zijn zelfs afgekeken van de dierenwereld. Heb je zin om je hierin te verdiepen?"
   });
 })();

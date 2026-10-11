@@ -11,8 +11,8 @@
     tijd: "7 à 10 lesuren",
     sterren: 3,
     naam: "Le français dans le monde",
-    kort: "Scherp je eigen Frans door deze te ontdekken in al zijn culturele en geografische facetten.",
-    voorWie: "Voor leerlingen die zich willen verdiepen in de Franse taal doorheen landen en culturen.",
-    omschrijving: "Ontdek het Frans buiten het klaslokaal! Reis naar andere landen en culturen en gebruik je vaardigheden om lees- en luisterfragmenten te begrijpen. Hoe goed scoor jij op de eindquiz?? 🤔😉"
+    kort: "Scherp je Frans aan via de culturele en geografische kanten van de taal.",
+    voorWie: "Voor leerlingen met zin om het Frans in andere landen en culturen te ontdekken.",
+    omschrijving: "Ontdek het Frans buiten het klaslokaal! Reis naar andere landen en culturen. Gebruik je vaardigheden bij lees- en luisterfragmenten. Hoe goed scoor jij op de eindquiz? 🤔😉"
   });
 })();

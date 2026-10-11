@@ -12,7 +12,7 @@
     sterren: 1,
     naam: "Gezelschapsspel",
     kort: "Ontwikkel zelf een gezelschapsspel van A tot Z.",
-    voorWie: "Voor leerlingen die creatief met taal omgaan en een voorliefde voor spelletjes hebben.",
-    omschrijving: "We spelen een spel vanavond! En JIJ zal dat ontwerpen! 🎲 Ga jij de uitdaging aan om een gezelschapsspel te bedenken? Kies zelf je thema, verzin de zotste spelregels en schrijf ze helder en duidelijk uit. Wie wordt de winnaar van jouw spel? De eerlijke speler of net de grootste valsspeler? Aan jou om te beslissen!"
+    voorWie: "Voor creatieve taalgebruikers met een voorliefde voor spelletjes.",
+    omschrijving: "We spelen vanavond een spel! En JIJ ontwerpt het! 🎲 Ga de uitdaging aan. Bedenk een eigen gezelschapsspel. Kies zelf je thema. Verzin de zotste spelregels. Schrijf ze helder en duidelijk uit. Wie wint jouw spel: de eerlijke speler of de grootste valsspeler? Jij beslist!"
   });
 })();

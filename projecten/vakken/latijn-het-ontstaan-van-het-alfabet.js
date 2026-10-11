@@ -11,8 +11,8 @@
     tijd: "1 à 3 lesuren",
     sterren: 2,
     naam: "Het ontstaan van het alfabet",
-    kort: "Verdiep je in de oorsprong van ons alfabet. Van ossenkop tot @penstaart.",
-    voorWie: "Voor leerlingen die interesse tonen in het ontstaan van onze taal.",
-    omschrijving: "Dat de Romeinen woorden als breedbeeldtelevisie, aquarobic en leaseauto niet kenden, dat weet iedereen. Maar hoe zijn we geëvolueerd van Proto-sinaïtische inscripties tot het alfabet dat we nu kennen? Hoe passen #Hashtags en @penstaartjes in dit plaatje? Haal je tijdmachine van onder het stof en ga op onderzoek uit naar de beginselen van het schrift!"
+    kort: "Verdiep je in de oorsprong van ons alfabet. Volg de weg van ossenkop tot @penstaart.",
+    voorWie: "Voor leerlingen met interesse in het ontstaan van onze taal.",
+    omschrijving: "De Romeinen kenden geen woorden als breedbeeldtelevisie, aquarobic of leaseauto. Dat weet iedereen. Hoe groeiden de proto-Sinaïtische inscripties uit tot ons huidige alfabet? Welke plaats hebben #hashtags en @penstaartjes in dat verhaal? Haal je tijdmachine van onder het stof. Onderzoek de beginselen van het schrift!"
   });
 })();

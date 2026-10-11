@@ -12,22 +12,22 @@ window.CSF = {
   werkgroep: "Werkgroep CSF · 1e en 2e jaar",
   titel: "CSF-projecten",
 
-  welkom: "Hier vind je alle CSF-projecten. Ben je nieuw in CSF? Start met een oefenproject. Daarin leer je hoe een project werkt. Daarna kies je zelf uit alle projecten.",
+  welkom: "Hier vind je alle CSF-projecten. Ben je nieuw in CSF? Start met een oefenproject. Daarin leer je de werking van een project. Kies daarna zelf uit alle projecten.",
 
   /* De knop "Wat wordt van mij verwacht?" (bovenaan elk project).
      Bron: workshop CSF praktisch. */
   verwachtingen: [
     { titel: "Voor de les", punten: [
       "Meld je bij je leerkracht bij de start van de les.",
-      "Bespreek of het past om uit de les te gaan.",
+      "Vraag toestemming om de les te verlaten.",
       "Haal de leerstof zelfstandig in tegen de volgende les.",
       "Toon je aangevulde cursus de volgende les aan je leerkracht.",
-      "Zet je coach in CC als je mailt naar je vakleerkracht."
+      "Zet je coach in CC bij elke mail naar je vakleerkracht."
     ]},
     { titel: "Logboek", punten: [
       "Vul na elke CSF-sessie je logboek nauwkeurig in.",
       "Deel de link naar jouw project met je coach.",
-      "Lees de feedback van je coach voor je aan je CSF-sessie begint."
+      "Lees de feedback van je coach vóór de start van je CSF-sessie."
     ]},
     { titel: "Attitude tijdens de sessie", punten: [
       "Werk in stilte.",
@@ -54,7 +54,7 @@ window.CSF = {
   kiestest: [
     ["Waar word je het blijst van?", [
       ["Een mysterie oplossen met bewijs", "wetenschappen"],
-      ["Uitzoeken hoe een taal in elkaar zit", "talen"],
+      ["De bouw van een taal uitzoeken", "talen"],
       ["Tekenen en schilderen", "beeld"],
       ["Ritme en muziek maken", "muziek"],
       ["Rekenen aan een echt probleem", "stem"],

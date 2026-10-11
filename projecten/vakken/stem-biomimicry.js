@@ -12,7 +12,7 @@
     sterren: 4,
     naam: "Biomimicry",
     kort: "Natuur en wetenschap gaan hand in hand.",
-    voorWie: "Voor leerlingen die verwonderd zijn bij wat de natuur te bieden heeft en wetenschappelijke interesse heeft.",
-    omschrijving: "De mens gebruikt vaak voorbeelden uit de natuur om zijn leven makkelijker te maken. Vele dagdagelijkse dingen zijn nagemaakt naar zaken die in de natuur heel normaal lijken. Benieuwd naar alle mogelijke vormen van Biomimicry en je te verdiepen in 1 van deze kopieën uit de natuur?"
+    voorWie: "Voor leerlingen met verwondering voor de natuur en interesse in wetenschap.",
+    omschrijving: "De mens kijkt vaak naar de natuur voor slimme oplossingen. Veel alledaagse voorwerpen zijn nagemaakt van iets uit de natuur. Ontdek de vele vormen van biomimicry. Verdiep je daarna in één kopie uit de natuur."
   });
 })();

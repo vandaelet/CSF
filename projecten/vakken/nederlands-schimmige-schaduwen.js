@@ -12,7 +12,7 @@
     sterren: 5,
     naam: "Schimmige schaduwen",
     kort: "Werk je eigen schaduwtheater uit.",
-    voorWie: "Voor leerlingen die creatief zijn en een voorliefde hebben voor toneel en theater.",
-    omschrijving: "Romeo, oh Romeo! To be or not to be… Sta jij binnenkort in het rijtje van grote toneelschrijvers zoals Shakespeare? Tijdens het ontwikkelen van je eigen schaduwtheater maak je gebruik van creativiteit op vlak van taal, maar ga je er ook praktisch mee aan de slag. Je maakt immers ook zelf schaduwfiguren die -net als echte acteurs- jouw toneelstuk zullen uitbeelden. 🎭"
+    voorWie: "Voor creatieve leerlingen met een voorliefde voor toneel en theater.",
+    omschrijving: "Romeo, oh Romeo! To be or not to be… Sta jij binnenkort naast grote toneelschrijvers als Shakespeare? Ontwikkel je eigen schaduwtheater. Gebruik je creativiteit voor de tekst. Ga ook praktisch aan de slag. Maak zelf schaduwfiguren. Zij spelen jouw toneelstuk als echte acteurs. 🎭"
   });
 })();

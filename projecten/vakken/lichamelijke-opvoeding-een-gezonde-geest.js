@@ -12,7 +12,7 @@
     sterren: 3,
     naam: "Een gezonde geest in een gezond lichaam",
     kort: "Ga op zoek naar de vele voordelen van lichaamsbeweging.",
-    voorWie: "Voor leerlingen die interesse tonen in de wisselwerking tussen lichaam en geest.",
-    omschrijving: "Van sporten krijg je been- en armspieren, buik- en bilspieren, dat is geweten. 🤸🏻‍♀️ Van sporten krijg je echter ook sterkere hersenen, wist je dat al? Ontdek op welke vlakken lichaamsbeweging jouw lichaam en geest stimuleert!"
+    voorWie: "Voor leerlingen met interesse in de wisselwerking tussen lichaam en geest.",
+    omschrijving: "Sporten geeft je sterkere been-, arm-, buik- en bilspieren. Dat is algemeen bekend. 🤸🏻‍♀️ Sporten geeft je ook sterkere hersenen. Wist je dat al? Ontdek de vele voordelen van beweging voor je lichaam en je geest!"
   });
 })();

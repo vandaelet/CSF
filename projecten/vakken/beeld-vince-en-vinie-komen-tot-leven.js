@@ -12,7 +12,7 @@
     sterren: 1,
     naam: "Vince en Vinie komen tot leven",
     kort: "Geef Vince en Vinie een digitale make-over.",
-    voorWie: "Voor leerlingen die creatief uit de hoek komen en een stap verder durven gaan.",
-    omschrijving: "Laat jij onze Vince en Vinie tot leven komen? Maak van de 2D-prentjes levensechte modellen, style ze naar jouw zin en laat ze struinen op een digitale catwalk. Hierbij maak je je nieuwe digitale tools meester en zet je je creativiteit om tot echte cartoonfiguren. 🏃🏻‍♂️‍➡️"
+    voorWie: "Voor creatieve leerlingen met de durf om een stap verder te gaan.",
+    omschrijving: "Laat jij Vince en Vinie tot leven komen? Maak van de 2D-prentjes levensechte modellen. Style ze naar jouw smaak. Laat ze daarna over een digitale catwalk struinen. Zo leer je nieuwe digitale tools gebruiken. Je creativiteit levert echte cartoonfiguren op. 🏃🏻‍♂️‍➡️"
   });
 })();
