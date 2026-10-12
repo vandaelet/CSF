@@ -101,7 +101,7 @@
   function kaart(p) {
     var delen = p.naam.split(":"), naam = delen[0], sub = delen.slice(1).join(":").trim();
     return '<a class="kies" href="#p-' + p.id + '" style="--h:var(' + kleur(p) + ')"><span class="dom">' + esc(label(p)) + '</span><span class="pn">' + esc(naam) +
-      '</span><span class="pk">' + esc(sub) + '</span><span class="pp">' + p.kort + "</span>" + (p.voorWie ? '<span class="pw">' + p.voorWie + "</span>" : "") +
+      '</span><span class="pk">' + esc(sub) + "</span>" + (p.kort ? '<span class="pp">' + p.kort + "</span>" : "") + (p.voorWie ? '<span class="pw">' + p.voorWie + "</span>" : "") +
       '<span class="pj">' + sterren(p) + "<span>" + esc(p.tijd) + "</span>" + (isFiche(p) ? '<span class="status">werkbundel volgt</span>' : "") + "</span></a>";
   }
 
@@ -158,9 +158,9 @@
     return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], terug, [label(p)]]) +
       '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + "</div>" +
-      '<p class="lead">' + p.kort + "</p>" +
+      (p.kort ? '<p class="lead">' + p.kort + "</p>" : "") +
       '<div class="acties"><button type="button" class="btn donker" id="verwacht-knop">Wat wordt van mij verwacht?</button></div>' +
-      '<div class="kiesuit"><div><b>Inhoud</b><span>' + p.kort + "</span></div><div><b>Uitdagingsniveau</b><span>" + (sterren(p) || "–") + "</span></div><div><b>Voorziene tijd</b><span>" + esc(p.tijd) + "</span></div></div>" +
+      '<div class="kiesuit"><div><b>Inhoud</b><span>' + (p.kort || "–") + "</span></div><div><b>Uitdagingsniveau</b><span>" + (sterren(p) || "–") + "</span></div><div><b>Voorziene tijd</b><span>" + esc(p.tijd) + "</span></div></div>" +
       '<div class="blok"><h3 class="banner">Over dit project</h3>' + (p.voorWie ? '<p><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") + "<p>" + (p.omschrijving || "") + "</p></div>" +
       '<div class="leeg"><b>De werkbundel van dit project volgt nog.</b><span>Wil je dit project kiezen? Bespreek het met je CSF-coach. Je coach bezorgt je het materiaal.</span></div>' +
       '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
