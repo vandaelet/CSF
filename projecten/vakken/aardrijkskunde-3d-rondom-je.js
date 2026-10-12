@@ -11,7 +11,7 @@
     tijd: "4 à 6 lesuren",
     sterren: 3,
     naam: "3D rondom je",
-    kort: "Vind de verborgen cache door codes te kraken.",
+    kort: "",
     voorWie: "Voor leerlingen met interesse in perspectief en de wereld.",
     omschrijving: "Laat het Pegmannetje je meenemen op tocht naar het Atomium! Zoek daarna de mooiste uitzichten vanop de Eiffeltoren. Onderweg leer je een heleboel leuke weetjes. Wat hebben vlinders gemeen met de kunstwerken van Escher? Tip: het begint met een S. 😉 Pas daarna je nieuwe kennis toe. Ontwerp als architect een gashaard. Deze opdracht is erg gevarieerd. Je vindt er zeker je gading!"
   });
