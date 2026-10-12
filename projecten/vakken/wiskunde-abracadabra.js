@@ -1,4 +1,4 @@
-/* Wiskunde · Abracadabra
+/* wiskunde · Abracadabra
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "wiskunde-abracadabra",
     soort: "vak",
     status: "fiche",
-    vak: "Wiskunde",
+    vak: "wiskunde",
     jaar: "1e en 2e jaar",
     tijd: "4 à 6 lesuren",
     sterren: 5,

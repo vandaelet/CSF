@@ -1,4 +1,4 @@
-/* Aardrijkskunde · Geocaching
+/* aardrijkskunde · Geocaching
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "aardrijkskunde-geocaching",
     soort: "vak",
     status: "fiche",
-    vak: "Aardrijkskunde",
+    vak: "aardrijkskunde",
     jaar: "1e en 2e jaar",
     tijd: "4 à 6 lesuren",
     sterren: 3,

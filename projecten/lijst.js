@@ -40,5 +40,5 @@ CSF.lijst = [
   "projecten/vakken/wiskunde-abracadabra.js",
   "projecten/vakken/wiskunde-regelmaat-en-formules-dankzij-e.js",
   "projecten/vakken/stem-biomimicry.js",
-  "projecten/vakken/vakoverschrijdend-maak-een-escaperoom.js",
+  "projecten/vakken/vakoverschrijdend-escaperoom.js",
 ];

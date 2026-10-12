@@ -22,10 +22,12 @@ Elk projectbestand bevat **alles** van dat project: de projectfiche, leerkaarten
 ## De site online zetten met GitHub Pages (eenmalig)
 
 1. Maak een gratis account op **github.com** (bijvoorbeeld met je schooladres).
-2. Klik rechtsboven op **+** → **New repository**. Naam: `csf-projecten`. Kies **Public**. Klik **Create repository**.
-3. Klik op **uploading an existing file**. Sleep de **inhoud** van deze map in het venster (`index.html`, `site.js`, `assets`, `coach`, `projecten`, `tools`, `LEESMIJ.md`). Klik **Commit changes**.
+2. Klik rechtsboven op **+** → **New repository**. Naam: `CSF`. Kies **Public**. Klik **Create repository**.
+3. Klik op **uploading an existing file**. Sleep de **inhoud** van deze map in het venster (`index.html`, `site.js`, `assets`, `coach`, `projecten`, `tools`, `LEESMIJ.md`). Sleep de mappen zelf mee, niet de map erboven. Klik **Commit changes**.
 4. Ga naar **Settings** → **Pages**. Kies bij *Source* **Deploy from a branch**, kies de branch **main** en de map **/ (root)**. Klik **Save**.
-5. Na een minuut of twee staat de site op `https://<jouw-gebruikersnaam>.github.io/csf-projecten/`.
+5. Na een minuut of twee staat de site op `https://<jouw-gebruikersnaam>.github.io/CSF/`.
+
+**Let op:** uploaden vervangt bestanden, maar verwijdert nooit oude bestanden. Verwijder een hernoemd of overbodig bestand zelf (bestand openen → prullenbakje).
 
 Collega's van de werkgroep kan je toegang geven via **Settings** → **Collaborators**.
 
@@ -42,7 +44,8 @@ Ging er iets mis? Elk bestand heeft een **History**: daar kan je een vorige vers
 
 1. Open `projecten/_sjabloon.js` en kopieer de volledige inhoud.
 2. Ga naar de map `projecten/vakken`, klik **Add file** → **Create new file**, geef een naam zoals `wiskunde-fractals.js` en plak de inhoud.
-3. Vul alles in. Kies bij `vak:` het vak (bijvoorbeeld `"Wiskunde"`): het project verschijnt dan in het Projectenoverzicht onder dat vak. Een uniek `id` is verplicht.
+3. Vul alles in. Kies bij `vak:` het vak (bijvoorbeeld `"wiskunde"`): het project verschijnt dan in het Projectenoverzicht onder dat vak. Talen schrijf je met een hoofdletter (`"Nederlands"`, `"Engels"`, `"Frans"`, `"Latijn"`), alle andere vakken met een kleine letter. Een uniek `id` is verplicht.
+   Schrijfregels: enkelvoudige zinnen, en elke opdracht begint met een gebiedende wijs.
 4. Open `projecten/lijst.js` en voeg een regel toe: `"projecten/vakken/wiskunde-fractals.js",`
 5. **Commit changes**.
 

@@ -1,4 +1,4 @@
-/* Beeld · Vince en Vinie komen tot leven
+/* beeld · Vince en Vinie komen tot leven
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "beeld-vince-en-vinie-komen-tot-leven",
     soort: "vak",
     status: "fiche",
-    vak: "Beeld",
+    vak: "beeld",
     jaar: "1e en 2e jaar",
     tijd: "1 à 3 lesuren",
     sterren: 1,

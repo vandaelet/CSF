@@ -62,8 +62,15 @@
   function logo() { return CSF.logo || "assets/logo.png"; }
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function lijst(xs) { return '<ul class="vink">' + (xs || []).map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul>"; }
-  function hoofd(s) { s = String(s || "").trim(); return s.charAt(0).toUpperCase() + s.slice(1); }
-  function label(p) { return hoofd(p.soort === "vak" ? p.vak : p.domein); }
+  /* Vaknamen: talen met een hoofdletter (Nederlands, Engels …), afkortingen zoals STEM blijven, alle andere vakken met een kleine letter. */
+  var TALEN = ["nederlands", "engels", "frans", "duits", "spaans", "italiaans", "latijn", "grieks"];
+  function vakNaam(s) {
+    s = String(s || "").trim(); if (!s) return s;
+    if (/[A-Z]/.test(s) && s === s.toUpperCase()) return s;
+    var eerste = s.toLowerCase().split(/[\s·]/)[0];
+    return TALEN.indexOf(eerste) >= 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s.charAt(0).toLowerCase() + s.slice(1);
+  }
+  function label(p) { return vakNaam(p.soort === "vak" ? p.vak : p.domein); }
   function sterren(p) { var n = +p.sterren || 0; return n ? '<span class="sterren" aria-label="Uitdagingsniveau ' + n + ' op 5">' + "★".repeat(n) + '<span class="leeg-ster">' + "★".repeat(5 - n) + "</span></span>" : ""; }
   function isFiche(p) { return p.status === "fiche" || !(p.werkbundel && p.werkbundel.length); }
   var store = {
@@ -104,7 +111,7 @@
     return '<div class="wrap">' + kop() + kruimel([["Start"]]) +
       '<div class="vel"><h2 class="banner">Welkom</h2><p>' + esc(CSF.welkom) + '</p><div class="poort">' +
       '<a class="deur" href="#oefenproject"><span class="dt">Oefenproject</span><span class="wie">1e jaar · stap 1</span><span class="dd">Kies één van de korte oefenprojecten (3 lesuren). Leer zo de aanpak van een CSF-project.</span><span class="doms">' +
-      oef.map(function (p) { return '<span style="--h:var(' + kleur(p) + ')">' + esc(p.domein) + "</span>"; }).join("") + '</span><span class="pijl">Naar de oefenprojecten →</span></a>' +
+      oef.map(function (p) { return '<span style="--h:var(' + kleur(p) + ')">' + esc(label(p)) + "</span>"; }).join("") + '</span><span class="pijl">Naar de oefenprojecten →</span></a>' +
       '<a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar · stap 2</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: projectfiche, lesplanning en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a>' +
       "</div></div>" + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
   }
@@ -127,7 +134,7 @@
 
   function vOverzicht() {
     var vk = vakken(), lijstVakken = [], jaren = ["1e", "2e"];
-    vk.forEach(function (p) { p.vak = hoofd(p.vak); if (lijstVakken.indexOf(p.vak) < 0) lijstVakken.push(p.vak); });
+    vk.forEach(function (p) { p.vak = vakNaam(p.vak); if (lijstVakken.indexOf(p.vak) < 0) lijstVakken.push(p.vak); });
     lijstVakken.sort(function (a, b) { return a.localeCompare(b, "nl"); });
     var fv = store.get("csf-fv") || "alle", fj = store.get("csf-fj") || "alle";
     if (fv !== "alle" && lijstVakken.indexOf(fv) < 0) fv = "alle";

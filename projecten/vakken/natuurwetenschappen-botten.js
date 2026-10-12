@@ -1,4 +1,4 @@
-/* Natuurwetenschappen · Over beentjes en botten
+/* natuurwetenschappen · Over beentjes en botten
    Bron: project ‘Skeletten vergelijken’ (pootskeletten) van de werkgroep, herwerkt zonder methodebladen.
    Tekeningen: projecten/afbeeldingen/botten-*.png (zolang ze ontbreken, staat er een kader ‘tekening volgt’). */
 (function () {
@@ -14,7 +14,7 @@
   CSF.project({
     id: "natuur-botten",
     soort: "vak",
-    vak: "Natuurwetenschappen",
+    vak: "natuurwetenschappen",
     jaar: "1e en 2e jaar",
     tijd: "4 lesuren",
     sterren: 2,

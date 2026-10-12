@@ -1,4 +1,4 @@
-/* Muziek · Sing us a song
+/* muziek · Sing us a song
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "muziek-sing-us-a-song",
     soort: "vak",
     status: "fiche",
-    vak: "Muziek",
+    vak: "muziek",
     jaar: "1e en 2e jaar",
     tijd: "7 à 10 lesuren",
     sterren: 4,

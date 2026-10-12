@@ -6,7 +6,7 @@
     id: "lichamelijke-opvoeding-een-gezonde-geest",
     soort: "vak",
     status: "fiche",
-    vak: "Lichamelijke opvoeding",
+    vak: "lichamelijke opvoeding",
     jaar: "1e en 2e jaar",
     tijd: "4 à 6 lesuren",
     sterren: 3,

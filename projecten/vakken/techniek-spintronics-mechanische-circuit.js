@@ -1,4 +1,4 @@
-/* Techniek · Spintronics – mechanische circuits draaien door!
+/* techniek · Spintronics – mechanische circuits draaien door!
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "techniek-spintronics-mechanische-circuit",
     soort: "vak",
     status: "fiche",
-    vak: "Techniek",
+    vak: "techniek",
     jaar: "1e en 2e jaar",
     tijd: "7 à 10 lesuren",
     sterren: 4,

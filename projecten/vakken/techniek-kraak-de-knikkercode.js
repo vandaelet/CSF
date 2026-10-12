@@ -1,4 +1,4 @@
-/* Techniek · Kraak de knikkercode
+/* techniek · Kraak de knikkercode
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "techniek-kraak-de-knikkercode",
     soort: "vak",
     status: "fiche",
-    vak: "Techniek",
+    vak: "techniek",
     jaar: "1e en 2e jaar",
     tijd: "kort tot lang",
     sterren: 5,

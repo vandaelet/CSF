@@ -1,4 +1,4 @@
-/* Wiskunde · Regelmaat en formules: dankzij een duojob naar de top!
+/* wiskunde · Regelmaat en formules: dankzij een duojob naar de top!
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "wiskunde-regelmaat-en-formules-dankzij-e",
     soort: "vak",
     status: "fiche",
-    vak: "Wiskunde",
+    vak: "wiskunde",
     jaar: "1e en 2e jaar",
     tijd: "1 à 3 lesuren",
     sterren: 2,

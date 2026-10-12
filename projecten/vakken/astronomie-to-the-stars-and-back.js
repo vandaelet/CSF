@@ -1,4 +1,4 @@
-/* Astronomie · To the stars and back
+/* astronomie · To the stars and back
    Projectfiche overgenomen uit de presentatie ‘CSF workshops’. De werkbundel volgt nog:
    vul hieronder 'lessen' en 'werkbundel' aan (zie projecten/_sjabloon.js) en haal dan 'status: "fiche"' weg. */
 (function () {
@@ -6,7 +6,7 @@
     id: "astronomie-to-the-stars-and-back",
     soort: "vak",
     status: "fiche",
-    vak: "Astronomie",
+    vak: "astronomie",
     jaar: "1e en 2e jaar",
     tijd: "7 à 10 lesuren",
     sterren: 5,

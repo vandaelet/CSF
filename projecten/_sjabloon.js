@@ -28,7 +28,7 @@
   CSF.project({
     id: "kies-een-unieke-korte-naam",        // zonder spaties, bv. "wiskunde-fractals"
     soort: "vak",                            // "vak" = Projectenoverzicht · "oefen" = oefenproject
-    vak: "Wiskunde",                         // het vak waaronder het project verschijnt
+    vak: "wiskunde",                         // het vak waaronder het project verschijnt
     jaar: "1e en 2e jaar",                   // "1e jaar", "2e jaar" of "1e en 2e jaar"
     tijd: "3 lesuren",
     sterren: 3,                              // uitdagingsniveau van 1 tot 5
