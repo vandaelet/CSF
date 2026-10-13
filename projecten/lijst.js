@@ -23,6 +23,7 @@ CSF.lijst = [
   "projecten/vakken/aardrijkskunde-geocaching.js",
   "projecten/vakken/aardrijkskunde-3d-rondom-je.js",
   "projecten/vakken/astronomie-to-the-stars-and-back.js",
+  "projecten/vakken/astronomie-reis-door-het-heelal.js",
   "projecten/vakken/beeld-vince-en-vinie-komen-tot-leven.js",
   "projecten/vakken/engels-all-about-movies.js",
   "projecten/vakken/frans-le-francais-dans-le-monde.js",
