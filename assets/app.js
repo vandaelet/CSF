@@ -32,15 +32,15 @@
 
   /* Lesplanning met een vrij aantal lesuren. o.midden = [{ titel, werk }, …] */
   CSF.lessenN = function (o) {
-    var logStart = "Vul de datumbalk in je logboek in. Lees je notities van de vorige keer. Kies je eerste taak voor vandaag.";
+    var logStart = "Vul het begin van je logboek in. Lees je notities van de vorige keer. Kies je eerste taak voor vandaag.";
     var eind = "Beoordeel je werk van vandaag. Vat je werk samen in 3 zinnen, voor een medeleerling of op papier. Vul je logboek in.";
     var out = [{ titel: o.t1, stappen: [
-      ["5'", "Logboek", "Vul de bovenkant van je logboek in: projectnaam, voorziene tijd, motivatie en afgesproken evaluatie (laatste blad)."],
+      ["5'", "Logboek", "Vul de opstart en het begin van je logboek in: voorziene tijd, motivatie en afgesproken evaluatie (laatste blad)."],
       ["10'", "Wat weet ik?", o.weet], ["5'", "Wat is de opdracht?", o.opdracht], ["10'", "Ideeën en het beste idee", o.ideeen],
       ["15'", "Uitwerking", o.start], ["5'", "Resultaat en logboek", "Kijk terug op dit lesuur. Noteer je geslaagde stappen en je problemen. Schat in je logboek de duur van je project."]] }];
     (o.midden || []).forEach(function (m) { out.push({ titel: m.titel, stappen: [["5'", "Logboek", logStart], ["35'", "Uitwerking", m.werk], ["10'", "Resultaat en logboek", eind]] }); });
     out.push({ titel: o.laatste.titel, stappen: [["5'", "Logboek", logStart], ["20'", "Uitwerking en resultaat", o.laatste.werk], ["10'", "Presenteren!", o.laatste.presenteer],
-      ["15'", "Wat heb ik geleerd?", "Vul het evaluatierooster op het laatste blad in. Vul daarna in je logboek de evaluatie en het reflectieblad in."]] });
+      ["15'", "Wat heb ik geleerd?", "Vul het evaluatierooster op het laatste blad in. Vul daarna in je logboek de evaluatie en de reflectie in."]] });
     return out;
   };
 
@@ -96,7 +96,7 @@
   function tascBlok(titel) {
     return '<div class="vel tasc"><h2 class="banner">' + titel + "</h2><ol>" + CSF.tasc.map(function (t, i) {
       return '<li><span class="n">' + (i + 1) + '</span><span class="q">' + t[0] + '</span><span class="k">' + t[1] + "</span></li>";
-    }).join("") + '<li class="split">Doorloop deze stappen elk lesuur opnieuw. Start met je voorkennis en je plan voor vandaag. Eindig met je resultaat, een korte samenvatting en je leerpunten. Vul je logboek zelf in op Smartschool.</li></ol></div>';
+    }).join("") + '<li class="split">Doorloop deze stappen elk lesuur opnieuw. Start met je voorkennis en je plan voor vandaag. Eindig met je resultaat, een korte samenvatting en je leerpunten. Vul bij het begin en op het einde van elk lesuur je logboek in via ‘Mijn logboek’.</li></ol></div>';
   }
   function kaart(p) {
     var delen = p.naam.split(":"), naam = delen[0], sub = delen.slice(1).join(":").trim();
@@ -113,7 +113,8 @@
       '<a class="deur" href="#oefenproject"><span class="dt">Oefenproject</span><span class="wie">1e jaar · stap 1</span><span class="dd">Kies één van de korte oefenprojecten (3 lesuren). Leer zo de aanpak van een CSF-project.</span><span class="doms">' +
       oef.map(function (p) { return '<span style="--h:var(' + kleur(p) + ')">' + esc(label(p)) + "</span>"; }).join("") + '</span><span class="pijl">Naar de oefenprojecten →</span></a>' +
       '<a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar · stap 2</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: projectfiche, lesplanning en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a>' +
-      "</div></div>" + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
+      "</div>" + (CSF.portaal && CSF.portaal.actief ? '<p class="lb-start"><a class="btn" href="#logboek">Mijn logboek</a> <span class="hint">Meld je aan met je schoolaccount. Vul je logboek in bij het begin en op het einde van elk lesuur.</span></p>' : "") +
+      "</div>" + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
   }
 
   function vOefen() {
@@ -126,7 +127,7 @@
       '<div class="vel"><h2 class="banner">Oefenproject · 1e jaar</h2>' +
       '<p><span class="kw">Kies één oefenproject.</span> Elk project duurt 3 lesuren van 50 minuten. Lees de opdracht hier op het scherm. Werk op papier in je werkbundel. Druk je werkbundel af met de knop bij je project.</p>' +
       '<p>Kies in lesuur 1 je eigen <span class="kw">invalshoek</span>: jouw draai aan het project, zonder extra werk.</p>' +
-      '<div class="ritme"><div><b>Start van elk lesuur</b><span>Vul de datumbalk in je logboek in. Noteer je voorkennis en je plan voor vandaag.</span></div><div><b>Tijdens het lesuur</b><span>Volg het stappenplan bovenaan het lesuur in je werkbundel.</span></div><div><b>Einde van elk lesuur</b><span>Beoordeel je werk. Vertel kort over je werk. Noteer je leerpunten. Vul je logboek in.</span></div></div></div>' +
+      '<div class="ritme"><div><b>Start van elk lesuur</b><span>Vul het begin van je logboek in. Noteer je voorkennis en je plan voor vandaag.</span></div><div><b>Tijdens het lesuur</b><span>Volg het stappenplan bovenaan het lesuur in je werkbundel.</span></div><div><b>Einde van elk lesuur</b><span>Beoordeel je werk. Vertel kort over je werk. Noteer je leerpunten. Vul je logboek in.</span></div></div></div>' +
       '<div class="vel"><h2 class="banner">Kies je oefenproject</h2><div class="kiezen">' + oefen().map(kaart).join("") + "</div>" +
       (kt ? '<details class="inklap" style="margin-top:14px"><summary>Twijfel je? Doe de kiestest</summary><form id="kiestest">' + kt + '<div id="advies" aria-live="polite"></div></form></details>' : "") +
       "</div>" + footer() + "</div>";
@@ -183,7 +184,7 @@
       (p.nogTijd ? '<h4 class="sub">Klaar en nog tijd over?</h4><p>' + p.nogTijd + "</p>" : "") + "</div>" : "";
     var lessen = (p.lessen || []).map(function (l, i) {
       var id = "klaar-" + p.id + "-" + (i + 1);
-      return '<div class="les"><h4><span class="lesnr">Lesuur ' + (i + 1) + "</span>" + l.titel + '</h4><ol class="stappen">' + l.stappen.map(function (s) {
+      return '<div class="les" data-les="' + (i + 1) + '"><h4><span class="lesnr">Lesuur ' + (i + 1) + "</span>" + l.titel + '</h4><ol class="stappen">' + l.stappen.map(function (s) {
         return '<li class="' + (s[1].indexOf("Logboek") >= 0 ? "lb" : "") + '"><span class="t">' + s[0] + '</span><span class="s">' + s[1] + '</span><span class="w">' + s[2] + "</span></li>";
       }).join("") + '</ol><label class="klaar" for="' + id + '"><input type="checkbox" id="' + id + '" data-p="' + p.id + '"> Dit lesuur is af</label></div>';
     }).join("");
@@ -193,6 +194,7 @@
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + '<span class="tag">uitwerking op papier</span></div>' +
       '<p class="lead">' + p.kort + "</p>" + (p.voorWie ? '<p class="hint" style="margin-top:6px"><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") +
       '<div class="acties"><button type="button" class="btn donker" id="verwacht-knop">Wat wordt van mij verwacht?</button><a class="btn" href="#wb-' + p.id + '">Bekijk en druk de werkbundel af</a>' + links + "</div>" +
+      '<div id="logboek-blok"></div>' +
       '<div class="voortgang" aria-live="polite"><div class="balk"><span></span></div><span class="vtekst"></span></div>' +
       '<div class="grid2"><div class="blok"><h3 class="banner">Projectfiche</h3><dl>' +
       "<dt>Omschrijving project</dt><dd>" + p.omschrijving + "</dd><dt>Doel van het project</dt><dd>" + p.doel + "</dd>" +
@@ -203,7 +205,7 @@
       (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") + "</div></div>" +
       inv +
       (controle ? '<div class="blok"><h3 class="banner">Controleer je oplossing</h3><p class="hint">Schrijf je antwoord eerst in je werkbundel. Tik het daarna hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle + "</div>" : "") +
-      '<div class="blok"><h3 class="banner">Zo verloopt je project</h3><p class="hint">Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat een eenvoudig stappenplan. Gele regels zijn logboekmomenten op Smartschool.</p><div class="lessen">' + lessen + "</div></div>" +
+      '<div class="blok"><h3 class="banner">Zo verloopt je project</h3><p class="hint">Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat een eenvoudig stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’.</p><div class="lessen">' + lessen + "</div></div>" +
       '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>" +
       '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
   }
@@ -251,16 +253,20 @@
 
   function footer() {
     return '<footer>Je werkt zelfstandig. Alles staat in je werkbundel en op deze site. Controleer je antwoorden bij ‘Controleer je oplossing’ in elk project.' +
-      '<span class="voor-coach"><a class="btn donker" href="#coach">Coachfiches (enkel voor coaches)</a></span></footer>';
+      '<span class="voor-coach">' + (CSF.portaal && CSF.portaal.actief ? '<a class="btn licht" href="#logboek">Mijn logboek</a> <a class="btn donker" href="#dashboard">Dashboard coaches</a> ' : "") +
+      '<a class="btn donker" href="#coach">Coachfiches (enkel voor coaches)</a></span></footer>';
   }
 
   /* ---------- Coachfiches: versleuteld, enkel te openen met de coachcode ---------- */
   var coachInhoud = null;
   function vCoach() {
     var kop0 = '<div class="wrap afdruk">' + kop() + kruimel([["Start", "#start"], ["Coachfiches"]]);
+    if (!coachInhoud && CSF.portaal && CSF.portaal.actief) {
+      return kop0 + '<div class="vel"><h2 class="banner">Coachfiches</h2><p>Deze pagina is enkel voor de CSF-coaches. Meld je aan met je schoolaccount.</p><div id="coach-poort"><p class="hint">Even geduld …</p></div></div>' + footer() + "</div>";
+    }
     if (!coachInhoud) {
       return kop0 + '<div class="vel"><h2 class="banner">Coachfiches</h2><p>Deze pagina is enkel voor de CSF-coaches. Typ de coachcode. Zo open je de coachfiches met voorbereiding, oplossingen en begeleidingstips.</p>' +
-        '<form id="coach-form" class="crij" style="max-width:520px"><label for="coach-code" class="hint" style="flex-basis:100%;margin:0">Coachcode</label><input type="password" id="coach-code" autocomplete="current-password" required>' +
+        '<form id="coach-form" class="crij" style="max-width:520px"><label for="coach-code" class="hint" style="flex-basis:100%;margin:0">Coachcode</label><input type="password" id="coach-code" autocomplete="off" required>' +
         '<button type="submit" class="btn">Openen</button></form><p class="fb" id="coach-fb" aria-live="polite"></p></div>' + footer() + "</div>";
     }
     var gezien = {}, fiches = [];
@@ -295,6 +301,8 @@
         .then(function (buf) { return JSON.parse(new TextDecoder().decode(buf)); });
     });
   }
+
+  if (CSF.portaal) CSF.portaal.testCode = function (c) { return ontsleutel(c).then(function () { return true; }, function () { return false; }); };
 
   /* ---------- Venster: Wat wordt van mij verwacht? ---------- */
   function openVerwacht() {
@@ -331,6 +339,7 @@
       app.querySelectorAll("[data-fj]").forEach(function (b) { b.addEventListener("click", function () { store.set("csf-fj", b.dataset.fj); teken(); }); });
     }
     if (view === "project") {
+      if (CSF.portaal && CSF.portaal.project) CSF.portaal.project(p, app);
       document.getElementById("verwacht-knop").addEventListener("click", openVerwacht);
       app.querySelectorAll(".optie").forEach(function (o) { o.addEventListener("click", function () {
         var v = o.closest(".tvraag"); if (v.dataset.klaar) return; v.dataset.klaar = "1";
@@ -367,10 +376,14 @@
       vg();
     }
     if (view === "coach") {
+      var poort = document.getElementById("coach-poort");
+      if (poort) CSF.portaal.coachfiches(poort, function (code) {
+        return ontsleutel(code).then(function (inh) { coachInhoud = inh; teken(); });
+      });
       var form = document.getElementById("coach-form");
       if (form) form.addEventListener("submit", function (e) {
         e.preventDefault();
-        var fb = document.getElementById("coach-fb"), code = document.getElementById("coach-code").value;
+        var fb = document.getElementById("coach-fb"), code = document.getElementById("coach-code").value.trim();
         fb.textContent = "Even geduld …";
         ontsleutel(code).then(function (inh) {
           coachInhoud = inh; try { sessionStorage.setItem("csf-coach", code); } catch (x) {}
@@ -390,6 +403,9 @@
     }
   }
 
+  /* ---------- Hulpstukken voor het portaal (assets/portaal.js) ---------- */
+  CSF.ui = { kop: kop, kruimel: kruimel, footer: footer, esc: esc, label: label, zoek: zoek, isFiche: isFiche, herteken: function () { teken(); } };
+
   /* ---------- Router ---------- */
   function teken() {
     var h = (location.hash || "#start").slice(1), app = document.getElementById("app"), p;
@@ -403,6 +419,7 @@
       app.innerHTML = vCoach(); koppel("coach"); document.title = "Coachfiches · " + CSF.titel;
     }
     else if (h === "overzicht") { app.innerHTML = vOverzicht(); koppel("overzicht"); document.title = "Projectenoverzicht · " + CSF.titel; }
+    else if (CSF.portaal && CSF.portaal.route && CSF.portaal.route(h, app)) { /* logboek of dashboard */ }
     else { app.innerHTML = vStart(); document.title = CSF.titel + " " + CSF.school; }
   }
   function start() {

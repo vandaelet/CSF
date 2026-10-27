@@ -1,0 +1,67 @@
+rules_version = '2';
+// Toegangsregels voor het CSF-portaal (Cloud Firestore).
+// Plak dit in Firebase → Firestore Database → Rules en klik op Publish.
+// Rollen: beheerder (collectie beheerders), coach (collectie coaches), leerling (collectie leerlingen),
+// vakleerkracht (staat bij een leerling in vakleerkrachten). Enkel schoolaccounts @svsl.be.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function aangemeld() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.*@svsl[.]be$');
+    }
+    function mail() { return request.auth.token.email.lower(); }
+    function beheerder() { return aangemeld() && exists(/databases/$(database)/documents/beheerders/$(mail())); }
+    function coach() { return aangemeld() && (beheerder() || exists(/databases/$(database)/documents/coaches/$(mail()))); }
+    function opLijst() { return exists(/databases/$(database)/documents/leerlingen/$(mail())); }
+
+    // beheerders: de beheerder beheert de lijst; iedereen mag nagaan of hij zelf beheerder is
+    match /beheerders/{email} {
+      allow read: if aangemeld() && (mail() == email || beheerder());
+      allow write: if beheerder();
+    }
+    // coaches: namen zijn zichtbaar voor iedereen met een schoolaccount; enkel de beheerder wijzigt
+    match /coaches/{email} {
+      allow read: if aangemeld();
+      allow write: if beheerder();
+    }
+    // leerlingenlijst: coaches voegen toe en wijzen een coach toe; de leerling en zijn vakleerkracht lezen mee
+    match /leerlingen/{email} {
+      allow read: if coach() || (aangemeld() && mail() == email)
+                  || (aangemeld() && mail() in resource.data.get('vakleerkrachten', []));
+      allow write: if coach();
+    }
+    // logboek: document <e-mail>__<project>; de leerling schrijft enkel zijn eigen logboek
+    match /logboeken/{id} {
+      allow read: if coach()
+                  || (aangemeld() && resource.data.leerling == mail())
+                  || (aangemeld() && mail() in resource.data.get('kijkers', []));
+      allow create: if aangemeld() && opLijst()
+                    && id.split('__')[0] == mail()
+                    && request.resource.data.leerling == mail()
+                    && request.resource.data.get('kijkers', []) ==
+                       get(/databases/$(database)/documents/leerlingen/$(mail())).data.get('vakleerkrachten', []);
+      allow update: if coach()
+                    || (aangemeld() && resource.data.leerling == mail()
+                        && request.resource.data.leerling == mail()
+                        && request.resource.data.project == resource.data.project
+                        && request.resource.data.get('kijkers', []) == resource.data.get('kijkers', []));
+      allow delete: if coach();
+    }
+    // feedback van de coach; de leerling mag enkel bevestigen dat hij ze gelezen heeft
+    match /feedback/{id} {
+      allow read: if coach() || (aangemeld() && resource.data.leerling == mail());
+      allow create: if coach() && request.resource.data.coach == mail() && request.resource.data.gelezen == false;
+      allow update: if coach()
+                    || (aangemeld() && resource.data.leerling == mail()
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gelezen', 'gelezenOp'])
+                        && request.resource.data.gelezen == true);
+      allow delete: if coach();
+    }
+    // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, enkel de beheerder schrijft
+    match /instellingen/{id} {
+      allow read: if coach();
+      allow write: if beheerder();
+    }
+  }
+}

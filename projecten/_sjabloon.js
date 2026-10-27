@@ -38,7 +38,7 @@
     omschrijving: "Waar gaat het project over? (3 à 4 zinnen)",
     doel: "Wat leert de leerling?",
     bereikt: ["Vaardigheid 1", "Vaardigheid 2", "Vaardigheid 3"],
-    toepassen: ["Executieve functie 1 (zie het reflectieblad)", "Executieve functie 2"],
+    toepassen: ["Executieve functie 1 (zie de reflectie in het logboek)", "Executieve functie 2"],
     materiaal: ["Werkbundel", "Potlood, gom", "Een toestel met internet"],
     oplossing: "Op deze site, bij ‘Controleer je oplossing’.",
     product: "Wat levert de leerling af?",

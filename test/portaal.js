@@ -1,0 +1,152 @@
+/* Test van het portaal met de nep-Firebase: leerlingen importeren, coach toewijzen, logboek (opstart, begin en einde,
+   afsluiting), poorten, feedback bevestigen, vakleerkracht, coachfiches via de rol, export en zonder koppeling.
+   Gebruik: test/serve.sh && node test/portaal.js   (coachfiches openen wordt enkel getest met CSF_COACHCODE=…) */
+const { B, context, pagina, aanmelden, fakedb, wacht } = require('./helpers');
+let ok = true; const fout = m => { ok = false; console.log('  FOUT: ' + m); }; const goed = m => console.log('  ok   ' + m);
+const check = (v, m) => v ? goed(m) : fout(m);
+
+const TOM = { uid:'t', email:'tom@svsl.be', displayName:'Tom Van Daele' };
+const ELS = { uid:'e', email:'els@svsl.be', displayName:'Els Van Huffel' };
+const LIEN = { uid:'l', email:'lien@svsl.be', displayName:'Lien Peeters' };
+const AN = { uid:'a', email:'an@svsl.be', displayName:'An Vakleerkracht' };
+const DB = {
+  'beheerders/tom@svsl.be': {},
+  'coaches/tom@svsl.be': { naam:'Van Daele T.' },
+  'coaches/els@svsl.be': { naam:'Van Huffel E.' },
+  'leerlingen/mo@svsl.be': { naam:'Mo Claes', klas:'1B', coach:'els@svsl.be', coachNaam:'Van Huffel E.', vakleerkrachten:[] },
+  'logboeken/mo@svsl.be__talen': { leerling:'mo@svsl.be', naam:'Mo Claes', project:'talen', projectnaam:'Taalbouwers: ontwerp je eigen taal', gestart:'2026-10-01T08:00:00Z', status:'bezig',
+    opstart:{ klas:'1B' }, lessen:[{ nr:1, datum:'2026-10-01', begin:{ stappen:['Wat is de opdracht?'], minuten:50 } }], kijkers:[] }
+};
+
+(async () => {
+  const { b, ctx } = await context();
+  const p = await pagina(ctx, DB);
+
+  console.log('1. Beheerder: overzicht en leerlingen importeren');
+  await aanmelden(p, '#dashboard', TOM);
+  await p.waitForSelector('.lb-overzicht');
+  check(await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-pill.rood').count() === 1, 'ontbrekend einde-logboek staat in het rood');
+  await p.click('[data-tab="leerlingen"]');
+  await p.fill('#plak-lijst', 'lien@svsl.be\tLien Peeters\t1A\tels@svsl.be\nfoo@gmail.com\tX\t1A');
+  await p.click('#plak-import'); await wacht(900);
+  let d = await fakedb(p);
+  check(d['leerlingen/lien@svsl.be'] && d['leerlingen/lien@svsl.be'].coach === 'els@svsl.be' && d['leerlingen/lien@svsl.be'].coachNaam === 'Van Huffel E.', 'leerling geïmporteerd met coach');
+  check(!d['leerlingen/foo@gmail.com'], 'adres buiten de school overgeslagen');
+  await p.waitForSelector('tr[data-ll="lien@svsl.be"]');
+  const rij = p.locator('tr[data-ll="lien@svsl.be"]');
+  await rij.locator('input[aria-label="Vakleerkracht"]').fill('an@svsl.be');
+  await rij.locator('[data-bewaar]').click(); await wacht(700);
+  d = await fakedb(p);
+  check(JSON.stringify(d['leerlingen/lien@svsl.be'].vakleerkrachten) === '["an@svsl.be"]', 'vakleerkracht bewaard');
+
+  console.log('2. Leerling: opstart en eerste lesuur');
+  await aanmelden(p, '#logboek-wetenschappen', LIEN);
+  await p.waitForSelector('#lb-opstart');
+  await p.click('#lb-opstart button[type=submit]');
+  check((await p.textContent('#lb-opstart .fb')).includes('verplichte'), 'opstart zonder antwoorden wordt geweigerd');
+  await p.fill('#vak', 'wiskunde'); await p.fill('#vakleerkracht', 'meneer Peeters');
+  await p.check('#dag-0'); await p.check('#lesuur-2'); await p.fill('#motivatie', 'Ik hou van speurwerk.'); await p.check('#evaluatieGelezen-0');
+  await p.click('#lb-opstart button[type=submit]');
+  await p.waitForSelector('#lb-begin');
+  d = await fakedb(p);
+  const LB = 'logboeken/lien@svsl.be__wetenschappen';
+  check(d[LB] && d[LB].opstart.dag === 'MA' && d[LB].opstart.coach === 'Van Huffel E.', 'opstart bewaard');
+  check(JSON.stringify(d[LB].kijkers) === '["an@svsl.be"]', 'vakleerkracht mag meelezen');
+  check(await p.locator('.lb-stappen').count() === 0, 'stappenplan nog niet zichtbaar voor het begin-logboek');
+  await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
+  check(await p.locator('.les.lb-slot').count() === 3, 'projectpagina: alle 3 lesuren vergrendeld');
+  await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-begin');
+  await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
+  check(await p.locator('.lb-stappen').count() === 1, 'stappenplan van lesuur 1 verschijnt na het begin-logboek');
+  await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
+  check(await p.locator('.les.lb-slot').count() === 2, 'projectpagina: lesuur 1 open, 2 en 3 vergrendeld');
+  await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-einde');
+  await p.goto(B + '#logboek'); await p.waitForSelector('.lb-kaart');
+  check((await p.textContent('.lb-kaart')).includes('bezig'), 'mijn logboek: project staat op bezig');
+  await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-einde');
+  for (const [id, v] of [['weet', 'Inkt bestaat uit kleurstoffen.'], ['opdracht', 'De dader vinden.'], ['ideeen', 'Chromatografie, vingerafdrukken.'], ['besteIdee', 'Chromatografie'], ['schatting', '3 lesuren'], ['reden', 'Goed gepland.'], ['verloop', 'Vlot.']]) await p.fill('#' + id, v);
+  await p.check('#tijd-0');
+  await p.click('#lb-einde button[type=submit]'); await p.waitForSelector('#lb-begin');
+  check((await p.textContent('#lb-begin button[type=submit]')).includes('lesuur 2'), 'na het einde-logboek start lesuur 2');
+
+  console.log('3. Coach: feedback geven');
+  await aanmelden(p, '#dashboard', ELS);
+  await p.waitForSelector('.db-rij[data-ll="lien@svsl.be"]');
+  check(await p.locator('[data-tab="beheer"]').count() === 0, 'coach ziet geen beheer');
+  check(await p.locator('.db-rij').count() === 2, 'coach ziet alle leerlingen');
+  await p.click('.db-rij[data-ll="lien@svsl.be"]'); await p.waitForSelector('#db-fb');
+  await p.fill('#db-fb-tekst', 'Mooi begin. Noteer ook je meetwaarden.'); await p.selectOption('#db-fb-les', '1');
+  await p.click('#db-fb button[type=submit]'); await wacht(900);
+  d = await fakedb(p);
+  const fb = Object.entries(d).filter(([k]) => k.startsWith('feedback/'));
+  check(fb.length === 1 && fb[0][1].gelezen === false && fb[0][1].les === 1 && fb[0][1].coachNaam === 'Van Huffel E.', 'feedback bewaard');
+
+  console.log('4. Leerling: feedback bevestigen, lesuur 2 en afsluiten');
+  await aanmelden(p, '#logboek-wetenschappen', LIEN);
+  await p.waitForSelector('.lb-fbpoort');
+  check(await p.locator('#lb-begin').count() === 0, 'eerst feedback lezen, dan pas verder');
+  await p.click('#lb-bevestig');
+  check((await p.textContent('.lb-acties .fb')).includes('Vink'), 'bevestigen zonder vinkje wordt geweigerd');
+  await p.check('.lb-gelezen'); await p.click('#lb-bevestig'); await p.waitForSelector('#lb-begin');
+  d = await fakedb(p);
+  check(Object.entries(d).filter(([k]) => k.startsWith('feedback/'))[0][1].gelezen === true, 'feedback als gelezen bewaard');
+  await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.');
+  await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
+  await p.fill('#gemist', 'Breuken'); await p.fill('#ingehaald', 'Cursus gelezen.'); await p.check('#vragen-1'); await p.check('#geslaagd-0');
+  await p.click('#lb-einde button[type=submit]'); await p.waitForSelector('#lb-naar-afsluiten');
+  await p.click('#lb-naar-afsluiten'); await p.waitForSelector('#lb-afsluit');
+  await p.check('#tijd-0'); await p.fill('#reden', 'Goed gepland.'); await p.check('#oordeel-1'); await p.check('#ef-0');
+  await p.fill('#presentatie', 'Getuigenis van 2 minuten.'); await p.check('#structuur-0'); await p.check('#verzorgd-0');
+  await p.fill('#nuWeet', 'Rf-waarden.'); await p.fill('#overMezelf', 'Ik meet nauwkeurig.'); await p.fill('#goedBeter', 'Planning kon beter.');
+  await p.click('#lb-afsluit button[type=submit]'); await p.waitForSelector('.lb-melding.groen');
+  d = await fakedb(p);
+  check(d[LB].status === 'afgerond' && d[LB].lessen.length === 2 && d[LB].afsluiting.ef[0] === 'Ik schat mijn tijd goed in.', 'project afgerond met reflectie');
+
+  console.log('5. Vakleerkracht, onbekende leerling en ander domein');
+  await aanmelden(p, '#dashboard', AN);
+  await p.waitForSelector('.lb-overzicht');
+  check(await p.locator('.db-rij').count() === 1 && await p.locator('.db-rij[data-ll="lien@svsl.be"]').count() === 1, 'vakleerkracht ziet enkel zijn leerling');
+  check(await p.locator('[data-tab="leerlingen"]').count() === 0, 'vakleerkracht kan geen leerlingen beheren');
+  await p.click('.db-rij'); await p.waitForSelector('.lb-detail');
+  check(await p.locator('#db-fb').count() === 0 && (await p.textContent('.lb-detail')).includes('Chromatogrammen meten'), 'vakleerkracht leest het logboek zonder feedbackvak');
+  await aanmelden(p, '#logboek', { uid:'x', email:'nieuw@svsl.be', displayName:'Nieuwe Leerling' });
+  await p.waitForSelector('.lb-melding');
+  check((await p.textContent('.lb-melding')).includes('nog niet op de CSF-lijst'), 'leerling zonder lijst krijgt uitleg');
+  await aanmelden(p, '#logboek', { uid:'g', email:'iemand@gmail.com', displayName:'Gmail' });
+  await p.waitForSelector('.lb-melding');
+  check((await p.textContent('.lb-melding')).includes('schoolaccount'), 'ander domein geweigerd');
+
+  console.log('6. Coachfiches via de rol en export');
+  await aanmelden(p, '#coach', LIEN); await p.waitForSelector('#coach-poort .lb-melding');
+  check((await p.textContent('#coach-poort')).includes('enkel voor de CSF-coaches'), 'leerling kan de coachfiches niet openen');
+  await aanmelden(p, '#coach', ELS); await p.waitForSelector('#coach-poort .lb-melding');
+  check((await p.textContent('#coach-poort')).includes('beheerder'), 'coach: wacht op de coachcode van de beheerder');
+  await aanmelden(p, '#dashboard', TOM); await p.waitForSelector('#db-csv');
+  const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#db-csv')]);
+  const csv = require('fs').readFileSync(await dl.path(), 'utf8');
+  check(dl.suggestedFilename().startsWith('csf-overzicht-') && csv.includes('Lien Peeters') && csv.includes('Afgerond'), 'overzicht als CSV gedownload');
+  await p.click('[data-tab="beheer"]'); await p.waitForSelector('#code-in');
+  await p.fill('#coach-mail', 'kris@svsl.be'); await p.fill('#coach-naam', 'Van Landeghem K.'); await p.click('#coach-voegtoe'); await wacht(700);
+  d = await fakedb(p); check(d['coaches/kris@svsl.be'] && d['coaches/kris@svsl.be'].naam === 'Van Landeghem K.', 'beheerder voegt een coach toe');
+  await p.fill('#code-in', 'verkeerde-code'); await p.click('#code-bewaar'); await wacht(2500);
+  check((await p.textContent('#code-fb')).includes('opent de coachfiches niet'), 'verkeerde coachcode wordt niet bewaard');
+  if (process.env.CSF_COACHCODE) {
+    await p.fill('#code-in', process.env.CSF_COACHCODE); await p.click('#code-bewaar'); await wacht(2500);
+    await aanmelden(p, '#coach', ELS); await p.waitForSelector('.coachband', { timeout: 15000 }).catch(() => {});
+    check(await p.locator('.coachband').count() > 3, 'coach opent de coachfiches zonder code');
+  } else console.log('  (coachfiches openen overgeslagen: geef CSF_COACHCODE mee)');
+  if (p.fouten.length) fout('fouten in de pagina: ' + p.fouten.join(' | '));
+  await b.close();
+
+  console.log('7. Zonder Firebase-koppeling');
+  const z = await context({ zonderPortaal: true }); const q = await pagina(z.ctx, {});
+  await q.goto(B + '#logboek'); await q.waitForSelector('.lb-melding');
+  check((await q.textContent('.lb-melding')).includes('nog niet gekoppeld'), 'logboek meldt dat de koppeling ontbreekt');
+  await q.goto(B + '#coach'); await q.waitForSelector('#coach-code');
+  check(true, 'coachfiches vallen terug op de code');
+  await q.goto(B + '#p-wetenschappen'); await q.waitForSelector('.les'); await wacht(300);
+  check(await q.locator('.les.lb-slot').count() === 0, 'projectpagina blijft open zonder koppeling');
+  if (q.fouten.length) fout('fouten zonder koppeling: ' + q.fouten.join(' | '));
+  await z.b.close();
+  console.log(ok ? 'ALLES OK' : 'ER ZIJN FOUTEN'); process.exit(ok ? 0 : 1);
+})().catch(e => { console.error(e); process.exit(1); });

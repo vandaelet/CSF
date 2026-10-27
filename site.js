@@ -25,9 +25,9 @@ window.CSF = {
       "Zet je coach in CC bij elke mail naar je vakleerkracht."
     ]},
     { titel: "Logboek", punten: [
-      "Vul na elke CSF-sessie je logboek nauwkeurig in.",
-      "Deel de link naar jouw project met je coach.",
-      "Lees de feedback van je coach vóór de start van je CSF-sessie."
+      "Vul bij het begin en op het einde van elk lesuur je logboek in via ‘Mijn logboek’ op deze site.",
+      "Zet de link naar jouw project in je logboek. Geef je coach toegang.",
+      "Lees de feedback van je coach. Bevestig in je logboek dat je ze gelezen hebt."
     ]},
     { titel: "Attitude tijdens de sessie", punten: [
       "Werk in stilte.",
