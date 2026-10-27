@@ -383,7 +383,7 @@ const DB = {
   await q.goto(B + '#wb-engels-all-about-movies'); await q.waitForSelector('.blad');
   check(true, 'werkbundel kan nu afgedrukt worden');
   await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('.ptabs');
-  await q.click('.ptab[data-tab="controle"]'); await q.waitForSelector('details.quiz');
+  await q.waitForSelector('#tp-start details.quiz');
   check(await q.locator('details.quiz').count() === 8, 'Engels: luisterquiz voor elk van de 8 clips');
   await q.click('details.quiz summary'); await q.click('details.quiz .optie[data-ok="1"]');
   check((await q.textContent('details.quiz .fb')).startsWith('Juist'), 'luisterquiz verbetert meteen');

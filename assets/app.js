@@ -237,8 +237,8 @@
         (ok ? '<span class="hint">✓ Gelezen</span>' : '<button type="button" class="btn licht lb-klein" data-lees="' + i + '">Ik heb deze leerkaart gelezen</button>') + "</p></details>";
     }).join("");
     var modus = CSF.portaal && CSF.portaal.projectModus ? CSF.portaal.projectModus(p) : "vol";
-    var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["start", "1. Start: leerkaarten"], ["fiche", "Projectfiche"], ["leidraad", "Leidraad per lesuur"]]
-      .concat(quizzen || controle ? [["controle", "Controleer je oplossing"]] : []).concat([["evaluatie", "Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "Werkbundel"]]);
+    var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["start", "1. Start: leerkaarten en oefeningen"], ["fiche", "Projectfiche"], ["leidraad", "Leidraad per lesuur"]]
+      .concat([["evaluatie", "Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "Werkbundel"]]);
     var actief = modus === "fiche" ? "fiche" : "start"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "start"; } catch (e) {}
     if (!tabs.some(function (t) { return t[0] === actief; })) actief = "start";
     /* onderaan elk tabblad: knoppen naar de vorige en de volgende stap */
@@ -260,6 +260,9 @@
       paneel("start", '<div class="blok"><h3 class="banner">Start hier: lees de leerkaarten</h3><p>De leerkaarten geven je de nieuwe leerstof die je nodig hebt voor dit project. Open elke leerkaart. Lees ze aandachtig. Klik daarna op <b>‘Ik heb deze leerkaart gelezen’</b>. Pas als je alle leerkaarten gelezen hebt, kan je de werkbundel afdrukken.</p>' +
         '<div class="lk-stand' + (open ? " klaar" : "") + '" aria-live="polite"><div class="balk"><span style="width:' + (lk.length ? 100 * nGel / lk.length : 100) + '%"></span></div><span>' + (lk.length ? nGel + " van " + lk.length + " leerkaarten gelezen" : "Dit project heeft geen leerkaarten.") + (open ? ' · <a href="#wb-' + p.id + '">Naar de werkbundel →</a>' : "") + "</span></div>" + kaarten + "</div>" +
         (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><p class="hint">Begrijp je de leerkaarten? Test het hier.</p><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") +
+        /* de oefeningen ‘Controleer je oplossing’ en de quizzen staan meteen na de leerkaarten */
+        (quizzen ? '<div class="blok"><h3 class="banner">' + esc(p.quizTitel || "Quiz per fragment") + '</h3><p class="hint">' + (p.quizUitleg || "Bekijk het fragment. Beantwoord daarna de vragen. Je ziet meteen of je antwoord juist is.") + "</p>" + quizzen + "</div>" : "") +
+        (controle ? '<div class="blok"><h3 class="banner">Controleer je oplossing</h3><p class="hint">Schrijf je antwoord eerst in je werkbundel. Tik het daarna hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle + "</div>" : "") +
         (links ? '<div class="blok"><h3 class="banner">Handige links</h3><div class="acties">' + links + "</div></div>" : "")) +
       paneel("fiche", '<div class="blok"><h3 class="banner">Projectfiche</h3><dl>' +
         "<dt>Omschrijving project</dt><dd>" + p.omschrijving + "</dd><dt>Doel van het project</dt><dd>" + p.doel + "</dd>" +
@@ -267,12 +270,11 @@
         "<dt>Materiële benodigdheden</dt><dd>" + lijst(p.materiaal) + "</dd><dt>Waar kan ik de oplossing vinden?</dt><dd>" + p.oplossing + "</dd><dt>Voorziene tijd</dt><dd>" + esc(p.tijd) + "</dd><dt>Eindproduct</dt><dd>" + p.product + "</dd></dl></div>") +
       paneel("leidraad", inv + '<div class="blok"><h3 class="banner">Leidraad per lesuur</h3><p class="hint">Dit is een leidraad, geen strak schema. Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat hetzelfde stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’.</p>' +
         '<div class="voortgang" aria-live="polite"><div class="balk"><span></span></div><span class="vtekst"></span></div><div class="lessen">' + lessen + "</div></div>") +
-      (quizzen || controle ? paneel("controle", (quizzen ? '<div class="blok"><h3 class="banner">' + esc(p.quizTitel || "Quiz per fragment") + '</h3><p class="hint">' + (p.quizUitleg || "Bekijk het fragment. Beantwoord daarna de vragen. Je ziet meteen of je antwoord juist is.") + "</p>" + quizzen + "</div>" : "") +
-        (controle ? '<div class="blok"><h3 class="banner">Controleer je oplossing</h3><p class="hint">Schrijf je antwoord eerst in je werkbundel. Tik het daarna hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle + "</div>" : "")) : "") +
+
       paneel("evaluatie", '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>") +
       paneel("werkbundel", '<div class="blok"><h3 class="banner">Werkbundel</h3>' + (open
         ? '<p>Je las alle leerkaarten. Bekijk de werkbundel en druk hem af op A4.</p><p><a class="btn" href="#wb-' + p.id + '">🖨 Bekijk en druk de werkbundel af</a></p>'
-        : '<div class="lb-melding oranje">🔒 <b>Lees eerst alle leerkaarten.</b> Je las er ' + nGel + " van " + lk.length + '. Ga naar het tabblad <a href="#" data-naartab="start">1. Start: leerkaarten</a>.</div>') + "</div>") +
+        : '<div class="lb-melding oranje">🔒 <b>Lees eerst alle leerkaarten.</b> Je las er ' + nGel + " van " + lk.length + '. Ga naar het tabblad <a href="#" data-naartab="start">1. Start: leerkaarten en oefeningen</a>.</div>') + "</div>") +
       '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
   }
 
