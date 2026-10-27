@@ -174,6 +174,14 @@
       return '<div class="tvraag" data-uitleg="' + esc(q[3]) + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + p.test.length + "</span>" + q[0] + '</p><div class="opties">' +
         q[1].map(function (o, j) { return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
     }).join("");
+    /* quizzen per fragment (bv. luisterquiz per filmclip) */
+    var quizzen = (p.quizzen || []).map(function (qz) {
+      return '<details class="kaart quiz"><summary>' + esc(qz.titel) + '</summary>' + (qz.link ? '<p><a href="' + esc(qz.link) + '" target="_blank" rel="noopener">Bekijk het fragment ↗</a></p>' : "") + '<div class="test" data-soort="quiz">' +
+        qz.vragen.map(function (q, i) {
+          return '<div class="tvraag" data-uitleg="' + esc(q[3] || "") + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + qz.vragen.length + "</span>" + q[0] + '</p><div class="opties">' +
+            q[1].map(function (o, j) { return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
+        }).join("") + '<p class="score" aria-live="polite"></p></div></details>';
+    }).join("");
     var controle = (p.controle || []).map(function (c, i) {
       var data = c[1] === "getal" ? 'data-n="' + esc(JSON.stringify(c[2])) + '"' : 'data-a="' + esc(JSON.stringify(c[2])) + '"';
       return '<div class="check" ' + data + ' data-h="' + esc(c[3]) + '"><label for="c-' + i + '">' + c[0] + '</label><div class="crij"><input type="text" id="c-' + i +
@@ -204,6 +212,7 @@
       (p.leerkaarten || []).map(function (k) { return '<details class="kaart"><summary>' + k[0] + "</summary><p>" + k[1] + "</p></details>"; }).join("") + "</div>" +
       (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") + "</div></div>" +
       inv +
+      (quizzen ? '<div class="blok"><h3 class="banner">' + esc(p.quizTitel || "Quiz per fragment") + '</h3><p class="hint">' + (p.quizUitleg || "Bekijk het fragment. Beantwoord daarna de vragen. Je ziet meteen of je antwoord juist is.") + "</p>" + quizzen + "</div>" : "") +
       (controle ? '<div class="blok"><h3 class="banner">Controleer je oplossing</h3><p class="hint">Schrijf je antwoord eerst in je werkbundel. Tik het daarna hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle + "</div>" : "") +
       '<div class="blok"><h3 class="banner">Zo verloopt je project</h3><p class="hint">Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat een eenvoudig stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’.</p><div class="lessen">' + lessen + "</div></div>" +
       '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>" +
@@ -347,9 +356,9 @@
         v.querySelectorAll(".optie").forEach(function (x) { if (x.dataset.ok === "1") x.classList.add("juist"); });
         if (!ok) o.classList.add("fout");
         v.dataset.goed = ok ? "1" : "0";
-        v.querySelector(".fb").textContent = (ok ? "Juist! " : "Niet helemaal. ") + v.dataset.uitleg;
+        v.querySelector(".fb").textContent = (ok ? "Juist! " : "Niet helemaal. ") + (v.dataset.uitleg || "");
         var t = v.closest(".test"), all = t.querySelectorAll(".tvraag").length, done = t.querySelectorAll(".tvraag[data-klaar]").length, goed = t.querySelectorAll('.tvraag[data-goed="1"]').length, rest = all - done;
-        t.querySelector(".score").textContent = rest > 0 ? "Nog " + rest + (rest > 1 ? " vragen" : " vraag") + " te gaan." : "Score: " + goed + " van " + all + " juist." + (goed < all ? " Lees de leerkaart nog eens na." : " Je bent klaar om te starten.");
+        t.querySelector(".score").textContent = rest > 0 ? "Nog " + rest + (rest > 1 ? " vragen" : " vraag") + " te gaan." : "Score: " + goed + " van " + all + " juist." + (t.dataset.soort === "quiz" ? " Noteer je score op je luisterblad." : goed < all ? " Lees de leerkaart nog eens na." : " Je bent klaar om te starten.");
       }); });
       app.querySelectorAll(".check").forEach(function (c) {
         var inp = c.querySelector("input"), fb = c.querySelector(".fb"), pogingen = 0;

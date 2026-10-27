@@ -290,6 +290,10 @@ const DB = {
   check(true, 'coachfiches vallen terug op de code');
   await q.goto(B + '#p-wetenschappen'); await q.waitForSelector('.les'); await wacht(300);
   check(await q.locator('.les.lb-slot').count() === 0, 'projectpagina blijft open zonder koppeling');
+  await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('details.quiz');
+  check(await q.locator('details.quiz').count() === 8, 'Engels: luisterquiz voor elk van de 8 clips');
+  await q.click('details.quiz summary'); await q.click('details.quiz .optie[data-ok="1"]');
+  check((await q.textContent('details.quiz .fb')).startsWith('Juist'), 'luisterquiz verbetert meteen');
   if (q.fouten.length) fout('fouten zonder koppeling: ' + q.fouten.join(' | '));
   await z.b.close();
   console.log(ok ? 'ALLES OK' : 'ER ZIJN FOUTEN'); process.exit(ok ? 0 : 1);

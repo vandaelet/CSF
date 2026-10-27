@@ -1,7 +1,7 @@
 /* Engels · All about movies
    Bron: de opdracht ‘CSF English · All about movies’ van de werkgroep, uitgewerkt tot 8 lesuren.
-   De luistervragen bij de 8 clips volgen zodra de verbetersleutel er is. Tot dan gebruikt de leerling
-   een eigen luisterblad per clip en verbetert de coach. De eigen filmquiz maakt de leerling in Google Forms. */
+   Per clip: een eigen luisterblad en een luisterquiz die meteen verbetert (vragen in eigen woorden naar de
+   opdracht en de verbetersleutel van de werkgroep). De eigen filmquiz maakt de leerling in Google Forms. */
 (function () {
   var h = CSF.h;
   var CLIPS = [
@@ -35,7 +35,7 @@
       <h3>3. New words</h3>
       ${h.tabel(["English word or expression", "Meaning in Dutch"], 3, 26)}
       <h3>4. My favourite line</h3>${h.lijnen(1)}
-      <p><b>How much did I understand?</b> &nbsp; without subtitles: ____ % &nbsp; · &nbsp; with subtitles: ____ % &nbsp; · &nbsp; <b>Score quiz (coach):</b> ____ / 5</p>`;
+      <p><b>How much did I understand?</b> &nbsp; without subtitles: ____ % &nbsp; · &nbsp; with subtitles: ____ % &nbsp; · &nbsp; <b>Score luisterquiz (site):</b> ____ / 5</p>`;
   }
 
   CSF.project({
@@ -53,10 +53,62 @@
     bereikt: ["Luisteren naar authentiek Engels: de grote lijn en details", "Nieuwe woorden en uitdrukkingen afleiden uit de context", "Vragen stellen: meerkeuzevragen, vragen met inversie en vraagwoordvragen", "Een digitale quiz maken in Google Forms", "Een mening en een aanbeveling schrijven in het Engels"],
     toepassen: ["Plannen: acht lesuren goed verdelen", "Volhouden bij moeilijk verstaanbaar Engels", "Nauwkeurig werken: correcte vragen en antwoordopties", "Zelfreflectie: je begrip inschatten met en zonder ondertitels"],
     materiaal: ["Werkbundel", "Een Chromebook met hoofdtelefoon", "Je SVSL-account voor Google Forms"],
-    oplossing: "Je coach verbetert je luisterbladen. Controleer de grammatica van je eigen vragen op deze site, bij ‘Controleer je oplossing’.",
+    oplossing: "Op deze site: de luisterquiz per clip verbetert meteen. Controleer de grammatica van je eigen vragen bij ‘Controleer je oplossing’.",
     product: "Vier ingevulde luisterbladen, een eigen filmquiz in Google Forms en een korte filmrecensie in het Engels",
     links: CLIPS.map(function (c) { return ["Clip (deel A): " + c[0], c[1]]; }).concat(QUIZCLIPS.map(function (c) { return ["Quizclip (deel B): " + c[0], c[1]]; }))
       .concat([["Google Forms", "https://docs.google.com/forms"], ["Hulp: een video toevoegen in Google Forms", "https://support.google.com/docs/answer/7322334"]]),
+    quizTitel: "Listening quiz per clip (deel A)",
+    quizUitleg: "Kijk eerst de clip en vul je luisterblad in. Open daarna de quiz van die clip. Je ziet meteen of je antwoord juist is. Noteer je score onderaan je luisterblad.",
+    quizzen: [
+      { titel: "1. The Great Gatsby", link: CLIPS[0][1], vragen: [
+        ["What does the woman remember about the man at the start?", ["his name", "his favourite drink", "where he lives"], 2],
+        ["The man says the party is like …", ["a park full of reporters", "an amusement park", "a museum"], 1],
+        ["Who got an invitation to the party?", ["only the woman", "the woman and the man", "only the man"], 2],
+        ["What can we guess about Nick at this moment?", ["He doesn’t really know Gatsby.", "He is Gatsby’s friend.", "He doesn’t like Gatsby at all."], 0],
+        ["Which story about Gatsby is NOT one of the rumours?", ["He killed someone.", "He spies for Germany.", "He won his money by gambling."], 2]] },
+      { titel: "2. The Hummingbird Project", link: CLIPS[1][1], vragen: [
+        ["In the example, what does the woman want to buy?", ["a broker’s office in New York", "a house in Kansas", "a lemon company in Zimbabwe"], 2],
+        ["How many shares does she want in the example?", ["10,000", "1,000", "10"], 1],
+        ["How long does the process take now?", ["16 milliseconds", "15 milliseconds", "17 milliseconds"], 2],
+        ["How much money a day can the new line make?", ["500 million dollars", "50 million dollars", "5 million dollars"], 0],
+        ["How long is one wing flap of a hummingbird?", ["17 milliseconds", "16 milliseconds", "15 milliseconds"], 1]] },
+      { titel: "3. Silver Linings Playbook", link: CLIPS[2][1], vragen: [
+        ["What do the two people talk about first?", ["the medicine they have taken", "films they have seen", "food they can cook"], 0],
+        ["When she says she is tired, the woman …", ["asks him to drive her home", "asks him to walk her home", "asks her sister for a lift"], 1],
+        ["According to the man, the woman …", ["is crazy", "frightens people", "isn’t good with people"], 2],
+        ["The sister tells her husband to …", ["drive the woman home", "drive both of them home", "walk the woman home"], 1],
+        ["The standing woman asks her sister to stop …", ["talking about her as if she isn’t there", "talking about her in front of others", "calling her a bad person"], 0]] },
+      { titel: "4. Away We Go", link: CLIPS[3][1], vragen: [
+        ["When are the parents moving to Antwerp?", ["in July", "in January", "in June"], 2],
+        ["Why is the young man upset?", ["They will leave before the baby arrives.", "They will still be there when the baby arrives.", "He finds Antwerp boring."], 0],
+        ["How long did the parents talk about moving?", ["5 years", "10 years", "15 years"], 2],
+        ["How far from their grandchild will they live?", ["3,000 miles", "more than 3,000 miles", "a bit less than 3,000 miles"], 0],
+        ["What does the father call Antwerp?", ["exciting", "the city of light", "June"], 1]] },
+      { titel: "5. Bolt", link: CLIPS[4][1], vragen: [
+        ["How often does Bolt leave the film set, according to the black cat?", ["twice a week", "never", "once a month"], 1],
+        ["Are the cats really evil?", ["No, they pretend so they can tease Bolt.", "Yes.", "Only the thin one."], 0],
+        ["Who is the cats’ boss?", ["the ‘green man’", "the ‘green-eyed man’", "Bolt"], 1],
+        ["The black cat thinks Bolt’s message is …", ["too long", "not very nice", "not needed"], 0],
+        ["‘She’s a goner’ means …", ["she isn’t here", "you can’t trust her", "she is lost / doomed"], 2]] },
+      { titel: "6. Tinker Tailor Soldier Spy", link: CLIPS[5][1], vragen: [
+        ["What does the man in the office ask the man with the bike first?", ["if everything is clear", "if his bike has clearance", "if he can ride a bike"], 1],
+        ["As a joke, he calls the people in the office …", ["cut-throats", "blondes", "a boring bunch"], 0],
+        ["Why does the man with the bike come in?", ["to park his bike", "to have a look at the new girl", "to talk business"], 1],
+        ["Has Bland seen the new girl yet?", ["yes", "no", "we don’t know"], 0],
+        ["‘To pop down’ means about the same as …", ["to get angry", "to get off", "to come by"], 2]] },
+      { titel: "7. Adventureland", link: CLIPS[6][1], vragen: [
+        ["How many giant pandas may James give away?", ["two a day", "none", "three a day"], 1],
+        ["In which department does James want to work?", ["rides", "games", "food"], 0],
+        ["‘You look more like a games guy’ means James …", ["plays a lot of video games", "would fit better in the games section", "plays mind games"], 1],
+        ["What is the main rule in the park?", ["Nothing is free.", "Friends may ride for free.", "Family may ride for free."], 0],
+        ["What does the man think of James’ CV?", ["He is a little interested.", "He wants to read it.", "He doesn’t care about it."], 2]] },
+      { titel: "8. The Royal Tenenbaums", link: CLIPS[7][1], vragen: [
+        ["What does the man ask first?", ["how long she will stay", "how long she has been there", "how long they have known each other"], 0],
+        ["Her answer is that …", ["she doesn’t know", "she hasn’t decided", "she will stay three months"], 0],
+        ["Will she ever come home?", ["probably", "certainly not", "maybe not"], 2],
+        ["What does ‘You’re joking’ mean here?", ["He finds her funny.", "He doesn’t want to believe her.", "He thinks it’s a game."], 1],
+        ["What does the man feel like doing?", ["eating some bread", "dying", "talking"], 1]] }
+    ],
     leerkaarten: [
       ["Film genres", "An <i>action film</i> has fights and chases. A <i>comedy</i> makes you laugh. A <i>drama</i> shows serious problems of real people. A <i>thriller</i> keeps you tense. An <i>animated film</i> is drawn or made with a computer. A <i>romantic comedy</i> mixes love and humour. A <i>documentary</i> shows real facts."],
       ["Slim luisteren", "Bekijk de clip eerst zonder ondertitels. Let op de grote lijn: wie, waar, wat. Bekijk de clip daarna met Engelse ondertitels. Pauzeer bij een moeilijke zin. Raad de betekenis van een nieuw woord uit de context. Zoek het pas daarna op."],
@@ -89,9 +141,9 @@
       weet: "Noteer je favoriete films en hun genre in het Engels.",
       opdracht: "Lees de opdracht. Kies vier clips uit deel A.",
       ideeen: "Bedenk hoe je Engels het best begrijpt: met of zonder ondertitels, één of meer keer kijken.",
-      start: "Werkblad 2: bekijk je eerste clip via de link bij het project. Vul het luisterblad in.",
+      start: "Werkblad 2: bekijk je eerste clip via de link bij het project. Vul het luisterblad in. Maak daarna de luisterquiz op de site.",
       midden: [
-        { titel: "Clip 2", werk: "Werkblad 3: bekijk je tweede clip. Vul het luisterblad in. Lever het in bij je coach." },
+        { titel: "Clip 2", werk: "Werkblad 3: bekijk je tweede clip. Vul het luisterblad in. Maak de luisterquiz op de site." },
         { titel: "Clip 3", werk: "Werkblad 4: bekijk je derde clip. Vul het luisterblad in. Vergelijk je begrip met clip 1." },
         { titel: "Clip 4", werk: "Werkblad 5: bekijk je vierde clip. Vul het luisterblad in. Lever je luisterbladen in bij je coach." },
         { titel: "Deel B: kies je quizclip", werk: "Werkblad 6: kies een clip uit deel B. Bekijk hem meerdere keren. Noteer wat er gebeurt, met de tijd erbij." },
