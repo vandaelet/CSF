@@ -418,3 +418,10 @@ footer { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justif
 .lb-vinklijst .t { min-width:2.4em; font-weight:700; }
 .lb-vinklijst .s { color:#1b8b8f; font-weight:600; white-space:nowrap; }
 .lb-vinklijst input:checked ~ .w { text-decoration:line-through; color:#777; }
+
+/* stappen voor de werkbundel */
+.stapcheck { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:6px; }
+.stapcheck li { display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid var(--lijn, #e3e3e3); border-radius:8px; background:#fff; }
+.stapcheck li.ok { background:#eef9f0; border-color:#bfe3c6; }
+.stapcheck .sc-vink { width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:#FCAF17; color:#fff; font-weight:700; flex:none; }
+.stapcheck li.ok .sc-vink { background:#2e9e4f; }

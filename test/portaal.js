@@ -87,10 +87,15 @@ const DB = {
   check(JSON.stringify(d[LB].kijkers) === '["an@svsl.be"]', 'vakleerkracht mag meelezen');
   check(await p.locator('.lb-stappen').count() === 0, 'stappenplan nog niet zichtbaar voor het begin-logboek');
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
-  await p.click('#tp-start [data-stap="fiche"]'); await wacht(300);
-  check(!(await p.locator('#tp-fiche').isHidden()) && await p.locator('#tp-start').isHidden() && await p.locator('.ptab[data-tab="fiche"][aria-selected="true"]').count() === 1, 'knop onderaan de leerkaarten leidt naar de volgende stap');
-  check((await p.textContent('#tp-fiche .stapnav')).includes('Volgende stap: Leidraad per lesuur'), 'elke stap heeft een knop naar de volgende stap');
-  await p.click('#tp-fiche [data-stap="start"]'); await wacht(200);
+  check(await p.locator('.ptab').first().getAttribute('data-tab') === 'fiche' && !(await p.locator('#tp-fiche').isHidden()), 'projectfiche is het eerste tabblad en opent eerst');
+  check((await p.textContent('#tp-fiche .stapnav')).includes('Volgende stap: Leerkaarten en oefeningen'), 'elke stap heeft een knop naar de volgende stap');
+  check((await p.textContent('.ptab[data-tab="werkbundel"]')).includes('🔒'), 'werkbundel op slot tot alle stappen bekeken zijn');
+  await p.click('#tp-fiche [data-stap="start"]'); await wacht(500);
+  check(!(await p.locator('#tp-start').isHidden()) && await p.locator('.ptab[data-tab="start"][aria-selected="true"]').count() === 1, 'knop onderaan de projectfiche leidt naar de leerkaarten');
+  await p.click('.ptab[data-tab="werkbundel"]'); await wacht(300);
+  check(await p.locator('#tp-werkbundel .stapcheck li.ok').count() === 1 && (await p.textContent('#tp-werkbundel')).includes('stappen 1 tot 4'), 'werkbundel toont welke stappen nog ontbreken');
+  d = await fakedb(p); check(!!(d['resultaten/peeters.lien@svsl.be__wetenschappen'] || {}).tab_fiche, 'bekeken stap komt in het logboek');
+  await p.click('.ptab[data-tab="start"]'); await wacht(300);
   check(await p.locator('.les.lb-slot').count() === 3, 'projectpagina: alle 3 lesuren vergrendeld');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-begin');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
@@ -152,13 +157,16 @@ const DB = {
   await p.waitForSelector('.lb-vragen .lb-pill.oranje');
   d = await fakedb(p); const VR = Object.entries(d).filter(([k]) => k.startsWith('vragen/'));
   check(VR.length === 1 && VR[0][1].open === true && VR[0][1].coach === 'els@svsl.be' && VR[0][1].project === 'wetenschappen', 'vraag aan de coach bewaard');
-  await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.');
+  await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.'); await p.fill('#vraagCoach', 'Mag ik met een vergrootglas werken?');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
   { const tk = await p.textContent('.lb-leidraad');
     check(tk.includes('nog af te werken') && tk.includes('Lesuur 1') && !tk.includes(afTekst), 'wat niet afgevinkt is, schuift door naar de volgende les'); }
   await p.click('#ld-meer'); await wacht(300);
   check((await p.textContent('.lb-leidraad')).includes('Lesuur 2'), 'leerling voegt het volgende lesuur van de leidraad toe');
   await p.fill('#gemist', 'Breuken'); await p.fill('#ingehaald', 'Cursus gelezen.'); await p.check('#vragen-1'); await p.check('#geslaagd-0');
+  await p.click('#lb-einde button[type=submit]'); await wacht(200);
+  check(await p.locator('#geslaagdWaarom.lb-mist, .lb-mist #geslaagdWaarom').count() + await p.locator('.lb-mist').count() > 0 && await p.locator('#lb-naar-afsluiten').count() === 0, 'eigen feedback bij geslaagd of niet geslaagd is verplicht');
+  await p.fill('#geslaagdWaarom', 'Ik werkte rustig door en volgde mijn planning.'); await p.fill('#vraagCoach', 'Hoe lang moet mijn rapport zijn?');
   await p.click('#lb-einde button[type=submit]'); await p.waitForSelector('#lb-naar-afsluiten');
   await p.click('#lb-naar-afsluiten'); await p.waitForSelector('#lb-afsluit');
   await p.check('#tijd-0'); await p.fill('#reden', 'Goed gepland.'); await p.check('#oordeel-1'); await p.check('#ef-0');
@@ -167,19 +175,22 @@ const DB = {
   await p.click('#lb-afsluit button[type=submit]'); await p.waitForSelector('.lb-melding.groen');
   d = await fakedb(p);
   check(d[LB].status === 'afgerond' && d[LB].lessen.length === 2 && d[LB].afsluiting.ef[0] === 'Ik schat mijn tijd goed in.', 'project afgerond met reflectie');
+  check(d[LB].lessen[1].einde.geslaagdWaarom.includes('rustig') && Object.values(d).some(v => v && v.tekst === 'Lesuur 2: Hoe lang moet mijn rapport zijn?' && v.open === true) && Object.values(d).some(v => v && v.tekst === 'Lesuur 2: Mag ik met een vergrootglas werken?'), 'vraag uit het logboek komt bij de open vragen van de coach');
 
   console.log('4b. Coach beantwoordt de vraag');
   await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('[data-tab="vragen"]');
-  check((await p.textContent('[data-tab="vragen"]')).includes('(1)'), 'tabblad open vragen toont het aantal');
+  check((await p.textContent('[data-tab="vragen"]')).includes('(3)'), 'tabblad open vragen toont het aantal');
   check(await p.locator('.db-rij[data-ll="peeters.lien@svsl.be"] .lb-pill.turkoois').count() === 1, 'overzicht toont de open vraag');
   await p.click('[data-tab="vragen"]'); await p.waitForSelector('.lb-vraagkaart');
   check((await p.textContent('.lb-vraagkaart')).includes('rode inkt'), 'coach ziet de vraag');
-  await p.fill('.lb-vraagkaart textarea', 'Ja, vergelijk ze met de blauwe.'); await p.click('[data-antw]'); await wacht(600);
+  await p.locator('.lb-vraagkaart textarea').first().fill('Ja, vergelijk ze met de blauwe.'); await p.locator('[data-antw]').first().click(); await wacht(600);
+  await p.locator('.lb-vraagkaart textarea').first().fill('Eén A4 is genoeg.'); await p.locator('[data-antw]').first().click(); await wacht(600);
+  await p.locator('.lb-vraagkaart textarea').first().fill('Ja, dat mag.'); await p.locator('[data-antw]').first().click(); await wacht(600);
   check((await p.textContent('#db-inhoud')).includes('geen open vragen') && !(await p.textContent('[data-tab="vragen"]')).includes('('), 'vraag beantwoord en gesloten');
   await aanmelden(p, '#logboek', LIEN); await p.waitForSelector('.lb-kaart');
   check((await p.textContent('.lb-melding.groen')).includes('beantwoordde je vraag'), 'leerling ziet dat er een antwoord is');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('.lb-antwoord');
-  check((await p.textContent('.lb-antwoord')).includes('vergelijk ze met de blauwe'), 'antwoord in het projectvenster'); await wacht(500);
+  check(await p.locator('.lb-antwoord', { hasText: 'vergelijk ze met de blauwe' }).count() === 1, 'antwoord in het projectvenster'); await wacht(500);
   d = await fakedb(p); check(Object.entries(d).filter(([k]) => k.startsWith('vragen/'))[0][1].gelezen === true, 'antwoord als gelezen bewaard');
 
   console.log('5. Vakleerkracht, onbekende leerling en ander domein');
@@ -390,7 +401,7 @@ const DB = {
   await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('.ptabs');
   check(await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 1, 'werkbundel vergrendeld tot de leerkaarten gelezen zijn');
   await q.goto(B + '#wb-engels-all-about-movies'); await wacht(500);
-  check(q.url().endsWith('#p-engels-all-about-movies') && await q.locator('#tp-werkbundel:not([hidden]) .lb-melding').count() === 1, 'rechtstreekse link naar de werkbundel brengt je terug naar de leerkaarten');
+  check(q.url().endsWith('#p-engels-all-about-movies') && await q.locator('#tp-werkbundel:not([hidden]) .lb-melding').count() === 1, 'rechtstreekse link naar de werkbundel brengt je terug naar de projectpagina');
   await q.click('.ptab[data-tab="start"]');
   const nLk = await q.locator('details.lk').count();
   for (let i = 0; i < nLk; i++) {
@@ -398,11 +409,13 @@ const DB = {
     if (!(await d.evaluate(e => e.open))) await d.locator('summary').click();
     await d.locator('[data-lees]').click(); await wacht(100);
   }
-  check(await q.locator('details.lk.gelezen').count() === nLk && await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 0, 'na alle leerkaarten is de werkbundel open');
+  check(await q.locator('details.lk.gelezen').count() === nLk && await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 1, 'leerkaarten alleen zijn niet genoeg: de werkbundel blijft dicht');
+  for (const s of ['leidraad', 'evaluatie']) { await q.click('.ptab[data-tab="' + s + '"]'); await wacht(300); }
+  check(await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 0, 'na de projectfiche, alle leerkaarten, de leidraad en de evaluatie is de werkbundel open');
   await q.goto(B + '#wb-engels-all-about-movies'); await q.waitForSelector('.blad');
   check(true, 'werkbundel kan nu afgedrukt worden');
   await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('.ptabs');
-  await q.waitForSelector('#tp-start details.quiz');
+  await q.click('.ptab[data-tab="start"]'); await q.waitForSelector('#tp-start details.quiz');
   check(await q.locator('details.quiz').count() === 8, 'Engels: luisterquiz voor elk van de 8 clips');
   await q.click('details.quiz summary'); await q.click('details.quiz .optie[data-ok="1"]');
   check((await q.textContent('details.quiz .fb')).startsWith('Juist'), 'luisterquiz verbetert meteen');

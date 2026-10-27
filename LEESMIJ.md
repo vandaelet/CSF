@@ -76,7 +76,7 @@ Wie de code vergeten is, kan niets terughalen uit het versleutelde bestand: vers
 
 ## Opbouw van een projectpagina
 
-Elke projectpagina heeft tabbladen: **1. Start: leerkaarten en oefeningen** (leerkaarten, Test jezelf, de quizzen en Controleer je oplossing), **Projectfiche**, **Leidraad per lesuur**, **Evaluatie** en **Werkbundel**. Onderaan elk tabblad leidt een knop naar de volgende stap.
+Elke projectpagina heeft genummerde tabbladen: **1. Projectfiche**, **2. Leerkaarten en oefeningen** (leerkaarten, Test jezelf, de quizzen en Controleer je oplossing), **3. Leidraad per lesuur**, **4. Evaluatie** en **5. Werkbundel**. Onderaan elk tabblad leidt een knop naar de volgende stap. De werkbundel gaat pas open als de leerling de stappen 1 tot 4 bekeek en alle leerkaarten las; het tabblad Werkbundel toont welke stappen nog ontbreken. Bij het eigen project komt ‘bekeken’ in de resultaten van de leerling (geldt op elke Chromebook). In het logboek kan de leerling bij het begin en het einde van een lesuur een vraag aan de coach stellen (komt bij ‘Open vragen’) en schrijft hij eigen feedback bij geslaagd of niet geslaagd.
 - De leerling opent elke leerkaart en klikt op ‘Ik heb deze leerkaart gelezen’. Pas als alle leerkaarten gelezen zijn, opent de werkbundel om af te drukken. Dat wordt per browser onthouden. Coaches (aangemeld of met de coachcode) kunnen de werkbundel altijd openen.
 - De afspraken van CSF staan in een kader bovenaan de startpagina, vóór de projecten (pas de tekst aan in `site.js`, bij `verwachtingen`).
 - De oefenprojecten zijn enkel zichtbaar voor leerlingen van het 1e jaar (afgeleid uit hun klas, bv. 1B) en voor coaches. Tweedejaars zien het tabblad niet. Wie niet aangemeld is, ziet de oefenprojecten pas na aanmelden.

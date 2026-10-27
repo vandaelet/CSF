@@ -30,6 +30,9 @@
     }
   };
 
+  /* logboekmoment (gele regel): de stap heet ‘… logboek …’, of de tekst vraagt het logboek in te vullen (behalve bij uitwerking) */
+  CSF.logMoment = function (soort, tekst) { soort = String(soort || ""); return /logboek/i.test(soort) || (/logboek/i.test(String(tekst || "")) && !/^uitwerking/i.test(soort)); };
+
   /* Lesplanning met een vrij aantal lesuren. o.midden = [{ titel, werk }, …] */
   CSF.lessenN = function (o) {
     var logStart = "Vul het begin van je logboek in. Lees je notities van de vorige keer. Kies je eerste taak voor vandaag.";
@@ -119,13 +122,31 @@
     if (r) return (p.leerkaarten || []).map(function (_, i) { return r["lk_" + i] ? i : -1; }).filter(function (i) { return i >= 0; });
     try { return JSON.parse(store.get("lk-" + p.id) || "[]"); } catch (e) { return []; }
   }
+  /* stappen die de leerling al bekeek (projectfiche, leidraad, evaluatie): bij het eigen project in het logboek, anders in deze browser */
+  var STAPPEN = ["fiche", "start", "leidraad", "evaluatie"];
+  function bekeken(p) {
+    var r = eigenRes(p), uit = [];
+    if (r) STAPPEN.forEach(function (s) { if (r["tab_" + s]) uit.push(s); });
+    else { try { uit = JSON.parse(store.get("stap-" + p.id) || "[]"); } catch (e) { uit = []; } }
+    return uit;
+  }
+  function markeer(p, s) {
+    if (STAPPEN.indexOf(s) < 0 || bekeken(p).indexOf(s) >= 0) return Promise.resolve(false);
+    var r = eigenRes(p);
+    if (r && CSF.portaal.registreer) return CSF.portaal.registreer(p.id, "tab_" + s, {}).then(function () { return true; });
+    var b = bekeken(p); b.push(s); store.set("stap-" + p.id, JSON.stringify(b)); return Promise.resolve(true);
+  }
+  /* wat nog ontbreekt voor de werkbundel: [stap, label, klaar] */
+  function stapStand(p) {
+    var lk = (p.leerkaarten || []).length, g = gelezen(p), b = bekeken(p), nGel = (p.leerkaarten || []).filter(function (_, i) { return g.indexOf(i) >= 0; }).length;
+    return [["fiche", "Projectfiche bekeken", b.indexOf("fiche") >= 0],
+      ["start", lk ? "Alle leerkaarten gelezen (" + nGel + " van " + lk + ")" : "Leerkaarten en oefeningen bekeken", lk ? nGel >= lk : b.indexOf("start") >= 0],
+      ["leidraad", "Leidraad per lesuur bekeken", b.indexOf("leidraad") >= 0], ["evaluatie", "Evaluatie bekeken", b.indexOf("evaluatie") >= 0]];
+  }
   function magAfdrukken(p) {
-    var n = (p.leerkaarten || []).length, g = gelezen(p);
-    if (!n) return true;
     if (CSF.portaal && CSF.portaal.isCoach && CSF.portaal.isCoach()) return true;
     try { if (sessionStorage.getItem("csf-coach")) return true; } catch (e) {}
-    for (var i = 0; i < n; i++) if (g.indexOf(i) < 0) return false;
-    return true;
+    return stapStand(p).every(function (x) { return x[2]; });
   }
 
   /* ---------- Weergaven ---------- */
@@ -226,7 +247,7 @@
     var lessen = (p.lessen || []).map(function (l, i) {
       var id = "klaar-" + p.id + "-" + (i + 1);
       return '<div class="les" data-les="' + (i + 1) + '"><h4><span class="lesnr">Lesuur ' + (i + 1) + "</span>" + l.titel + '</h4><ol class="stappen">' + l.stappen.map(function (s) {
-        return '<li class="' + (s[1].indexOf("Logboek") >= 0 ? "lb" : "") + '"><span class="t">' + s[0] + '</span><span class="s">' + s[1] + '</span><span class="w">' + s[2] + "</span></li>";
+        return '<li class="' + (CSF.logMoment(s[1], s[2]) ? "lb" : "") + '"><span class="t">' + s[0] + '</span><span class="s">' + s[1] + '</span><span class="w">' + s[2] + "</span></li>";
       }).join("") + '</ol><label class="klaar" for="' + id + '"><input type="checkbox" id="' + id + '" data-p="' + p.id + '"> Dit lesuur is af</label></div>';
     }).join("");
     var links = (p.links || []).map(function (l) { return '<a class="btn licht" href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + " ↗</a>"; }).join("");
@@ -237,10 +258,11 @@
         (ok ? '<span class="hint">✓ Gelezen</span>' : '<button type="button" class="btn licht lb-klein" data-lees="' + i + '">Ik heb deze leerkaart gelezen</button>') + "</p></details>";
     }).join("");
     var modus = CSF.portaal && CSF.portaal.projectModus ? CSF.portaal.projectModus(p) : "vol";
-    var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["start", "1. Start: leerkaarten en oefeningen"], ["fiche", "Projectfiche"], ["leidraad", "Leidraad per lesuur"]]
-      .concat([["evaluatie", "Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "Werkbundel"]]);
-    var actief = modus === "fiche" ? "fiche" : "start"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "start"; } catch (e) {}
-    if (!tabs.some(function (t) { return t[0] === actief; })) actief = "start";
+    var stand = stapStand(p);
+    var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["fiche", "1. Projectfiche"], ["start", "2. Leerkaarten en oefeningen"], ["leidraad", "3. Leidraad per lesuur"],
+      ["evaluatie", "4. Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "5. Werkbundel"]];
+    var actief = "fiche"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "fiche"; } catch (e) {}
+    if (!tabs.some(function (t) { return t[0] === actief; })) actief = "fiche";
     /* onderaan elk tabblad: knoppen naar de vorige en de volgende stap */
     var schoon = function (t) { return t.replace(/^[^A-Za-zÀ-ÿ0-9]+\s*/, "").replace(/^\d+\.\s*/, ""); };
     var stapNav = function (id) {
@@ -257,7 +279,7 @@
       '<p class="lead">' + p.kort + "</p>" + (p.voorWie ? '<p class="hint" style="margin-top:6px"><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") +
       '<div id="logboek-blok"></div>' +
       '<div class="ptabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="ptab' + (t[0] === "werkbundel" && !open ? " slot" : "") + '" role="tab" data-tab="' + t[0] + '" aria-selected="' + (actief === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
-      paneel("start", '<div class="blok"><h3 class="banner">Start hier: lees de leerkaarten</h3><p>De leerkaarten geven je de nieuwe leerstof die je nodig hebt voor dit project. Open elke leerkaart. Lees ze aandachtig. Klik daarna op <b>‘Ik heb deze leerkaart gelezen’</b>. Pas als je alle leerkaarten gelezen hebt, kan je de werkbundel afdrukken.</p>' +
+      paneel("start", '<div class="blok"><h3 class="banner">Start hier: lees de leerkaarten</h3><p>De leerkaarten geven je de nieuwe leerstof die je nodig hebt voor dit project. Open elke leerkaart. Lees ze aandachtig. Klik daarna op <b>‘Ik heb deze leerkaart gelezen’</b>. De werkbundel gaat open als je alle leerkaarten gelezen hebt en de projectfiche, de leidraad en de evaluatie bekeken hebt.</p>' +
         '<div class="lk-stand' + (open ? " klaar" : "") + '" aria-live="polite"><div class="balk"><span style="width:' + (lk.length ? 100 * nGel / lk.length : 100) + '%"></span></div><span>' + (lk.length ? nGel + " van " + lk.length + " leerkaarten gelezen" : "Dit project heeft geen leerkaarten.") + (open ? ' · <a href="#wb-' + p.id + '">Naar de werkbundel →</a>' : "") + "</span></div>" + kaarten + "</div>" +
         (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><p class="hint">Begrijp je de leerkaarten? Test het hier.</p><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") +
         /* de oefeningen ‘Controleer je oplossing’ en de quizzen staan meteen na de leerkaarten */
@@ -273,8 +295,10 @@
 
       paneel("evaluatie", '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>") +
       paneel("werkbundel", '<div class="blok"><h3 class="banner">Werkbundel</h3>' + (open
-        ? '<p>Je las alle leerkaarten. Bekijk de werkbundel en druk hem af op A4.</p><p><a class="btn" href="#wb-' + p.id + '">🖨 Bekijk en druk de werkbundel af</a></p>'
-        : '<div class="lb-melding oranje">🔒 <b>Lees eerst alle leerkaarten.</b> Je las er ' + nGel + " van " + lk.length + '. Ga naar het tabblad <a href="#" data-naartab="start">1. Start: leerkaarten en oefeningen</a>.</div>') + "</div>") +
+        ? '<p>Je bekeek alle stappen. Bekijk de werkbundel en druk hem af op A4.</p><p><a class="btn" href="#wb-' + p.id + '">🖨 Bekijk en druk de werkbundel af</a></p>'
+        : '<div class="lb-melding oranje">🔒 <b>De werkbundel gaat pas open als je de stappen 1 tot 4 bekeken hebt.</b> Klik op een stap die nog niet klaar is.</div>') +
+        '<ul class="stapcheck">' + stand.map(function (x, i) { return '<li class="' + (x[2] ? "ok" : "") + '"><span class="sc-vink" aria-hidden="true">' + (x[2] ? "✓" : i + 1) + '</span>' +
+          (x[2] ? esc(x[1]) : '<a href="#" data-naartab="' + x[0] + '">' + esc(x[1]) + "</a>") + "</li>"; }).join("") + "</ul></div>") +
       '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
   }
 
@@ -409,7 +433,11 @@
         app.querySelectorAll(".ptab").forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.tab === id)); });
         app.querySelectorAll(".tabpaneel").forEach(function (x) { x.hidden = x.id !== "tp-" + id; });
         try { sessionStorage.setItem("tab-" + p.id, id); } catch (e) {}
+        /* stap bekeken: bewaren en de werkbundel bijwerken */
+        var voor = magAfdrukken(p);
+        markeer(p, id).then(function (nieuw) { if (nieuw && location.hash === "#p-" + p.id) { var y = window.scrollY; if (magAfdrukken(p) !== voor || id !== "werkbundel") { teken(); window.scrollTo(0, y); } } });
       };
+      if (!(CSF.portaal && CSF.portaal.projectModus && CSF.portaal.projectModus(p) === "fiche")) { var act = app.querySelector('.ptab[aria-selected="true"]'); if (act) markeer(p, act.dataset.tab).then(function (nieuw) { if (nieuw && location.hash === "#p-" + p.id) { var y = window.scrollY; teken(); window.scrollTo(0, y); } }); }
       app.querySelectorAll(".ptab").forEach(function (b) { b.addEventListener("click", function () { tabKies(b.dataset.tab); }); });
       app.querySelectorAll("[data-stap]").forEach(function (b) { b.addEventListener("click", function () {
         tabKies(b.dataset.stap); var t = app.querySelector(".ptabs"); if (t) window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + window.scrollY - 12), behavior: "smooth" });
