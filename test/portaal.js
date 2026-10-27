@@ -263,7 +263,7 @@ const DB = {
   await aanmelden(p, '#dashboard', TOM); await p.waitForSelector('[data-tab="zicht"]');
   await p.click('[data-tab="zicht"]'); await p.selectOption('#zj-1', 'oefen'); await p.click('#zicht-bewaar'); await wacht(500);
   d = await fakedb(p); check(d['instellingen/zichtbaarheid'].jaar['1'] === 'oefen', 'coach zet het 1e jaar op enkel oefenprojecten');
-  await p.click('[data-tab="beheer"]'); await p.waitForSelector('#vk-lijst'); await p.fill('#vk-lijst', 'An Peeters\nTim van Besien\nMaeté Basslé\nBert Claes ; bert@svsl.be'); await p.click('#vk-bewaar'); await wacht(500);
+  await p.click('[data-tab="vak"]'); await p.waitForSelector('#vk-lijst'); await p.fill('#vk-lijst', 'An Peeters\nTim van Besien\nMaeté Basslé\nBert Claes ; bert@svsl.be'); await p.click('#vk-bewaar'); await wacht(500);
   d = await fakedb(p); const VK = d['instellingen/vakleerkrachten'].lijst;
   check(VK.map(v => v.naam).join() === 'Maeté Basslé,Bert Claes,An Peeters,Tim van Besien', 'beheerder bewaart de lijst van vakleerkrachten');
   check(VK.find(v => v.naam === 'Tim van Besien').email === 'vanbesien.tim@svsl.be' && VK.find(v => v.naam === 'Maeté Basslé').email === 'bassle.maete@svsl.be' && VK.find(v => v.naam === 'Bert Claes').email === 'bert@svsl.be', 'e-mailadres familienaam.voornaam, aan elkaar en zonder accenten');

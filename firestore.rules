@@ -116,10 +116,10 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).removedKeys().size() == 0;
       allow delete: if coach();
     }
-    // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, enkel de beheerder schrijft
+    // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, de beheerder schrijft; coaches ook de zichtbaarheid en de vakleerkrachten
     match /instellingen/{id} {
       allow read: if coach() || (aangemeld() && id in ['zichtbaarheid', 'klassen', 'vakleerkrachten']);
-      allow write: if beheerder() || (coach() && id == 'zichtbaarheid');
+      allow write: if beheerder() || (coach() && id in ['zichtbaarheid', 'vakleerkrachten']);
     }
   }
 }

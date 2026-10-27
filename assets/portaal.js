@@ -727,7 +727,7 @@
 
   function tekenDashboard(doel) {
     var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
-    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["projecten", "Projecten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
+    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
     doel.innerHTML = (D.geweigerd && D.geweigerd.length ? '<div class="lb-melding rood"><b>De toegangsregels in Firebase zijn niet up-to-date.</b> ' + (rol.beheerder ? "Plak de volledige inhoud van <code>firestore.rules</code> uit GitHub in Firebase → Firestore Database → Rules en klik op Publish." : "Vraag de beheerder om de regels opnieuw te publiceren.") + ' <span class="hint">(geen toegang tot: ' + esc(D.geweigerd.join(", ")) + ")</span></div>" : "") +
       '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
       '</div><div id="db-inhoud"></div>';
@@ -739,6 +739,7 @@
     if (D.tab === "projecten" && rol.coach) return tabProjecten(z, doel);
     if (D.tab === "zicht" && rol.coach) return tabZicht(z, doel);
     if (D.tab === "beheer" && rol.beheerder) return tabBeheer(z, doel);
+    if (D.tab === "vak") return tabVak(z);
     tabOverzicht(z, doel);
   }
 
@@ -1198,21 +1199,10 @@
     });
   }
 
-  function tabBeheer(z, doel) {
+  function tabVak(z) {
     var d = D.data;
-    z.innerHTML = "<h3>Coaches</h3><p class=\"hint\">Alleen wie hier staat, kan het dashboard en de coachfiches openen. Elke coach ziet alle leerlingen.</p>" +
-      '<div class="lb-tabelwrap"><table class="lb-overzicht"><thead><tr><th>Naam</th><th>E-mail</th><th></th></tr></thead><tbody>' +
-      d.coaches.map(function (c) { return '<tr><td>' + esc(c.naam || "") + "</td><td>" + esc(c._id) + '</td><td><button type="button" class="btn donker lb-klein" data-coachwis="' + esc(c._id) + '">Verwijder</button></td></tr>'; }).join("") +
-      '</tbody></table></div><div class="lb-twee">' + veld("coach-mail", "E-mailadres van de coach", { hint: "naam@" + DOMEIN }) + veld("coach-naam", "Naam zoals in het logboek", { hint: "bv. Van Daele T." }) +
-      '</div><div class="lb-acties"><button type="button" class="btn" id="coach-voegtoe">Voeg coach toe</button><span class="fb" id="coach-fb2" aria-live="polite"></span></div>' +
-      "<h3>Coachfiches</h3><p>" + (d.codeIngesteld ? '<span class="lb-pill groen">ingesteld</span> Coaches openen de coachfiches zonder code.' : '<span class="lb-pill oranje">nog niet ingesteld</span> Bewaar de coachcode één keer. Daarna openen coaches de coachfiches zonder code.') + "</p>" +
-      '<div class="crij"><input type="password" id="code-in" autocomplete="off" aria-label="Coachcode" placeholder="Coachcode"><button type="button" class="btn" id="code-bewaar">Bewaar de coachcode</button><span class="fb" id="code-fb" aria-live="polite"></span></div>' +
-      "<h3>Herinnering per e-mail</h3><p class=\"hint\">Elke schooldag om 16 uur krijgt een leerling een e-mail als hij die dag CSF had en zijn logboek niet volledig invulde. Dat geldt enkel voor leerlingen met ‘Logboek elke les’ aangevinkt. Het script staat in de map <code>herinnering</code> (zie LEESMIJ.md).</p>" +
-      '<label class="lb-chip" for="her-aan"><input type="checkbox" id="her-aan"' + (d.herinnering.aan ? " checked" : "") + "><span>Herinneringen versturen</span></label>" +
-      '<div class="lb-veld"><label for="her-vrij">Vrije dagen en vakanties</label><textarea id="her-vrij" rows="5" placeholder="2026-11-02 2026-11-08&#10;2026-11-11">' + esc(d.herinnering.vrij || "") + '</textarea><span class="hint">Eén dag of periode per regel: een datum, of een begin- en einddatum. Op die dagen vertrekt geen herinnering.</span></div>' +
-      '<div class="lb-acties"><button type="button" class="btn" id="her-bewaar">Bewaar</button><span class="fb" id="her-fb" aria-live="polite"></span></div>' +
-      "<h3>Vakleerkrachten</h3><p class=\"hint\">Leerlingen kiezen hieruit de leerkracht(en) van wie ze de les verlaten. Die leerkrachten kunnen dan het logboek lezen. Eén leerkracht per regel: Voornaam Familienaam. Het e-mailadres maakt het portaal zelf: familienaam.voornaam@" + DOMEIN + " (familienaam aan elkaar, zonder accenten). Wijkt een adres af? Schrijf dan: Voornaam Familienaam ; e-mailadres.</p>" +
-      '<div class="lb-veld"><label for="vk-lijst">Lijst van vakleerkrachten</label><textarea id="vk-lijst" rows="6" rows="12" placeholder="An Peeters&#10;Tim van Besien">' + esc((d.vakleerkrachtenLijst || []).map(function (v) { var x = vkRegel(v.naam); return v.naam + (x.email === v.email ? "" : " ; " + v.email); }).join("\n")) + "</textarea></div>" +
+    z.innerHTML = "<h3>Vakleerkrachten</h3><p class=\"hint\">Leerlingen kiezen hieruit de leerkracht(en) van wie ze de les verlaten. Die leerkrachten kunnen dan het logboek lezen. Eén leerkracht per regel: Voornaam Familienaam. Het e-mailadres maakt het portaal zelf: familienaam.voornaam@" + DOMEIN + " (familienaam aan elkaar, zonder accenten). Wijkt een adres af? Schrijf dan: Voornaam Familienaam ; e-mailadres.</p>" +
+      '<div class="lb-veld"><label for="vk-lijst">Lijst van vakleerkrachten</label><textarea id="vk-lijst" rows="12" placeholder="An Peeters&#10;Tim van Besien">' + esc((d.vakleerkrachtenLijst || []).map(function (v) { var x = vkRegel(v.naam); return v.naam + (x.email === v.email ? "" : " ; " + v.email); }).join("\n")) + "</textarea></div>" +
       '<div class="lb-acties"><button type="button" class="btn" id="vk-bewaar">Bewaar de lijst</button> <button type="button" class="btn licht" id="vk-kopieer">Kopieer alle e-mailadressen</button><span class="fb" id="vk-fb" aria-live="polite"></span></div>' +
       '<details class="vk-mails"><summary>Toon de e-mailadressen</summary><textarea id="vk-mails" rows="6" readonly aria-label="E-mailadressen van de vakleerkrachten">' + esc((d.vakleerkrachtenLijst || []).map(function (v) { return v.email; }).join("; ")) + "</textarea></details>";
     z.querySelector("#vk-kopieer").addEventListener("click", function () {
@@ -1233,6 +1223,21 @@
       F.setDoc(ref("instellingen/vakleerkrachten"), { lijst: lijstV }).then(function () { d.vakleerkrachtenLijst = lijstV; INST.vakleerkrachten = lijstV; z.querySelector("#vk-mails").value = lijstV.map(function (v) { return v.email; }).join("; "); out.textContent = "Bewaard (" + lijstV.length + " leerkrachten)."; })
         .catch(function (e) { out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
     });
+  }
+
+  function tabBeheer(z, doel) {
+    var d = D.data;
+    z.innerHTML = "<h3>Coaches</h3><p class=\"hint\">Alleen wie hier staat, kan het dashboard en de coachfiches openen. Elke coach ziet alle leerlingen.</p>" +
+      '<div class="lb-tabelwrap"><table class="lb-overzicht"><thead><tr><th>Naam</th><th>E-mail</th><th></th></tr></thead><tbody>' +
+      d.coaches.map(function (c) { return '<tr><td>' + esc(c.naam || "") + "</td><td>" + esc(c._id) + '</td><td><button type="button" class="btn donker lb-klein" data-coachwis="' + esc(c._id) + '">Verwijder</button></td></tr>'; }).join("") +
+      '</tbody></table></div><div class="lb-twee">' + veld("coach-mail", "E-mailadres van de coach", { hint: "naam@" + DOMEIN }) + veld("coach-naam", "Naam zoals in het logboek", { hint: "bv. Van Daele T." }) +
+      '</div><div class="lb-acties"><button type="button" class="btn" id="coach-voegtoe">Voeg coach toe</button><span class="fb" id="coach-fb2" aria-live="polite"></span></div>' +
+      "<h3>Coachfiches</h3><p>" + (d.codeIngesteld ? '<span class="lb-pill groen">ingesteld</span> Coaches openen de coachfiches zonder code.' : '<span class="lb-pill oranje">nog niet ingesteld</span> Bewaar de coachcode één keer. Daarna openen coaches de coachfiches zonder code.') + "</p>" +
+      '<div class="crij"><input type="password" id="code-in" autocomplete="off" aria-label="Coachcode" placeholder="Coachcode"><button type="button" class="btn" id="code-bewaar">Bewaar de coachcode</button><span class="fb" id="code-fb" aria-live="polite"></span></div>' +
+      "<h3>Herinnering per e-mail</h3><p class=\"hint\">Elke schooldag om 16 uur krijgt een leerling een e-mail als hij die dag CSF had en zijn logboek niet volledig invulde. Dat geldt enkel voor leerlingen met ‘Logboek elke les’ aangevinkt. Het script staat in de map <code>herinnering</code> (zie LEESMIJ.md).</p>" +
+      '<label class="lb-chip" for="her-aan"><input type="checkbox" id="her-aan"' + (d.herinnering.aan ? " checked" : "") + "><span>Herinneringen versturen</span></label>" +
+      '<div class="lb-veld"><label for="her-vrij">Vrije dagen en vakanties</label><textarea id="her-vrij" rows="5" placeholder="2026-11-02 2026-11-08&#10;2026-11-11">' + esc(d.herinnering.vrij || "") + '</textarea><span class="hint">Eén dag of periode per regel: een datum, of een begin- en einddatum. Op die dagen vertrekt geen herinnering.</span></div>' +
+      '<div class="lb-acties"><button type="button" class="btn" id="her-bewaar">Bewaar</button><span class="fb" id="her-fb" aria-live="polite"></span></div>';
     var fb = z.querySelector("#coach-fb2");
     z.querySelector("#coach-voegtoe").addEventListener("click", function () {
       var email = z.querySelector("#coach-mail").value.trim().toLowerCase(), naam = z.querySelector("#coach-naam").value.trim();
