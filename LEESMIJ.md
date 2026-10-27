@@ -81,6 +81,14 @@ Elke projectpagina heeft tabbladen: **1. Start: leerkaarten**, **Projectfiche**,
 - De afspraken van CSF staan in een kader bovenaan de startpagina, vóór de projecten (pas de tekst aan in `site.js`, bij `verwachtingen`).
 - De oefenprojecten zijn enkel zichtbaar voor leerlingen van het 1e jaar (afgeleid uit hun klas, bv. 1B) en voor coaches. Tweedejaars zien het tabblad niet. Wie niet aangemeld is, ziet de oefenprojecten pas na aanmelden.
 
+## Aanmelden, zichtbaarheid en één project tegelijk
+
+- **Aanmelden is verplicht.** Wie de site opent, meldt zich eerst aan met zijn SVSL-account. Enkel CSF-leerlingen (aangevinkt in de klaslijst) en coaches komen binnen. Kent het portaal de klas van een leerling niet, dan duidt de leerling ze één keer zelf aan.
+- **Startpagina:** bovenaan de CSF-afspraken, daaronder ‘Projectenoverzicht’ en ‘Oefenprojecten eerste jaar’. Wat een leerling ziet, stel je in via Dashboard → **Zichtbaarheid** (per jaar en per klas) en Dashboard → **CSF-leerlingen** (kolom ‘Ziet’, per leerling). Standaard: 1e jaar ziet beide, 2e jaar enkel alle projecten.
+- **Eén project tegelijk.** De leerling kiest zijn project in ‘Mijn logboek’, samen met de vakleerkracht(en) van wie hij de les verlaat (uit de lijst in Dashboard → Coaches en instellingen → Vakleerkrachten). Van andere projecten ziet hij enkel de projectfiche.
+- **Goedkeuren.** Een afgewerkt project keurt de coach goed in het dashboard (klik op de leerling → ‘Keur project goed’). Pas dan kiest de leerling een nieuw project. Goedgekeurde projecten staan in zijn **portfolio**. Met ‘Annuleer’ wis je een logboek; de leerling kiest dan opnieuw.
+- **Resultaten.** Welke leerkaarten de leerling las en wat hij antwoordde bij ‘Test jezelf’, ‘Controleer je oplossing’ en de quizzen, komt in zijn logboek. De leerling kan een antwoord niet meer wijzigen. De coach ziet de scores en de antwoorden in het dashboard.
+
 ## Digitaal logboek en dashboard
 
 Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De projecten blijven openbaar; het logboek, het dashboard en de coachfiches vragen aanmelden.

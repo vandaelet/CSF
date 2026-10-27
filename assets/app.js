@@ -112,7 +112,13 @@
   }
 
   /* ---------- Leerkaarten: eerst lezen, dan pas de werkbundel ---------- */
-  function gelezen(p) { try { return JSON.parse(store.get("lk-" + p.id) || "[]"); } catch (e) { return []; } }
+  /* portaal actief en dit is het project van de leerling: resultaten komen uit zijn logboek (Firestore) */
+  function eigenRes(p) { var P = CSF.portaal; return P && P.actief && P.isLeerling && P.isLeerling() && P.huidig() === p.id ? (P.res(p.id) || {}) : null; }
+  function gelezen(p) {
+    var r = eigenRes(p);
+    if (r) return (p.leerkaarten || []).map(function (_, i) { return r["lk_" + i] ? i : -1; }).filter(function (i) { return i >= 0; });
+    try { return JSON.parse(store.get("lk-" + p.id) || "[]"); } catch (e) { return []; }
+  }
   function magAfdrukken(p) {
     var n = (p.leerkaarten || []).length, g = gelezen(p);
     if (!n) return true;
@@ -123,32 +129,26 @@
   }
 
   /* ---------- Weergaven ---------- */
-  /* Oefenprojecten: enkel voor het 1e jaar (en voor coaches). Zonder portaal of nog onbekende rol: zichtbaar. */
-  function toonOefen() {
-    var P = CSF.portaal;
-    if (!P || !P.actief) return true;
-    if (!P.rolBekend) return true;
-    if (P.isCoach && P.isCoach()) return true;
-    return P.leerjaar && P.leerjaar() === 1;
-  }
+  function zicht() { var P = CSF.portaal; return P && P.actief && P.zicht ? P.zicht() : "beide"; }
   function afsprakenKader() {
     return '<div class="afspraken" id="verwacht"><div class="afspraken-kop">CSF-afspraken</div><div class="afspraken-grid">' +
       (CSF.verwachtingen || []).map(function (v) { return '<div><b>' + esc(v.titel) + "</b><ul>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("") + "</div></div>";
   }
   function vStart() {
-    var oef = oefen(), P = CSF.portaal, toon = toonOefen(), aangemeld = P && P.actief && P.rolBekend && P.isAangemeld && P.isAangemeld();
+    var oef = oefen(), P = CSF.portaal, z = zicht(), hu = P && P.actief && P.huidig ? P.huidig() : null, hp = hu ? zoek(hu) : null;
+    var deuren = (z !== "oefen" ? '<a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: leerkaarten, projectfiche, leidraad per lesuur en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a>' : "") +
+      (z !== "alle" ? '<a class="deur" href="#oefenproject"><span class="dt">Oefenprojecten eerste jaar</span><span class="wie">1e jaar · 3 lesuren</span><span class="dd">Korte oefenprojecten. Leer de aanpak van een CSF-project.</span><span class="doms">' +
+        oef.map(function (p) { return '<span style="--h:var(' + kleur(p) + ')">' + esc(label(p)) + "</span>"; }).join("") + '</span><span class="pijl">Naar de oefenprojecten →</span></a>' : "");
     return '<div class="wrap">' + kop() + kruimel([["Start"]]) +
-      '<div class="vel">' + afsprakenKader() + '<h2 class="banner">Welkom</h2><p>' + esc(CSF.welkom) + "</p>" +
-      '<div class="starttabs">' + (toon ? '<a class="starttab" href="#oefenproject">Oefenprojecten <span>enkel 1e jaar</span></a>' : "") + "</div>" +
-      '<div class="poort een"><a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: leerkaarten, projectfiche, leidraad per lesuur en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a></div>' +
-      (toon ? '<p class="hint">Ben je in het 1e jaar en nieuw in CSF? Start met een kort <a href="#oefenproject">oefenproject</a> (3 lesuren). Daarin leer je de aanpak van een CSF-project.</p>'
-        : (P && P.actief && !aangemeld ? '<p class="hint">Eerstejaars: meld je aan via ‘Mijn logboek’ om de oefenprojecten te zien.</p>' : "")) +
-      (CSF.portaal && CSF.portaal.actief ? '<p class="lb-start"><a class="btn" href="#logboek">Mijn logboek</a> <span class="hint">Meld je aan met je schoolaccount. Vul je logboek in bij het begin en op het einde van elk lesuur.</span></p>' : "") +
+      '<div class="vel">' + afsprakenKader() +
+      (P && P.actief && P.isLeerling && P.isLeerling() ? '<div class="lb-melding mijnproject"><b>Mijn logboek</b> · ' + (hp ? 'Je werkt aan <a href="#p-' + esc(hp.id) + '">' + esc(hp.naam.split(":")[0]) + '</a>. <a class="btn lb-klein" href="#logboek">Open mijn logboek</a>' : 'Je hebt nog geen project. <a class="btn lb-klein" href="#logboek">Kies je project in je logboek</a>') + "</div>" : "") +
+      '<h2 class="banner">Welkom</h2><p>' + esc(CSF.welkom) + "</p>" +
+      '<div class="poort' + (z === "beide" ? "" : " een") + '">' + deuren + "</div>" +
       "</div>" + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
   }
-  function vGeenOefen() {
-    return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], ["Oefenproject"]]) +
-      '<div class="vel"><h2 class="banner">Oefenprojecten</h2><div class="lb-melding oranje">De oefenprojecten zijn enkel voor leerlingen van het 1e jaar. Kies een project in het <a href="#overzicht">projectenoverzicht</a>.</div></div>' + footer() + "</div>";
+  function vNietZichtbaar(titel) {
+    return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], [titel]]) +
+      '<div class="vel"><h2 class="banner">' + esc(titel) + '</h2><div class="lb-melding oranje">Dit deel staat (nog) niet open voor jou. Ga terug naar de <a href="#start">startpagina</a> of open <a href="#logboek">je logboek</a>.</div></div>' + footer() + "</div>";
   }
 
   function vOefen() {
@@ -204,20 +204,20 @@
     if (isFiche(p)) return vFiche(p);
     var terug = p.soort === "vak" ? ["Projectenoverzicht", "#overzicht"] : ["Oefenproject", "#oefenproject"];
     var test = (p.test || []).map(function (q, i) {
-      return '<div class="tvraag" data-uitleg="' + esc(q[3]) + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + p.test.length + "</span>" + q[0] + '</p><div class="opties">' +
+      return '<div class="tvraag" data-key="t_' + i + '" data-uitleg="' + esc(q[3]) + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + p.test.length + "</span>" + q[0] + '</p><div class="opties">' +
         q[1].map(function (o, j) { return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
     }).join("");
     /* quizzen per fragment (bv. luisterquiz per filmclip) */
-    var quizzen = (p.quizzen || []).map(function (qz) {
+    var quizzen = (p.quizzen || []).map(function (qz, qa) {
       return '<details class="kaart quiz"><summary>' + esc(qz.titel) + '</summary>' + (qz.link ? '<p><a href="' + esc(qz.link) + '" target="_blank" rel="noopener">Bekijk het fragment ↗</a></p>' : "") + '<div class="test" data-soort="quiz">' +
         qz.vragen.map(function (q, i) {
-          return '<div class="tvraag" data-uitleg="' + esc(q[3] || "") + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + qz.vragen.length + "</span>" + q[0] + '</p><div class="opties">' +
+          return '<div class="tvraag" data-key="q_' + qa + "_" + i + '" data-uitleg="' + esc(q[3] || "") + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + qz.vragen.length + "</span>" + q[0] + '</p><div class="opties">' +
             q[1].map(function (o, j) { return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
         }).join("") + '<p class="score" aria-live="polite"></p></div></details>';
     }).join("");
     var controle = (p.controle || []).map(function (c, i) {
       var data = c[1] === "getal" ? 'data-n="' + esc(JSON.stringify(c[2])) + '"' : 'data-a="' + esc(JSON.stringify(c[2])) + '"';
-      return '<div class="check" ' + data + ' data-h="' + esc(c[3]) + '"><label for="c-' + i + '">' + c[0] + '</label><div class="crij"><input type="text" id="c-' + i +
+      return '<div class="check" data-i="' + i + '" ' + data + ' data-h="' + esc(c[3]) + '"><label for="c-' + i + '">' + c[0] + '</label><div class="crij"><input type="text" id="c-' + i +
         '" autocomplete="off" spellcheck="false"><button type="button" class="btn licht cknop">Controleer</button></div><p class="fb" aria-live="polite"></p></div>';
     }).join("");
     var inv = p.invalshoek ? '<div class="blok"><h3 class="banner">Kies je invalshoek</h3><p class="hint">' + p.invalshoek.intro + ' Je invalshoek is geen extra werk. Het is jouw eigen draai aan het project. Noteer je keuze in je logboek bij motivatie.</p><div class="invs">' +
@@ -236,11 +236,12 @@
       return '<details class="kaart lk' + (ok ? " gelezen" : "") + '" data-i="' + i + '"><summary><span class="lk-vink" aria-hidden="true">' + (ok ? "✓" : (i + 1)) + "</span>" + k[0] + "</summary><p>" + k[1] + '</p><p class="lk-knop">' +
         (ok ? '<span class="hint">✓ Gelezen</span>' : '<button type="button" class="btn licht lb-klein" data-lees="' + i + '">Ik heb deze leerkaart gelezen</button>') + "</p></details>";
     }).join("");
-    var tabs = [["start", "1. Start: leerkaarten"], ["fiche", "Projectfiche"], ["leidraad", "Leidraad per lesuur"]]
+    var modus = CSF.portaal && CSF.portaal.projectModus ? CSF.portaal.projectModus(p) : "vol";
+    var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["start", "1. Start: leerkaarten"], ["fiche", "Projectfiche"], ["leidraad", "Leidraad per lesuur"]]
       .concat(quizzen || controle ? [["controle", "Controleer je oplossing"]] : []).concat([["evaluatie", "Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "Werkbundel"]]);
-    var actief = "start"; try { actief = sessionStorage.getItem("tab-" + p.id) || "start"; } catch (e) {}
+    var actief = modus === "fiche" ? "fiche" : "start"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "start"; } catch (e) {}
     if (!tabs.some(function (t) { return t[0] === actief; })) actief = "start";
-    var paneel = function (id, inhoud) { return '<div class="tabpaneel" id="tp-' + id + '" role="tabpanel"' + (actief === id ? "" : " hidden") + ">" + inhoud + "</div>"; };
+    var paneel = function (id, inhoud) { if (!tabs.some(function (t) { return t[0] === id; })) return ""; return '<div class="tabpaneel" id="tp-' + id + '" role="tabpanel"' + (actief === id ? "" : " hidden") + ">" + inhoud + "</div>"; };
     return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], terug, [label(p)]]) +
       '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + '<span class="tag">uitwerking op papier</span></div>' +
@@ -388,15 +389,32 @@
       };
       app.querySelectorAll(".ptab").forEach(function (b) { b.addEventListener("click", function () { tabKies(b.dataset.tab); }); });
       app.querySelectorAll("[data-naartab]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); tabKies(a.dataset.naartab); }); });
+      var Pt = CSF.portaal, eigen = eigenRes(p);
+      /* resultaten van de leerling nog niet geladen? Laad ze en teken opnieuw */
+      if (Pt && Pt.actief && Pt.isLeerling && Pt.isLeerling() && Pt.huidig() === p.id && !Pt.res(p.id)) Pt.laadRes(p.id).then(function () { if (location.hash === "#p-" + p.id) teken(); });
+      var reg = function (k, w) { if (eigen && Pt.registreer) return Pt.registreer(p.id, k, w); return Promise.resolve(false); };
       app.querySelectorAll("[data-lees]").forEach(function (b) { b.addEventListener("click", function () {
-        var g = gelezen(p), i = Number(b.dataset.lees); if (g.indexOf(i) < 0) g.push(i);
-        store.set("lk-" + p.id, JSON.stringify(g));
-        var y = window.scrollY; teken(); window.scrollTo(0, y);
-        var vlg = app.querySelector('details.lk:not(.gelezen)'); if (vlg) vlg.open = true;
+        var i = Number(b.dataset.lees);
+        var verder = function () { var y = window.scrollY; teken(); window.scrollTo(0, y); var vlg = app.querySelector('details.lk:not(.gelezen)'); if (vlg) vlg.open = true; };
+        if (eigen) { b.disabled = true; reg("lk_" + i, {}).then(verder); return; }
+        var g = gelezen(p); if (g.indexOf(i) < 0) g.push(i);
+        store.set("lk-" + p.id, JSON.stringify(g)); verder();
       }); });
+      /* eerder gegeven antwoorden tonen (en vastzetten) */
+      var toonAntwoord = function (v, keuze) {
+        var opts = v.querySelectorAll(".optie"), o = opts[keuze]; if (!o) return;
+        v.dataset.klaar = "1"; var ok = o.dataset.ok === "1";
+        opts.forEach(function (x) { if (x.dataset.ok === "1") x.classList.add("juist"); x.disabled = true; });
+        if (!ok) o.classList.add("fout");
+        v.dataset.goed = ok ? "1" : "0";
+        v.querySelector(".fb").textContent = (ok ? "Juist! " : "Niet helemaal. ") + (v.dataset.uitleg || "");
+      };
+      if (eigen) app.querySelectorAll(".tvraag[data-key]").forEach(function (v) { var x = eigen[v.dataset.key]; if (x) toonAntwoord(v, x.keuze); });
       app.querySelectorAll(".optie").forEach(function (o) { o.addEventListener("click", function () {
         var v = o.closest(".tvraag"); if (v.dataset.klaar) return; v.dataset.klaar = "1";
         var ok = o.dataset.ok === "1";
+        if (v.dataset.key) reg(v.dataset.key, { keuze: Array.prototype.indexOf.call(v.querySelectorAll(".optie"), o), ok: ok });
+        v.querySelectorAll(".optie").forEach(function (x) { if (eigen) x.disabled = true; });
         v.querySelectorAll(".optie").forEach(function (x) { if (x.dataset.ok === "1") x.classList.add("juist"); });
         if (!ok) o.classList.add("fout");
         v.dataset.goed = ok ? "1" : "0";
@@ -405,13 +423,16 @@
         t.querySelector(".score").textContent = rest > 0 ? "Nog " + rest + (rest > 1 ? " vragen" : " vraag") + " te gaan." : "Score: " + goed + " van " + all + " juist." + (t.dataset.soort === "quiz" ? " Noteer je score op je luisterblad." : goed < all ? " Lees de leerkaart nog eens na." : " Je bent klaar om te starten.");
       }); });
       app.querySelectorAll(".check").forEach(function (c) {
-        var inp = c.querySelector("input"), fb = c.querySelector(".fb"), pogingen = 0;
+        var inp = c.querySelector("input"), fb = c.querySelector(".fb"), pogingen = 0, ci = c.dataset.i;
+        if (eigen) { for (var k = 1; eigen["c_" + ci + "_" + k]; k++) { pogingen = k; if (eigen["c_" + ci + "_" + k].ok) { inp.value = eigen["c_" + ci + "_" + k].antwoord; inp.disabled = true; c.classList.add("ok"); fb.textContent = "Juist! Goed gedaan."; c.querySelector(".cknop").disabled = true; } } }
         function test() {
           var v = inp.value.trim(); if (!v) { fb.textContent = "Vul eerst een antwoord in."; return; }
           var ok = false, juist = "";
           if (c.dataset.n) { var wm = JSON.parse(c.dataset.n), g = parseFloat(v.replace(",", ".")); ok = !isNaN(g) && Math.abs(g - wm[0]) <= wm[1] + 1e-9; juist = String(wm[0]).replace(".", ","); }
           else { var a = JSON.parse(c.dataset.a); ok = a.some(function (x) { return norm(x) === norm(v); }); juist = a[0]; }
           pogingen++; c.classList.toggle("ok", ok);
+          reg("c_" + ci + "_" + pogingen, { antwoord: v, ok: ok });
+          if (ok && eigen) { inp.disabled = true; c.querySelector(".cknop").disabled = true; }
           if (ok) { fb.textContent = "Juist! Goed gedaan."; return; }
           fb.textContent = "Nog niet. Tip: " + c.dataset.h.replace(/<[^>]+>/g, "") + " ";
           if (pogingen >= 3) { var b = document.createElement("button"); b.type = "button"; b.className = "toon"; b.textContent = "Toon het antwoord";
@@ -461,12 +482,17 @@
 
   /* ---------- Router ---------- */
   function teken() {
-    var h = (location.hash || "#start").slice(1), app = document.getElementById("app"), p;
+    var h = (location.hash || "#start").slice(1), app = document.getElementById("app"), p, Pp = CSF.portaal;
+    if (Pp && Pp.poortNodig && Pp.poortNodig(h)) { Pp.poort(app); document.title = CSF.titel + " " + CSF.school; return; }
+    var leerling = Pp && Pp.actief && Pp.isLeerling && Pp.isLeerling();
+    if (leerling && h.indexOf("p-") === 0 && (p = zoek(h.slice(2))) && !Pp.ziet(p) && Pp.huidig() !== p.id) { app.innerHTML = vNietZichtbaar(p.naam); return; }
+    if (leerling && h === "overzicht" && zicht() === "oefen") { app.innerHTML = vNietZichtbaar("Projectenoverzicht"); return; }
+    if (leerling && h === "oefenproject" && zicht() === "alle") { app.innerHTML = vNietZichtbaar("Oefenprojecten eerste jaar"); return; }
+    if (leerling && h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && Pp.huidig() !== p.id) { location.replace("#p-" + p.id); return; }
     if (h.indexOf("p-") === 0 && (p = zoek(h.slice(2)))) { app.innerHTML = vProject(p); koppel("project", p); document.title = p.naam + " · " + CSF.titel; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && isFiche(p)) { location.replace("#p-" + p.id); return; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && !magAfdrukken(p)) { try { sessionStorage.setItem("tab-" + p.id, "werkbundel"); } catch (e) {} location.replace("#p-" + p.id); return; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3)))) { app.innerHTML = vWerkbundel(p); koppel("werkbundel", p); document.title = "Werkbundel · " + p.naam; }
-    else if ((h === "oefenproject" || (h.indexOf("p-") === 0 && (p = zoek(h.slice(2))) && p.soort !== "vak")) && !toonOefen()) { app.innerHTML = vGeenOefen(); document.title = "Oefenproject · " + CSF.titel; }
     else if (h === "oefenproject") { app.innerHTML = vOefen(); koppel("oefen"); document.title = "Oefenproject · " + CSF.titel; }
     else if (h === "coach") {
       var bewaard = null; try { bewaard = sessionStorage.getItem("csf-coach"); } catch (x) {}

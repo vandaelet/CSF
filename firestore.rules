@@ -33,6 +33,10 @@ service cloud.firestore {
       allow read: if coach() || (aangemeld() && mail() == email)
                   || (aangemeld() && mail() in resource.data.get('vakleerkrachten', []));
       allow write: if coach();
+      // de leerling duidt één keer zelf zijn klas aan, en kiest zijn vakleerkrachten bij de start van een project
+      allow update: if aangemeld() && mail() == email && opLijst()
+                    && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['klas']) && resource.data.get('klas', '') == '')
+                        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vakleerkrachten']));
     }
     // logboek: document <e-mail>__<project>; de leerling schrijft enkel zijn eigen logboek
     match /logboeken/{id} {
@@ -42,13 +46,15 @@ service cloud.firestore {
       allow create: if aangemeld() && opLijst()
                     && id.split('__')[0] == mail()
                     && request.resource.data.leerling == mail()
+                    && request.resource.data.get('goedgekeurd', false) == false
                     && request.resource.data.get('kijkers', []) ==
                        get(/databases/$(database)/documents/leerlingen/$(mail())).data.get('vakleerkrachten', []);
       allow update: if coach()
                     || (aangemeld() && resource.data.leerling == mail()
                         && request.resource.data.leerling == mail()
                         && request.resource.data.project == resource.data.project
-                        && request.resource.data.get('kijkers', []) == resource.data.get('kijkers', []));
+                        && request.resource.data.get('kijkers', []) == resource.data.get('kijkers', [])
+                        && request.resource.data.get('goedgekeurd', false) == resource.data.get('goedgekeurd', false));
       allow delete: if coach();
     }
     // feedback van de coach; de leerling mag enkel bevestigen dat hij ze gelezen heeft
@@ -101,10 +107,19 @@ service cloud.firestore {
                    && request.resource.data.tijd is string && request.resource.data.tijd.size() <= 40;
       allow delete: if coach();
     }
+    // resultaten van leerkaarten, test, controle en quiz: de leerling kan enkel toevoegen, nooit wijzigen of wissen
+    match /resultaten/{id} {
+      allow read: if coach() || (aangemeld() && id.split('__')[0] == mail());
+      allow create: if aangemeld() && opLijst() && id.split('__')[0] == mail() && request.resource.data.leerling == mail();
+      allow update: if aangemeld() && opLijst() && id.split('__')[0] == mail()
+                    && request.resource.data.diff(resource.data).changedKeys().size() == 0
+                    && request.resource.data.diff(resource.data).removedKeys().size() == 0;
+      allow delete: if coach();
+    }
     // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, enkel de beheerder schrijft
     match /instellingen/{id} {
-      allow read: if coach();
-      allow write: if beheerder();
+      allow read: if coach() || (aangemeld() && id in ['zichtbaarheid', 'klassen', 'vakleerkrachten']);
+      allow write: if beheerder() || (coach() && id == 'zichtbaarheid');
     }
   }
 }
