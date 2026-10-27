@@ -241,7 +241,16 @@
       .concat(quizzen || controle ? [["controle", "Controleer je oplossing"]] : []).concat([["evaluatie", "Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "Werkbundel"]]);
     var actief = modus === "fiche" ? "fiche" : "start"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "start"; } catch (e) {}
     if (!tabs.some(function (t) { return t[0] === actief; })) actief = "start";
-    var paneel = function (id, inhoud) { if (!tabs.some(function (t) { return t[0] === id; })) return ""; return '<div class="tabpaneel" id="tp-' + id + '" role="tabpanel"' + (actief === id ? "" : " hidden") + ">" + inhoud + "</div>"; };
+    /* onderaan elk tabblad: knoppen naar de vorige en de volgende stap */
+    var schoon = function (t) { return t.replace(/^[^A-Za-zÀ-ÿ0-9]+\s*/, "").replace(/^\d+\.\s*/, ""); };
+    var stapNav = function (id) {
+      var i = tabs.map(function (t) { return t[0]; }).indexOf(id), vorig = tabs[i - 1], volg = tabs[i + 1];
+      if (!vorig && !volg) return "";
+      var nogLezen = id === "start" && lk.length && nGel < lk.length ? '<p class="hint">Je las ' + nGel + " van de " + lk.length + " leerkaarten. Lees ze allemaal voor je de werkbundel afdrukt.</p>" : "";
+      return '<div class="stapnav">' + nogLezen + '<div class="stapknoppen">' + (vorig ? '<button type="button" class="btn licht" data-stap="' + vorig[0] + '">← ' + esc(schoon(vorig[1])) + "</button>" : "<span></span>") +
+        (volg ? '<button type="button" class="btn" data-stap="' + volg[0] + '">Volgende stap: ' + esc(schoon(volg[1])) + " →</button>" : "") + "</div></div>";
+    };
+    var paneel = function (id, inhoud) { if (!tabs.some(function (t) { return t[0] === id; })) return ""; return '<div class="tabpaneel" id="tp-' + id + '" role="tabpanel"' + (actief === id ? "" : " hidden") + ">" + inhoud + stapNav(id) + "</div>"; };
     return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], terug, [label(p)]]) +
       '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + '<span class="tag">uitwerking op papier</span></div>' +
@@ -400,6 +409,10 @@
         try { sessionStorage.setItem("tab-" + p.id, id); } catch (e) {}
       };
       app.querySelectorAll(".ptab").forEach(function (b) { b.addEventListener("click", function () { tabKies(b.dataset.tab); }); });
+      app.querySelectorAll("[data-stap]").forEach(function (b) { b.addEventListener("click", function () {
+        tabKies(b.dataset.stap); var t = app.querySelector(".ptabs"); if (t) window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + window.scrollY - 12), behavior: "smooth" });
+        var k = app.querySelector('.ptab[data-tab="' + b.dataset.stap + '"]'); if (k) k.focus({ preventScroll: true });
+      }); });
       app.querySelectorAll("[data-naartab]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); tabKies(a.dataset.naartab); }); });
       var Pt = CSF.portaal, eigen = eigenRes(p);
       /* resultaten van de leerling nog niet geladen? Laad ze en teken opnieuw */

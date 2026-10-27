@@ -395,3 +395,8 @@ footer { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justif
 .moment .vk-zoeker { margin-top:4px; }
 .moment .vk-zoek { width:100%; max-width:22rem; padding:.5rem .7rem; border:1px solid #cfd8dc; border-radius:8px; font:inherit; margin:.2rem 0 .5rem; }
 .moment .vk-zoek[hidden] { display:none; }
+
+/* vorige en volgende stap onderaan elk tabblad */
+.stapnav { margin-top:22px; padding-top:14px; border-top:2px solid var(--lijn, #e3e3e3); }
+.stapknoppen { display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+@media print { .stapnav { display:none !important; } }

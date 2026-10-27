@@ -87,6 +87,10 @@ const DB = {
   check(JSON.stringify(d[LB].kijkers) === '["an@svsl.be"]', 'vakleerkracht mag meelezen');
   check(await p.locator('.lb-stappen').count() === 0, 'stappenplan nog niet zichtbaar voor het begin-logboek');
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
+  await p.click('#tp-start [data-stap="fiche"]'); await wacht(300);
+  check(!(await p.locator('#tp-fiche').isHidden()) && await p.locator('#tp-start').isHidden() && await p.locator('.ptab[data-tab="fiche"][aria-selected="true"]').count() === 1, 'knop onderaan de leerkaarten leidt naar de volgende stap');
+  check((await p.textContent('#tp-fiche .stapnav')).includes('Volgende stap: Leidraad per lesuur'), 'elke stap heeft een knop naar de volgende stap');
+  await p.click('#tp-fiche [data-stap="start"]'); await wacht(200);
   check(await p.locator('.les.lb-slot').count() === 3, 'projectpagina: alle 3 lesuren vergrendeld');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-begin');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
