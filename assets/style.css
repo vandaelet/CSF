@@ -368,3 +368,11 @@ footer { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justif
 .starttab span { font-weight:400; color:#666; font-size:.8rem; }
 .poort.een { grid-template-columns:1fr; margin-top:0; }
 @media (max-width:960px) { .afspraken-grid { grid-template-columns:1fr; } }
+
+/* vakleerkracht zoeken op familienaam */
+.vk-zoeker #vk-zoek{width:100%;max-width:22rem;padding:.5rem .7rem;border:1px solid #cfd8dc;border-radius:8px;font:inherit;margin:.2rem 0 .5rem}
+.vk-resultaten:empty{display:none}
+.vk-hit{cursor:pointer;background:#fff;font:inherit}
+.vk-gekozen input{display:none}
+.vk-gekozen span{background:#3BC1C5;color:#fff;border-radius:999px;padding:.25rem .7rem;cursor:pointer}
+.vk-mails{margin-top:.6rem}.vk-mails textarea{width:100%;font:inherit;font-size:.85rem}

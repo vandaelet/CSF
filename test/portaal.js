@@ -263,8 +263,10 @@ const DB = {
   await aanmelden(p, '#dashboard', TOM); await p.waitForSelector('[data-tab="zicht"]');
   await p.click('[data-tab="zicht"]'); await p.selectOption('#zj-1', 'oefen'); await p.click('#zicht-bewaar'); await wacht(500);
   d = await fakedb(p); check(d['instellingen/zichtbaarheid'].jaar['1'] === 'oefen', 'coach zet het 1e jaar op enkel oefenprojecten');
-  await p.click('[data-tab="beheer"]'); await p.waitForSelector('#vk-lijst'); await p.fill('#vk-lijst', 'mevrouw An ; an@svsl.be\nmeneer Bert ; bert@svsl.be'); await p.click('#vk-bewaar'); await wacht(500);
-  d = await fakedb(p); check(d['instellingen/vakleerkrachten'].lijst.length === 2, 'beheerder bewaart de lijst van vakleerkrachten');
+  await p.click('[data-tab="beheer"]'); await p.waitForSelector('#vk-lijst'); await p.fill('#vk-lijst', 'An Peeters\nTim van Besien\nMaeté Basslé\nBert Claes ; bert@svsl.be'); await p.click('#vk-bewaar'); await wacht(500);
+  d = await fakedb(p); const VK = d['instellingen/vakleerkrachten'].lijst;
+  check(VK.map(v => v.naam).join() === 'Maeté Basslé,Bert Claes,An Peeters,Tim van Besien', 'beheerder bewaart de lijst van vakleerkrachten');
+  check(VK.find(v => v.naam === 'Tim van Besien').email === 'vanbesien.tim@svsl.be' && VK.find(v => v.naam === 'Maeté Basslé').email === 'bassle.maete@svsl.be' && VK.find(v => v.naam === 'Bert Claes').email === 'bert@svsl.be', 'e-mailadres familienaam.voornaam, aan elkaar en zonder accenten');
   await p.click('[data-tab="overzicht"]'); await p.selectOption('#db-coach', 'alle'); await p.waitForSelector('.db-rij[data-ll="mo@svsl.be"]');
   await p.click('.db-rij[data-ll="mo@svsl.be"]'); await p.waitForSelector('.lb-detail');
   check((await p.textContent('.lb-detail')).includes('Leerkaarten 1/'), 'coach ziet de resultaten van de leerkaarten en vragen');
@@ -277,10 +279,11 @@ const DB = {
   check((await p.textContent('#lb-inhoud')).includes('Mijn portfolio') && await p.locator('.lb-kaart .lb-pill.groen').count() >= 1, 'goedgekeurd project staat in het portfolio');
   const keuze = await p.locator('#lb-nieuw option').first().getAttribute('value');
   await p.click('#lb-start'); await p.waitForSelector('#lb-opstart');
-  await p.fill('#vak', 'wiskunde'); await p.check('#vkLijst-0'); await p.check('#dag-1'); await p.check('#lesuur-3'); await p.fill('#motivatie', 'Nieuw project.'); await p.check('#evaluatieGelezen-0');
+  await p.fill('#vak', 'wiskunde'); await p.fill('#vk-zoek', 'bes'); await p.waitForSelector('.vk-hit'); check((await p.textContent('#vk-resultaten')).includes('Tim van Besien'), 'zoeken op familienaam toont de leerkracht');
+  await p.fill('#vk-zoek', 'pee'); await p.click('.vk-hit'); await p.check('#dag-1'); await p.check('#lesuur-3'); await p.fill('#motivatie', 'Nieuw project.'); await p.check('#evaluatieGelezen-0');
   await p.click('#lb-opstart button[type=submit]'); await p.waitForSelector('#lb-begin');
   d = await fakedb(p); const NL = d['logboeken/peeters.lien@svsl.be__' + keuze];
-  check(NL && JSON.stringify(NL.kijkers) === '["an@svsl.be"]' && NL.opstart.vakleerkracht === 'mevrouw An', 'nieuw project met vakleerkracht uit de lijst');
+  check(NL && JSON.stringify(NL.kijkers) === '["peeters.an@svsl.be"]' && NL.opstart.vakleerkracht === 'An Peeters', 'nieuw project met vakleerkracht uit de lijst');
 
   console.log('6. Coachfiches via de rol en export');
   await aanmelden(p, '#coach', LIEN); await p.waitForSelector('#coach-poort .lb-melding');

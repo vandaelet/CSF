@@ -231,6 +231,45 @@
       : '<input type="' + (o.type || "text") + '" id="' + id + '" name="' + id + '" value="' + v + '"' + (o.verplicht ? " required" : "") + (o.type === "number" ? ' min="0" max="600"' : "") + ">";
     return '<div class="lb-veld"><label for="' + id + '">' + label + ster + "</label>" + inp + (o.hint ? '<span class="hint">' + o.hint + "</span>" : "") + "</div>";
   }
+  /* vakleerkrachten: "Voornaam Familienaam" → familienaam.voornaam@svsl.be (familienaam aan elkaar, zonder accenten) */
+  function plat(t) { return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+  function vkMail(voornaam, familienaam) { return plat(familienaam).replace(/[^a-z0-9-]/g, "") + "." + plat(voornaam).replace(/[^a-z0-9-]/g, "") + "@" + DOMEIN; }
+  function vkDelen(naam) { var w = String(naam).trim().split(/\s+/); return { voornaam: w[0] || "", familienaam: w.slice(1).join(" ") }; }
+  function vkRegel(r) {
+    var dl = r.split(";"), naam = dl[0].trim().replace(/\s+/g, " "), x = vkDelen(naam);
+    var e = dl.length > 1 ? String(dl[1]).trim().toLowerCase() : (x.familienaam ? vkMail(x.voornaam, x.familienaam) : "");
+    return { naam: naam, voornaam: x.voornaam, familienaam: x.familienaam, email: e };
+  }
+  function vkFam(v) { return v.familienaam || vkDelen(v.naam).familienaam || v.naam; }
+  function vkPast(v, q) {
+    q = plat(q).replace(/\s+/g, " ").trim(); if (q.length < 2) return false;
+    var f = plat(vkFam(v));
+    return f.indexOf(q) === 0 || f.replace(/\s/g, "").indexOf(q.replace(/\s/g, "")) === 0 || f.split(" ").some(function (w) { return w.indexOf(q) === 0; });
+  }
+  function vkZoeker(label) {
+    return '<fieldset class="lb-keuze vk-zoeker" data-verplicht="1"><legend>' + label + ' <span class="lb-ster">*</span></legend>' +
+      '<input type="text" id="vk-zoek" autocomplete="off" placeholder="Typ de familienaam" aria-label="Zoek een leerkracht op familienaam">' +
+      '<div class="vk-resultaten lb-chips" id="vk-resultaten" aria-live="polite"></div><div class="lb-chips" id="vk-gekozen"></div></fieldset>';
+  }
+  function vkKoppel(form) {
+    var zoek = form.querySelector("#vk-zoek"), res = form.querySelector("#vk-resultaten"), gek = form.querySelector("#vk-gekozen");
+    if (!zoek) return;
+    function gekozen() { return [].map.call(gek.querySelectorAll("input"), function (i) { return i.value; }); }
+    function toon() {
+      var q = zoek.value, al = gekozen(), hits = INST.vakleerkrachten.filter(function (v) { return al.indexOf(v.email) < 0 && vkPast(v, q); }).slice(0, 8);
+      res.innerHTML = plat(q).trim().length < 2 ? "" : hits.length ? hits.map(function (v) { return '<button type="button" class="lb-chip vk-hit" data-mail="' + esc(v.email) + '">+ ' + esc(v.naam) + "</button>"; }).join("")
+        : '<span class="hint">Geen leerkracht gevonden. Controleer de familienaam.</span>';
+    }
+    zoek.addEventListener("input", toon);
+    zoek.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); var b = res.querySelector(".vk-hit"); if (b) b.click(); } });
+    res.addEventListener("click", function (e) {
+      var b = e.target.closest(".vk-hit"); if (!b) return;
+      var v = INST.vakleerkrachten.filter(function (x) { return x.email === b.dataset.mail; })[0]; if (!v) return;
+      gek.insertAdjacentHTML("beforeend", '<label class="lb-chip vk-gekozen" title="Klik om te verwijderen"><input type="checkbox" name="vkLijst" value="' + esc(v.email) + '" checked><span>' + esc(v.naam) + " ✕</span></label>");
+      zoek.value = ""; toon(); zoek.focus();
+    });
+    gek.addEventListener("change", function (e) { if (!e.target.checked) { e.target.closest("label").remove(); toon(); } });
+  }
   function keuze(naam, label, opties, o) {
     o = o || {}; var type = o.meer ? "checkbox" : "radio", gekozen = [].concat(o.waarde || []);
     return '<fieldset class="lb-keuze"' + (o.verplicht ? ' data-verplicht="1"' : "") + "><legend>" + label + (o.verplicht ? ' <span class="lb-ster">*</span>' : "") + '</legend><div class="lb-chips' + (o.lijst ? " lijst" : "") + '">' +
@@ -423,7 +462,7 @@
     doel.innerHTML = kopje + '<div class="lb-melding">Dit is de <b>opstart</b> van je logboek. Je vult dit één keer in. Daarna vul je bij elk lesuur een begin en een einde in.</div>' +
       formulier("lb-opstart",
         '<div class="lb-twee">' + veld("klas", "Ik zit in klas", { waarde: L.klas, verplicht: true }) + veld("vak", "Ik ga uit de les voor het vak", { verplicht: true }) + "</div>" +
-        (INST.vakleerkrachten.length ? keuze("vkLijst", "Ik ga uit de les van (duid één of meer leerkrachten aan)", INST.vakleerkrachten.map(function (v) { return v.naam; }), { meer: true, verplicht: true, lijst: true })
+        (INST.vakleerkrachten.length ? vkZoeker("Ik ga uit de les van (typ de familienaam en klik op de leerkracht; meer dan één mag)")
           : veld("vakleerkracht", "Ik ga uit de les van mevrouw/meneer", { verplicht: true })) +
         keuze("dag", "Op welke dag?", DAGEN, { verplicht: true }) + keuze("lesuur", "Tijdens welk lesuur?", LESUREN, { verplicht: true }) +
         '<p class="lb-vast">Mijn CSF-coach: <b>' + esc(L.coachNaam || "nog niet toegewezen") + "</b> · Project: <b>" + esc(p.naam) + "</b></p>" +
@@ -433,11 +472,12 @@
         veld("evaluatieExtra", "Extra afspraken met mijn coach", { lang: true, rijen: 2 }) +
         veld("link", "Link naar mijn project (als je online werkt)", { hint: "Zet de link openbaar of geef je coach toegang." }),
         "Bewaar mijn opstart");
+    vkKoppel(doel.querySelector("#lb-opstart"));
     bij(doel.querySelector("#lb-opstart"), function (d) {
       d.coach = L.coachNaam || "";
       var kijkers = L.vakleerkrachten || [], eerst = Promise.resolve();
       if (d.vkLijst) {
-        var gekozen = INST.vakleerkrachten.filter(function (v) { return d.vkLijst.indexOf(v.naam) >= 0; });
+        var gekozen = INST.vakleerkrachten.filter(function (v) { return d.vkLijst.indexOf(v.email) >= 0; });
         d.vakleerkracht = gekozen.map(function (v) { return v.naam; }).join(", ");
         kijkers = gekozen.map(function (v) { return String(v.email || "").toLowerCase(); }).filter(Boolean);
         delete d.vkLijst;
@@ -1171,17 +1211,26 @@
       '<label class="lb-chip" for="her-aan"><input type="checkbox" id="her-aan"' + (d.herinnering.aan ? " checked" : "") + "><span>Herinneringen versturen</span></label>" +
       '<div class="lb-veld"><label for="her-vrij">Vrije dagen en vakanties</label><textarea id="her-vrij" rows="5" placeholder="2026-11-02 2026-11-08&#10;2026-11-11">' + esc(d.herinnering.vrij || "") + '</textarea><span class="hint">Eén dag of periode per regel: een datum, of een begin- en einddatum. Op die dagen vertrekt geen herinnering.</span></div>' +
       '<div class="lb-acties"><button type="button" class="btn" id="her-bewaar">Bewaar</button><span class="fb" id="her-fb" aria-live="polite"></span></div>' +
-      "<h3>Vakleerkrachten</h3><p class=\"hint\">Leerlingen kiezen hieruit de leerkracht(en) van wie ze de les verlaten. Die leerkrachten kunnen dan het logboek lezen. Eén leerkracht per regel: naam ; e-mailadres.</p>" +
-      '<div class="lb-veld"><label for="vk-lijst">Lijst van vakleerkrachten</label><textarea id="vk-lijst" rows="6" placeholder="mevrouw Peeters (wiskunde) ; an.peeters@' + esc(DOMEIN) + '">' + esc((d.vakleerkrachtenLijst || []).map(function (v) { return v.naam + " ; " + v.email; }).join("\n")) + "</textarea></div>" +
-      '<div class="lb-acties"><button type="button" class="btn" id="vk-bewaar">Bewaar de lijst</button><span class="fb" id="vk-fb" aria-live="polite"></span></div>';
+      "<h3>Vakleerkrachten</h3><p class=\"hint\">Leerlingen kiezen hieruit de leerkracht(en) van wie ze de les verlaten. Die leerkrachten kunnen dan het logboek lezen. Eén leerkracht per regel: Voornaam Familienaam. Het e-mailadres maakt het portaal zelf: familienaam.voornaam@" + DOMEIN + " (familienaam aan elkaar, zonder accenten). Wijkt een adres af? Schrijf dan: Voornaam Familienaam ; e-mailadres.</p>" +
+      '<div class="lb-veld"><label for="vk-lijst">Lijst van vakleerkrachten</label><textarea id="vk-lijst" rows="6" rows="12" placeholder="An Peeters&#10;Tim van Besien">' + esc((d.vakleerkrachtenLijst || []).map(function (v) { var x = vkRegel(v.naam); return v.naam + (x.email === v.email ? "" : " ; " + v.email); }).join("\n")) + "</textarea></div>" +
+      '<div class="lb-acties"><button type="button" class="btn" id="vk-bewaar">Bewaar de lijst</button> <button type="button" class="btn licht" id="vk-kopieer">Kopieer alle e-mailadressen</button><span class="fb" id="vk-fb" aria-live="polite"></span></div>' +
+      '<details class="vk-mails"><summary>Toon de e-mailadressen</summary><textarea id="vk-mails" rows="6" readonly aria-label="E-mailadressen van de vakleerkrachten">' + esc((d.vakleerkrachtenLijst || []).map(function (v) { return v.email; }).join("; ")) + "</textarea></details>";
+    z.querySelector("#vk-kopieer").addEventListener("click", function () {
+      var out = z.querySelector("#vk-fb"), t = (d.vakleerkrachtenLijst || []).map(function (v) { return v.email; }).join("; ");
+      if (!t) { out.textContent = "Bewaar eerst de lijst."; return; }
+      var ok = function () { out.textContent = "Gekopieerd: " + (d.vakleerkrachtenLijst || []).length + " adressen. Plak ze in het veld ‘Aan’ of ‘Bcc’ van een e-mail."; };
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(ok, function () { var ta = z.querySelector("#vk-mails"); ta.parentNode.open = true; ta.select(); out.textContent = "Kopiëren lukte niet automatisch. Selecteer de adressen hieronder en kopieer ze."; });
+    });
     z.querySelector("#vk-bewaar").addEventListener("click", function () {
       var out = z.querySelector("#vk-fb"), fout = [], lijstV = z.querySelector("#vk-lijst").value.split(/\n/).map(function (r) { return r.trim(); }).filter(Boolean).map(function (r) {
-        var dl = r.split(";"), e = String(dl[1] || "").trim().toLowerCase();
-        if (dl.length < 2 || e.slice(-(DOMEIN.length + 1)) !== "@" + DOMEIN) fout.push(r);
-        return { naam: dl[0].trim(), email: e };
-      });
-      if (fout.length) { out.textContent = "Deze regel klopt niet: " + fout[0] + ". Schrijf: naam ; naam@" + DOMEIN; return; }
-      F.setDoc(ref("instellingen/vakleerkrachten"), { lijst: lijstV }).then(function () { d.vakleerkrachtenLijst = lijstV; INST.vakleerkrachten = lijstV; out.textContent = "Bewaard (" + lijstV.length + " leerkrachten)."; })
+        var v = vkRegel(r);
+        if (!v.familienaam || v.email.slice(-(DOMEIN.length + 1)) !== "@" + DOMEIN || !/^[^@\s;]+@/.test(v.email)) fout.push(r);
+        return v;
+      }).sort(function (a, b) { return plat(vkFam(a)).replace(/\s/g, "").localeCompare(plat(vkFam(b)).replace(/\s/g, "")) || plat(a.voornaam).localeCompare(plat(b.voornaam)); });
+      if (fout.length) { out.textContent = "Deze regel klopt niet: " + fout[0] + ". Schrijf: Voornaam Familienaam (of: Voornaam Familienaam ; naam@" + DOMEIN + ")."; return; }
+      var dubbel = lijstV.filter(function (v, i) { return lijstV.some(function (w, j) { return j < i && w.email === v.email; }); });
+      if (dubbel.length) { out.textContent = "Dit e-mailadres staat er twee keer: " + dubbel[0].email + ". Schrijf het juiste adres achter een ; bij één van beide."; return; }
+      F.setDoc(ref("instellingen/vakleerkrachten"), { lijst: lijstV }).then(function () { d.vakleerkrachtenLijst = lijstV; INST.vakleerkrachten = lijstV; z.querySelector("#vk-mails").value = lijstV.map(function (v) { return v.email; }).join("; "); out.textContent = "Bewaard (" + lijstV.length + " leerkrachten)."; })
         .catch(function (e) { out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
     });
     var fb = z.querySelector("#coach-fb2");
