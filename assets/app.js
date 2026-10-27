@@ -334,10 +334,22 @@
       return '<div class="blad"><div class="coachband">COACHFICHE · NIET VOOR LEERLINGEN</div><div class="domein">' + esc(label(p)) + " · " + esc(p.jaar) + "</div><h1>" + esc(p.naam) + "</h1>" +
         coachInhoud[p.id] + (ctl ? "<h2>Antwoorden ‘Controleer je oplossing’</h2><table>" + ctl + "</table>" : "") + (les ? "<h2>Lesplanning</h2><table>" + les + "</table>" : "") + "</div>";
     };
-    var lijstKnoppen = fiches.map(function (p) { return '<a class="chip" href="#coach" data-spring="cf-' + p.id + '">' + esc(p.naam.split(":")[0]) + "</a>"; }).join("");
+    /* ordenen zoals het projectenoverzicht: eerst de oefenprojecten, dan per vak (alfabetisch) */
+    var OEFEN = "Oefenprojecten eerste jaar", groepen = [];
+    fiches.forEach(function (p) {
+      var g = p.soort === "vak" ? vakNaam(p.vak) : OEFEN, x = groepen.filter(function (y) { return y.naam === g; })[0];
+      if (!x) { x = { naam: g, ps: [] }; groepen.push(x); } x.ps.push(p);
+    });
+    groepen.sort(function (a, b) { return a.naam === OEFEN ? -1 : b.naam === OEFEN ? 1 : a.naam.localeCompare(b.naam, "nl"); });
+    fiches = [].concat.apply([], groepen.map(function (g) { return g.ps; }));
+    var lijstKnoppen = groepen.map(function (g) {
+      return '<div class="cf-groep"><h3>' + esc(g.naam) + '</h3><div class="chips">' + g.ps.map(function (p) { return '<a class="chip" href="#coach" data-spring="cf-' + p.id + '">' + esc(p.naam.split(":")[0]) + "</a>"; }).join("") + "</div></div>";
+    }).join("");
     return kop0 + '<div class="wb-balk"><h2>Coachfiches</h2><button type="button" class="btn" id="druk">Alles afdrukken</button><button type="button" class="btn donker" id="coach-uit">Afsluiten</button></div>' +
-      '<div class="vel wb-uitleg"><h2 class="banner">Voor de coaches</h2>' + (coachInhoud.algemeen || "") + '<div class="chips">' + lijstKnoppen + "</div></div>" +
-      '<div class="wb-bladen">' + fiches.map(function (p) { return '<div id="cf-' + p.id + '" style="width:100%;display:flex;justify-content:center">' + blad(p) + "</div>"; }).join("") + "</div></div>";
+      '<div class="vel wb-uitleg"><h2 class="banner">Voor de coaches</h2>' + (coachInhoud.algemeen || "") + lijstKnoppen + "</div>" +
+      '<div class="wb-bladen">' + groepen.map(function (g) {
+        return '<h2 class="cf-kop">' + esc(g.naam) + "</h2>" + g.ps.map(function (p) { return '<div id="cf-' + p.id + '" style="width:100%;display:flex;justify-content:center">' + blad(p) + "</div>"; }).join("");
+      }).join("") + "</div></div>";
   }
   function b64buf(s) { var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function laadCoachData() {
