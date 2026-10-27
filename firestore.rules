@@ -120,6 +120,13 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).removedKeys().size() == 0;
       allow delete: if coach();
     }
+    // aanpassingen aan de site: elke coach vraagt, de beheerder behandelt ze
+    match /wensen/{id} {
+      allow read: if coach();
+      allow create: if coach() && request.resource.data.door == mail() && request.resource.data.status == 'nieuw'
+                    && request.resource.data.tekst is string && request.resource.data.tekst.size() <= 2000;
+      allow update, delete: if beheerder();
+    }
     // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, de beheerder schrijft; coaches ook de zichtbaarheid en de vakleerkrachten
     match /instellingen/{id} {
       allow read: if coach() || (aangemeld() && id in ['zichtbaarheid', 'klassen', 'vakleerkrachten']);

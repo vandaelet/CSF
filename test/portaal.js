@@ -331,6 +331,18 @@ const DB = {
   d = await fakedb(p);
   check(d['logboeken/peeters.lien@svsl.be__' + keuze].status === 'geannuleerd' && d['logboeken/peeters.lien@svsl.be__' + ander].opstart.link === 'https://docs.google.com/document/d/abc' && p.url().endsWith('#logboek-' + ander), 'leerling wisselt van project; opstart en link gaan mee');
 
+  console.log('5e. Aanpassingen aan de site');
+  await aanmelden(p, '#p-wetenschappen', ELS); await p.waitForSelector('#lb-wens'); await p.click('#lb-wens'); await p.waitForSelector('#ws-form');
+  check((await p.inputValue('#ws-waar')).startsWith('Forensisch lab'), 'coach vraagt een aanpassing vanuit een projectpagina');
+  await p.click('#ws-form button[type=submit]'); check((await p.textContent('#ws-form .fb')).includes('Schrijf eerst'), 'lege vraag wordt geweigerd');
+  await p.fill('#ws-tekst', 'Typfout in blad 2: vingerafdukken.'); await p.check('#ws-dringend'); await p.click('#ws-form button[type=submit]'); await p.waitForSelector('[data-w]');
+  d = await fakedb(p); const W = Object.entries(d).find(([k]) => k.startsWith('wensen/'));
+  check(W && W[1].status === 'nieuw' && W[1].door === 'els@svsl.be' && W[1].dringend === true && (await p.textContent('[data-tab="wensen"]')).includes('(1)'), 'vraag bewaard en zichtbaar met het aantal');
+  check(await p.locator('[data-wbewaar]').count() === 0, 'een coach kan de status niet wijzigen');
+  await aanmelden(p, '#dashboard', TOM); await p.click('[data-tab="wensen"]'); await p.waitForSelector('[data-wbewaar]');
+  await p.selectOption('[data-wst]', 'klaar'); await p.fill('[data-want]', 'Verbeterd.'); await p.click('[data-wbewaar]'); await wacht(500);
+  d = await fakedb(p); check(d[W[0]].status === 'klaar' && d[W[0]].antwoord === 'Verbeterd.' && (await p.textContent('#db-inhoud')).includes('Geen aanpassingen'), 'beheerder zet de vraag op opgelost met een antwoord');
+
   console.log('5d. Testleerling van een coach');
   await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('[data-tab="test"]');
   await p.click('[data-tab="test"]'); await p.click('#test-start'); await p.waitForSelector('#jaar-1', { state: 'attached' });

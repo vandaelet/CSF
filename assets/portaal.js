@@ -767,7 +767,12 @@
       if (!document.body.contains(blok)) return;
       var vak = blok.firstChild;
       if (!gebruiker) { vak.innerHTML = "<p><b>Mijn logboek.</b> Meld je aan om je logboek in te vullen. Het stappenplan van elk lesuur verschijnt na je begin-logboek.</p>" + '<button type="button" class="btn" id="loginBtn">Aanmelden met je schoolaccount</button><span class="fb" id="login-fb"></span>'; koppelLogin(vak); return; }
-      if (rol.coach || rol.vak.length) { vak.innerHTML = '<p><b>Je bent aangemeld als leerkracht.</b> <a href="#dashboard">Open het dashboard</a>.</p>'; return; }
+      if (rol.coach) {
+        vak.innerHTML = '<p><b>Je bent aangemeld als coach.</b> <a href="#dashboard">Open het dashboard</a>. <button type="button" class="btn licht lb-klein" id="lb-wens">Vraag een aanpassing aan dit project</button></p>';
+        vak.querySelector("#lb-wens").addEventListener("click", function () { var t = app.querySelector('.ptab[aria-selected="true"]'); P.vraagAanpassing(p.naam.split(":")[0] + (t ? ", tabblad " + t.textContent.replace(/^[^A-Za-z0-9]+/, "") : "")); });
+        return;
+      }
+      if (rol.vak.length) { vak.innerHTML = '<p><b>Je bent aangemeld als leerkracht.</b> <a href="#dashboard">Open het dashboard</a>.</p>'; return; }
       if (!rol.leerling) { vak.innerHTML = "<p>Je staat nog niet op de CSF-lijst. Vraag je coach om je toe te voegen.</p>"; return; }
       var hu = lopend(MIJN.lbs);
       if (!hu || hu.project !== p.id) {
@@ -888,12 +893,12 @@
     var geweigerd = [], zacht = function (naam) { return lijst(naam).catch(function () { geweigerd.push(naam); return []; }); };
     var taken = rol.coach
       ? [lijst("leerlingen"), lijst("logboeken"), lijst("feedback"), lijst("coaches"), rol.beheerder ? opt(haal("instellingen/coachfiches")) : niets,
-         zacht("klaslijst"), zacht("aanmeldingen"), opt(haal("instellingen/schooljaar")), rol.beheerder ? opt(haal("instellingen/herinnering")) : niets, zacht("gezien"), zacht("vragen"), zacht("resultaten")]
-      : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), leeg, leeg, niets, leeg, leeg, niets, niets, leeg, leeg, leeg];
+         zacht("klaslijst"), zacht("aanmeldingen"), opt(haal("instellingen/schooljaar")), rol.beheerder ? opt(haal("instellingen/herinnering")) : niets, zacht("gezien"), zacht("vragen"), zacht("resultaten"), zacht("wensen")]
+      : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), leeg, leeg, niets, leeg, leeg, niets, niets, leeg, leeg, leeg, leeg];
     Promise.all(taken).then(function (r) {
       D.data = { leerlingen: r[0], logboeken: r[1], feedback: r[2], coaches: r[3], codeIngesteld: !!(r[4] && r[4].exists && r[4].exists() && r[4].data().code),
         klaslijst: r[5], aanmeldingen: r[6], schooljaar: r[7] && r[7].exists && r[7].exists() ? r[7].data().jaar || "" : "",
-        herinnering: r[8] && r[8].exists && r[8].exists() ? r[8].data() : { aan: false, vrij: VRIJ_2026 }, gezien: r[9], vragen: r[10], resultaten: r[11] || [] };
+        herinnering: r[8] && r[8].exists && r[8].exists() ? r[8].data() : { aan: false, vrij: VRIJ_2026 }, gezien: r[9], vragen: r[10], resultaten: r[11] || [], wensen: r[12] || [] };
       /* een coach ziet eerst zijn eigen leerlingen */
       if (!D.filterGezet) { D.filterGezet = true; if (rol.coach && r[0].some(function (l) { return l.coach === mail() && l.actief !== false; })) D.coachFilter = mail(); }
       if (!rol.coach) D.tab = "overzicht";
@@ -935,7 +940,7 @@
 
   function tekenDashboard(doel) {
     var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
-    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"], ["test", "Testleerling"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
+    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"], ["test", "Testleerling"], ["wensen", "Aanpassingen aan de site" + (function () { var n = D.data.wensen.filter(function (w) { return w.status === "nieuw" || w.status === "bezig"; }).length; return n ? " (" + n + ")" : ""; })()]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
     doel.innerHTML = (D.geweigerd && D.geweigerd.length ? '<div class="lb-melding rood"><b>De toegangsregels in Firebase zijn niet up-to-date.</b> ' + (rol.beheerder ? "Plak de volledige inhoud van <code>firestore.rules</code> uit GitHub in Firebase → Firestore Database → Rules en klik op Publish." : "Vraag de beheerder om de regels opnieuw te publiceren.") + ' <span class="hint">(geen toegang tot: ' + esc(D.geweigerd.join(", ")) + ")</span></div>" : "") +
       '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
       '</div><div id="db-inhoud"></div>';
@@ -949,6 +954,7 @@
     if (D.tab === "beheer" && rol.beheerder) return tabBeheer(z, doel);
     if (D.tab === "vak") return tabVak(z);
     if (D.tab === "test" && rol.coach) return tabTest(z, doel);
+    if (D.tab === "wensen" && rol.coach) return tabWensen(z, doel);
     tabOverzicht(z, doel);
   }
 
@@ -1413,6 +1419,65 @@
       var out = z.querySelector("#zicht-fb"); out.textContent = "Bezig met bewaren …";
       F.setDoc(ref("instellingen/zichtbaarheid"), nieuw).then(function () { d.zicht = nieuw; out.textContent = "Bewaard. Leerlingen zien dit bij hun volgende aanmelding."; })
         .catch(function (e) { out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
+    });
+  }
+
+  /* ---------- aanpassingen aan de site: coaches vragen, de beheerder werkt ze af ---------- */
+  var WSTATUS = { nieuw: ["oranje", "nieuw"], bezig: ["turkoois", "in behandeling"], klaar: ["groen", "opgelost"], nee: ["grijs", "niet mogelijk"] };
+  var WSOORT = ["Fout op de site", "Tekst of opdracht aanpassen", "Nieuwe functie", "Nieuw project", "Andere vraag"];
+  P.vraagAanpassing = function (waar) { try { sessionStorage.setItem("csf-wens-waar", waar || ""); } catch (e) {} D.tab = "wensen"; location.hash = "#dashboard"; };
+  function tabWensen(z, doel) {
+    var d = D.data, waar = ""; try { waar = sessionStorage.getItem("csf-wens-waar") || ""; sessionStorage.removeItem("csf-wens-waar"); } catch (e) {}
+    var filter = D.wensFilter || "open";
+    var lijstW = d.wensen.filter(function (w) { return filter === "alle" || (filter === "open" ? (w.status === "nieuw" || w.status === "bezig") : w.status === filter); })
+      .sort(function (a, b) { return (b.dringend ? 1 : 0) - (a.dringend ? 1 : 0) || String(a.datum).localeCompare(String(b.datum)); });
+    var open = d.wensen.filter(function (w) { return w.status === "nieuw" || w.status === "bezig"; });
+    z.innerHTML = "<h3>Vraag een aanpassing</h3><p class=\"hint\">Zie je een fout, wil je een tekst anders of heb je een idee? Noteer het hier. " + (rol.beheerder ? "Jij" : "De beheerder") + " werkt de vragen af op " + (rol.beheerder ? "je" : "zijn") + " eigen ritme. Je ziet hier de stand van je vraag.</p>" +
+      '<form id="ws-form" class="lb-form" novalidate><div class="lb-twee"><div class="lb-veld"><label for="ws-soort">Soort</label><select id="ws-soort">' + WSOORT.map(function (x) { return "<option>" + esc(x) + "</option>"; }).join("") + "</select></div>" +
+      '<div class="lb-veld"><label for="ws-waar">Waar? (project, pagina of tabblad)</label><input type="text" id="ws-waar" value="' + esc(waar) + '" placeholder="bv. Geocaching, werkbundel blad 3"></div></div>' +
+      veld("ws-tekst", "Wat moet er anders?", { lang: true, rijen: 4, verplicht: true, hint: "Schrijf zo concreet mogelijk: wat staat er nu, wat moet er komen?" }) +
+      '<label class="lb-chip" for="ws-dringend"><input type="checkbox" id="ws-dringend"><span>Dringend (leerlingen zitten vast)</span></label>' +
+      '<div class="lb-acties"><button type="submit" class="btn">Verstuur mijn vraag</button><span class="fb" aria-live="polite"></span></div></form>' +
+      "<h3>Gevraagde aanpassingen</h3>" +
+      '<div class="crij lb-filters"><label for="ws-filter" class="hint">Toon</label><select id="ws-filter">' + [["open", "Nog te doen"], ["klaar", "Opgelost"], ["nee", "Niet mogelijk"], ["alle", "Alles"]].map(function (f) { return '<option value="' + f[0] + '"' + (filter === f[0] ? " selected" : "") + ">" + f[1] + "</option>"; }).join("") + "</select>" +
+      (rol.beheerder && open.length ? '<button type="button" class="btn licht lb-klein" id="ws-kopieer">Kopieer de open vragen als lijst</button>' : "") + '<span class="fb" id="ws-kfb" aria-live="polite"></span></div>' +
+      (lijstW.length ? lijstW.map(function (w) {
+        var st = WSTATUS[w.status] || WSTATUS.nieuw;
+        return '<div class="lb-vraagkaart" data-w="' + esc(w._id) + '"><p><span class="lb-pill ' + st[0] + '">' + st[1] + "</span> " + (w.dringend ? '<span class="lb-pill rood">dringend</span> ' : "") + "<b>" + esc(w.soort) + "</b>" + (w.waar ? " · " + esc(w.waar) : "") +
+          ' <span class="hint">· ' + esc(w.naam || w.door) + " · " + datum(w.datum) + '</span></p><p class="lb-vraagtekst">' + esc(w.tekst).replace(/\n/g, "<br>") + "</p>" +
+          (w.antwoord ? '<p class="lb-antwoord"><b>Antwoord</b> · ' + datum(w.antwoordOp) + "<br>" + esc(w.antwoord).replace(/\n/g, "<br>") + "</p>" : "") +
+          (rol.beheerder ? '<div class="crij"><select data-wst="1" aria-label="Status">' + Object.keys(WSTATUS).map(function (k) { return '<option value="' + k + '"' + (w.status === k ? " selected" : "") + ">" + WSTATUS[k][1] + "</option>"; }).join("") +
+            '</select><input type="text" data-want="1" value="' + esc(w.antwoord || "") + '" placeholder="Antwoord of uitleg (mag leeg)" aria-label="Antwoord"><button type="button" class="btn lb-klein" data-wbewaar="1">Bewaar</button><button type="button" class="btn donker lb-klein" data-wwis="1">Verwijder</button><span class="fb" aria-live="polite"></span></div>' : "") + "</div>";
+      }).join("") : '<div class="lb-melding groen">Geen aanpassingen in deze lijst.</div>');
+    z.querySelector("#ws-filter").addEventListener("change", function (e) { D.wensFilter = e.target.value; tabWensen(z, doel); });
+    var f = z.querySelector("#ws-form");
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var out = f.querySelector(".fb"), tekst = f.querySelector("#ws-tekst").value.trim();
+      if (!tekst) { out.textContent = "Schrijf eerst wat er anders moet."; return; }
+      var w = { door: mail(), naam: rol.coachNaam || gebruiker.displayName || mail(), soort: f.querySelector("#ws-soort").value, waar: f.querySelector("#ws-waar").value.trim().slice(0, 200),
+        tekst: tekst.slice(0, 2000), dringend: f.querySelector("#ws-dringend").checked, datum: nu(), status: "nieuw", antwoord: "" };
+      out.textContent = "Bezig met versturen …";
+      var nid = nieuwId();
+      F.setDoc(ref("wensen/" + nid), w).then(function () { w._id = nid; d.wensen.push(w); D.wensFilter = "open"; tekenDashboard(doel); })
+        .catch(function (err) { out.textContent = "Versturen lukte niet. (" + (err.code || err.message) + ") Publiceer de nieuwste firestore.rules."; });
+    });
+    var kp = z.querySelector("#ws-kopieer");
+    if (kp) kp.addEventListener("click", function () {
+      var t = open.map(function (w, i) { return (i + 1) + ". [" + w.soort + (w.dringend ? ", dringend" : "") + "] " + (w.waar ? w.waar + ": " : "") + w.tekst.replace(/\s+/g, " ") + " (" + (w.naam || w.door) + ", " + datum(w.datum) + ")"; }).join("\n");
+      var ok = z.querySelector("#ws-kfb");
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { ok.textContent = "Gekopieerd: " + open.length + " vragen."; }, function () { ok.textContent = "Kopiëren lukte niet."; });
+    });
+    z.querySelectorAll("[data-w]").forEach(function (k) {
+      var id = k.dataset.w, out = k.querySelector(".crij .fb"), b = k.querySelector("[data-wbewaar]"), wis = k.querySelector("[data-wwis]");
+      if (b) b.addEventListener("click", function () {
+        var upd = { status: k.querySelector("[data-wst]").value, antwoord: k.querySelector("[data-want]").value.trim().slice(0, 1000), antwoordOp: nu() };
+        F.updateDoc(ref("wensen/" + id), upd).then(function () { lokaal("wensen", id, upd); tekenDashboard(doel); }).catch(function (err) { out.textContent = "Lukte niet. (" + (err.code || err.message) + ")"; });
+      });
+      if (wis) wis.addEventListener("click", function () {
+        if (!window.confirm("Deze vraag verwijderen?")) return;
+        F.deleteDoc(ref("wensen/" + id)).then(function () { d.wensen = d.wensen.filter(function (x) { return x._id !== id; }); tekenDashboard(doel); }).catch(function (err) { out.textContent = "Lukte niet. (" + (err.code || err.message) + ")"; });
+      });
     });
   }
 

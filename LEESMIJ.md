@@ -95,6 +95,14 @@ Elke projectpagina heeft genummerde tabbladen: **1. Projectfiche**, **2. Leerkaa
 - **Feedback** staat bovenaan, zowel bij de leerling als in het detail van het dashboard, met de status gelezen of nog niet gelezen. De leerling kan op elke feedback antwoorden. Een nieuw antwoord verschijnt in het overzicht als *nieuw antwoord op feedback*.
 - Lesuren staan met het laatste lesuur bovenaan; de opstart staat onderaan.
 
+## Aanpassingen aan de site vragen
+
+Coaches noteren fouten en wensen in Dashboard → **Aanpassingen aan de site** (of met de knop ‘Vraag een aanpassing aan dit project’ op een projectpagina). Ze kiezen een soort, waar het over gaat en of het dringend is. De beheerder zet de status op *in behandeling*, *opgelost* of *niet mogelijk* en kan een antwoord geven. ‘Kopieer de open vragen als lijst’ geeft een genummerde lijst om in één keer af te werken.
+
+## Projectlink en ander project
+
+Bovenaan het logboek staat de link naar het project. De leerling voegt hem toe of wijzigt hem op elk moment. Zolang het project niet afgerond is, kan de leerling er ook een **ander project** kiezen: zijn opstart en ingevulde lesuren gaan mee, het oude logboek krijgt de status geannuleerd.
+
 ## Testleerling voor coaches
 
 Elke coach heeft een eigen testleerling (`test--<e-mail van de coach>`). Open Dashboard → **Testleerling** → ‘Maak mijn testleerling en start’. Je ziet de site dan precies zoals een leerling: klas kiezen, project kiezen, leerkaarten, vragen, logboek, vragen aan de coach. Een oranje balk bovenaan wisselt naar ‘Bekijk als coach’ (detail van de testleerling in het overzicht) of stopt de testmodus. ‘Zet de testleerling terug op nul’ wist alle logboeken, antwoorden, feedback en vragen. De testleerling staat in het overzicht met het label *test*, komt niet in de export en krijgt geen herinneringsmails. Kies jezelf als vakleerkracht, dan ziet geen collega de testleerling.
