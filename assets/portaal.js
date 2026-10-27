@@ -392,7 +392,7 @@
   }
   function lesHtml(l) {
     var b = l.begin || {}, e = l.einde || {};
-    return '<div class="lb-les"><h4>Lesuur ' + l.nr + ' <span class="hint">· ' + datum(l.datum) + "</span>" + (l.einde ? "" : ' <span class="lb-pill oranje">einde ontbreekt</span>') + "</h4>" +
+    return '<div class="lb-les"><h4>Lesuur ' + l.nr + ' <span class="hint">· ' + datum(l.datum) + (l.ander ? " · bij het vorige project " + esc(String(l.ander).split(":")[0]) : "") + "</span>" + (l.einde ? "" : ' <span class="lb-pill oranje">einde ontbreekt</span>') + "</h4>" +
       tabel([rij("Stappen", b.stappen), rij("Voorziene tijd (min)", b.minuten), rij("Wat ga ik vandaag doen?", b.plan), rij("Vraag aan de coach (begin)", b.vraagCoach),
         l.leidraad ? rij("Leidraad (" + (l.leidraad.items || []).filter(function (x) { return x.af; }).length + "/" + (l.leidraad.items || []).length + " afgevinkt)", leidraadTekst(l.leidraad)) : "",
         rij("Wat weet ik van dit onderwerp?", e.weet), rij("Wat is de opdracht?", e.opdracht), rij("Mijn ideeën", e.ideeen), rij("Het beste idee", e.besteIdee),
@@ -419,7 +419,7 @@
       if (rest.length) return { les: prev.leidraad.les, items: rest };
       return { les: prev.leidraad.les + 1, items: leidraadItems(p, prev.leidraad.les + 1) };
     }
-    var k = vorige.length + 1;
+    var k = vorige.filter(function (x) { return !x.ander; }).length + 1;
     return { les: k, items: leidraadItems(p, k) };
   }
   function leidraadHtml(p, ld) {
@@ -539,6 +539,51 @@
     }).catch(function (e) { melding(doel, "Je logboek kon niet laden. (" + esc(e && e.message) + ")", "rood"); });
   }
 
+  /* ---------- bovenaan het logboek: link naar het project (altijd te wijzigen) en ander project kiezen ---------- */
+  function goedeLink(u) { return /^https?:\/\/\S+\.\S+/i.test(String(u || "").trim()); }
+  function linkBlok(lb, p) {
+    var link = lb.opstart && lb.opstart.link, kan = lb.status !== "afgerond" && !lb.goedgekeurd;
+    var opties = kan ? CSF.projecten.filter(function (q) { return q.id !== p.id && P.ziet(q) && !CSF.ui.isFiche(q) && !MIJN.lbs.some(function (x) { return x.project === q.id && x.status !== "geannuleerd"; }); })
+      .sort(function (a, b) { return (a.soort === "vak") - (b.soort === "vak") || CSF.ui.label(a).localeCompare(CSF.ui.label(b), "nl"); }) : [];
+    return '<div class="lb-projectlink">' +
+      (link ? '<p class="lb-linkrij"><span>🔗 <b>Link naar mijn project:</b> <a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(link) + ' ↗</a></span><button type="button" class="btn licht lb-klein" data-pl="wijzig">Wijzig de link</button></p>'
+        : '<p class="lb-linkrij"><span class="hint">Werk je online? Deel de link naar je project. Je coach ziet hem dan bovenaan je logboek.</span><button type="button" class="btn licht lb-klein" data-pl="wijzig">Voeg een link toe</button></p>') +
+      '<div class="lb-pl-form" hidden><div class="crij"><input type="url" id="pl-link" value="' + esc(link || "") + '" placeholder="https://…" aria-label="Link naar mijn project"><button type="button" class="btn lb-klein" data-pl="bewaar">Bewaar</button>' +
+      (link ? '<button type="button" class="btn donker lb-klein" data-pl="wis">Wis de link</button>' : "") + '</div><span class="hint">Zet de link openbaar of geef je coach toegang.</span></div>' +
+      (kan && opties.length ? '<details class="lb-ander"><summary>Ander project kiezen</summary><p class="hint">Je ingevulde lesuren en je opstart gaan mee naar het nieuwe project. Wat je bij dit project invulde (leerkaarten, vragen) blijft bij dit project.</p>' +
+        '<div class="crij"><select id="pl-ander" aria-label="Kies een ander project">' + opties.map(function (q) { return '<option value="' + esc(q.id) + '">' + esc((q.soort === "vak" ? CSF.ui.label(q) : "oefenproject") + " · " + q.naam.split(":")[0]) + "</option>"; }).join("") +
+        '</select><button type="button" class="btn lb-klein" data-pl="ander">Wissel naar dit project</button></div></details>' : "") +
+      '<span class="fb" aria-live="polite"></span></div>';
+  }
+  function linkKoppel(doel) {
+    if (doel.dataset.pk) return; doel.dataset.pk = "1";
+    doel.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-pl]"); if (!b || !doel._lb) return;
+      var c = doel._lb, blok = b.closest(".lb-projectlink"), out = blok.querySelector(".fb"), actie = b.dataset.pl;
+      if (actie === "wijzig") { var f = blok.querySelector(".lb-pl-form"); f.hidden = !f.hidden; if (!f.hidden) blok.querySelector("#pl-link").focus(); return; }
+      if (actie === "bewaar" || actie === "wis") {
+        var u = actie === "wis" ? "" : blok.querySelector("#pl-link").value.trim();
+        if (u && !goedeLink(u)) { out.textContent = "Dit is geen geldige link. Kopieer de volledige link, die begint met https://"; return; }
+        out.textContent = "Bezig met bewaren …";
+        F.updateDoc(ref("logboeken/" + c.id), { "opstart.link": u }).then(herteken).catch(function (err) { out.textContent = "Bewaren lukte niet. (" + (err.code || err.message) + ")"; });
+        return;
+      }
+      if (actie === "ander") {
+        var nid = blok.querySelector("#pl-ander").value, np = project(nid); if (!np) return;
+        if (!window.confirm("Wissel van ‘" + c.p.naam.split(":")[0] + "’ naar ‘" + np.naam.split(":")[0] + "’? Je ingevulde lesuren gaan mee.")) return;
+        out.textContent = "Bezig met wisselen …";
+        var L = rol.leerling, oud = c.lb;
+        var lessen = (oud.lessen || []).map(function (x) { var y = Object.assign({}, x); delete y.leidraad; if (!y.ander) y.ander = oud.projectnaam; return y; });
+        var data = { leerling: mail(), naam: oud.naam || wieNaam(), project: np.id, projectnaam: np.naam, gestart: oud.gestart || nu(), status: "bezig", goedgekeurd: false,
+          opstart: Object.assign({}, oud.opstart || {}, { gewisseldVan: oud.projectnaam, gewisseldOp: nu() }), lessen: lessen, kijkers: L.vakleerkrachten || [] };
+        F.setDoc(ref("logboeken/" + mail() + "__" + np.id), data)
+          .then(function () { return F.updateDoc(ref("logboeken/" + c.id), { status: "geannuleerd", gewisseldNaar: np.id }); })
+          .then(function () { MIJN.lbs = MIJN.lbs.filter(function (x) { return x.project !== c.p.id && x.project !== np.id; }).concat([data]); location.hash = "#logboek-" + np.id; })
+          .catch(function (err) { out.textContent = "Wisselen lukte niet. (" + (err.code || err.message) + ")"; });
+      }
+    });
+  }
+
   /* ---------- leerling: logboek van één project ---------- */
   function logboek(doel, pid) {
     var p = project(pid);
@@ -549,7 +594,7 @@
       vragenBlok(doel.querySelector("#lb-vragen"), p);
       doel = doel.querySelector("#lb-hoofd");
     }
-    reageerKoppel(doel);
+    reageerKoppel(doel); linkKoppel(doel);
     var id = mail() + "__" + pid;
     Promise.all([haal("logboeken/" + id), lijst("feedback", ["leerling", "==", mail()], ["gelezen", "==", false]), lijst("feedback", ["leerling", "==", mail()]), lijst("logboeken", ["leerling", "==", mail()]), P.laadRes(pid)]).then(function (r) {
       var lb = r[0].exists() ? r[0].data() : null, open = r[1], alle = r[2].filter(function (f) { return f.project === pid; });
@@ -558,6 +603,7 @@
       var kopje = '<p class="lb-projectnaam">' + esc(p.naam) + "</p>" + (lb && lb.status !== "geannuleerd" ? scoreHtml(p, r[4]) : "") +
         (alle.length && !open.length ? '<details class="lb-hist lb-fbboven" open><summary>Feedback van mijn coach (' + alle.length + ")</summary>" + feedbackLijst(alle, { leerling: true }) + "</details>" : "");
       if (lb && lb.status === "geannuleerd") lb = null;
+      if (lb) { doel._lb = { lb: lb, p: p, id: id }; kopje = '<p class="lb-projectnaam">' + esc(p.naam) + "</p>" + linkBlok(lb, p) + kopje.slice(('<p class="lb-projectnaam">' + esc(p.naam) + "</p>").length); }
       if (!lb && hu && hu.project !== pid) return melding(doel, "Je werkt al aan het project <b>" + esc(hu.projectnaam) + '</b>. Je kan pas een nieuw project kiezen als je coach dat project goedkeurt. <a href="#logboek">Naar mijn logboek</a>.', "oranje");
       if (!lb && !P.ziet(p)) return melding(doel, 'Dit project staat niet open voor jou. Kies een project in <a href="#logboek">Mijn logboek</a>.', "oranje");
       if (open.length) return feedbackPoort(doel, open, kopje);
@@ -606,7 +652,7 @@
         veld("motivatie", "Motivatie: ik koos voor dit project omdat …", { lang: true, verplicht: true }) +
         crit + keuze("evaluatieGelezen", "Afgesproken evaluatie", ["Ik heb de afgesproken evaluatie gelezen en genoteerd."], { meer: true, verplicht: true }) +
         veld("evaluatieExtra", "Extra afspraken met mijn coach", { lang: true, rijen: 2 }) +
-        veld("link", "Link naar mijn project (als je online werkt)", { hint: "Zet de link openbaar of geef je coach toegang." }),
+        veld("link", "Link naar mijn project (als je online werkt)", { hint: "Zet de link openbaar of geef je coach toegang. Je kan de link later nog toevoegen of wijzigen bovenaan je logboek." }),
         "Bewaar mijn opstart");
     var fo = doel.querySelector("#lb-opstart");
     momentenKoppel(fo);
@@ -1017,6 +1063,8 @@
         return '<details class="lb-hist" open><summary>' + esc(lb.projectnaam) + ' <span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span></summary>" +
           (rol.coach ? '<div class="lb-acties lb-goedkeur" data-lb="' + esc(lb.leerling + "__" + lb.project) + '">' + (lb.goedgekeurd ? '<span class="lb-pill groen">goedgekeurd door ' + esc(lb.goedgekeurdDoor || "") + " op " + datum(lb.goedgekeurdOp) + "</span>"
             : '<button type="button" class="btn lb-klein" data-keur="1">Keur project goed</button>') + ' <button type="button" class="btn donker lb-klein" data-annuleer="1">' + (lb.goedgekeurd ? "Haal uit portfolio" : "Annuleer: leerling kiest opnieuw") + '</button><span class="fb" aria-live="polite"></span></div>' : "") +
+          (lb.opstart && lb.opstart.link ? '<p class="lb-linkrij">🔗 <b>Link naar het project:</b> <a href="' + esc(lb.opstart.link) + '" target="_blank" rel="noopener">' + esc(lb.opstart.link) + " ↗</a></p>" : "") +
+          (lb.status === "geannuleerd" && lb.gewisseldNaar ? '<p class="hint">De leerling wisselde naar een ander project.</p>' : "") +
           (pr ? "<h4>Leerkaarten en vragen</h4>" + scoreHtml(pr, res) + antwoordenHtml(pr, res) : "") +
           (lb.afsluiting ? "<h4>Evaluatie en reflectie</h4>" + afsluitingHtml(lb.afsluiting) : "") +
           "<h4>Lesuren <span class=\"hint\">· laatste bovenaan</span></h4>" + ((lb.lessen || []).length ? (lb.lessen || []).slice().reverse().map(lesHtml).join("") : '<p class="hint">Nog geen lesuren.</p>') +

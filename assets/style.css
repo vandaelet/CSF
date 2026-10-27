@@ -425,3 +425,10 @@ footer { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justif
 .stapcheck li.ok { background:#eef9f0; border-color:#bfe3c6; }
 .stapcheck .sc-vink { width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:#FCAF17; color:#fff; font-weight:700; flex:none; }
 .stapcheck li.ok .sc-vink { background:#2e9e4f; }
+
+/* projectlink bovenaan het logboek */
+.lb-projectlink { margin:8px 0 14px; padding:10px 12px; background:#eef9f9; border:1px solid #cdeced; border-radius:8px; }
+.lb-linkrij { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; justify-content:space-between; margin:0; }
+.lb-linkrij a { word-break:break-all; }
+.lb-pl-form { margin-top:8px; } .lb-pl-form input { flex:1 1 260px; padding:.45rem .6rem; border:1px solid #cfd8dc; border-radius:8px; font:inherit; }
+.lb-ander { margin-top:8px; } .lb-ander summary { cursor:pointer; color:#1b8b8f; font-weight:600; }

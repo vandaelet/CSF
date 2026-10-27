@@ -321,6 +321,15 @@ const DB = {
   d = await fakedb(p); const NL = d['logboeken/peeters.lien@svsl.be__' + keuze];
   check(NL && JSON.stringify(NL.kijkers) === '["peeters.an@svsl.be","vanbesien.tim@svsl.be"]' && NL.opstart.vakleerkracht === 'An Peeters, Tim van Besien', 'nieuw project met vakleerkrachten uit de lijst');
   check(NL.opstart.momenten.length === 2 && NL.opstart.momenten[1].dag === 'DO' && NL.opstart.momenten[1].lesuur === '5' && NL.opstart.vak === 'wiskunde, Frans', 'met + een tweede les verlaten (andere dag, lesuur, vak en leerkracht)');
+  check((await p.textContent('.lb-projectlink')).includes('Voeg een link toe'), 'bovenaan het logboek: link toevoegen');
+  await p.click('[data-pl="wijzig"]'); await p.fill('#pl-link', 'mijn project'); await p.click('[data-pl="bewaar"]'); await wacht(200);
+  check((await p.textContent('.lb-projectlink .fb')).includes('geen geldige link'), 'ongeldige link wordt geweigerd');
+  await p.fill('#pl-link', 'https://docs.google.com/document/d/abc'); await p.click('[data-pl="bewaar"]'); await p.waitForSelector('.lb-projectlink a');
+  check((await p.textContent('.lb-projectlink')).includes('docs.google.com/document/d/abc') && (await fakedb(p))['logboeken/peeters.lien@svsl.be__' + keuze].opstart.link === 'https://docs.google.com/document/d/abc', 'link bewaard en bovenaan het logboek zichtbaar');
+  await p.click('.lb-ander summary'); const ander = await p.locator('#pl-ander option').first().getAttribute('value');
+  await p.click('[data-pl="ander"]'); await p.waitForSelector('.lb-projectlink a'); await wacht(500);
+  d = await fakedb(p);
+  check(d['logboeken/peeters.lien@svsl.be__' + keuze].status === 'geannuleerd' && d['logboeken/peeters.lien@svsl.be__' + ander].opstart.link === 'https://docs.google.com/document/d/abc' && p.url().endsWith('#logboek-' + ander), 'leerling wisselt van project; opstart en link gaan mee');
 
   console.log('5d. Testleerling van een coach');
   await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('[data-tab="test"]');
