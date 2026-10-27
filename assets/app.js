@@ -132,7 +132,7 @@
     return P.leerjaar && P.leerjaar() === 1;
   }
   function afsprakenKader() {
-    return '<div class="afspraken" id="verwacht"><div class="afspraken-kop">Eerst lezen: de afspraken van CSF</div><div class="afspraken-grid">' +
+    return '<div class="afspraken" id="verwacht"><div class="afspraken-kop">CSF-afspraken</div><div class="afspraken-grid">' +
       (CSF.verwachtingen || []).map(function (v) { return '<div><b>' + esc(v.titel) + "</b><ul>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("") + "</div></div>";
   }
   function vStart() {
