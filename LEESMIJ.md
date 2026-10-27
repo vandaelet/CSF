@@ -89,7 +89,7 @@ Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De 
 - **Overzicht** van alle leerlingen. Een ontbrekend einde-logboek staat in het **rood**. Klik op een leerling om het volledige logboek te lezen en feedback te geven.
 - **Kopieer overzicht voor Google Sheets** (plakken met Ctrl+V) of download het overzicht of alle lesuren als CSV.
 - **Klaslijsten**: vink aan wie CSF volgt en kies een coach (zie hieronder).
-- **CSF-leerlingen**: wijzig de coach en vul het e-mailadres van de vakleerkracht in. Dat kan je doorheen het jaar wijzigen. Een leerling die niet op de klaslijst staat, voeg je hier met de hand toe.
+- **CSF-leerlingen**: zet ‘Logboek elke les’ aan of uit (herinnering per e-mail), wijzig de coach en vul het e-mailadres van de vakleerkracht in. Dat kan je doorheen het jaar wijzigen. Een leerling die niet op de klaslijst staat, voeg je hier met de hand toe.
 - **Coachfiches**: een coach opent ze zonder code.
 
 **Vakleerkracht**: staat zijn e-mailadres bij een leerling, dan leest hij via het dashboard het logboek van die leerling (zonder iets te kunnen wijzigen).
@@ -111,6 +111,23 @@ De klaslijsten staan enkel in Firebase, nooit op GitHub. Zet een echte klaslijst
    - Vink daarna de nieuwe CSF-leerlingen aan.
 4. **Stoppen met CSF**: vink de leerling uit. Hij en zijn logboeken blijven bewaard, maar hij kan geen logboek meer invullen. Je kan hem later opnieuw aanvinken.
 5. **Aanmeldingen**: meldt een leerling zich aan met een adres dat niet op de CSF-lijst staat, dan verschijnt hij bovenaan in het oranje. Klik op de knop om hem met dat adres op CSF te zetten, of op **Negeer**.
+
+## Herinnering per e-mail
+
+Een leerling met **Logboek elke les** aangevinkt (tabblad CSF-leerlingen) krijgt een e-mail als hij na zijn CSF-les het logboek niet volledig invulde. De mail vertrekt elke schooldag rond 16 uur. De CSF-dag komt uit de opstart van zijn logboek. Op de Chromebook verschijnt de mail als melding van Gmail. In de site ziet hij bovendien een rode melding tot zijn logboek in orde is.
+
+Vink je ‘Logboek elke les’ uit, dan vult de leerling zijn logboek nog in. Hij krijgt dan geen herinnering en een ontbrekend logboek staat niet in het rood.
+
+**Eén keer installeren** (met het schoolaccount dat eigenaar is van het Firebase-project):
+1. Ga naar **script.google.com** en klik **Nieuw project**. Geef het de naam `CSF herinnering`.
+2. Klik links op het tandwiel (**Projectinstellingen**) en vink **appsscript.json-manifestbestand weergeven in editor** aan.
+3. Klik links op **Editor**. Open `Code.gs`, wis alles en plak de inhoud van `herinnering/Code.gs` uit GitHub.
+4. Open `appsscript.json`, wis alles en plak de inhoud van `herinnering/appsscript.json`. Klik op het diskette-icoon om te bewaren.
+5. Kies bovenaan de functie **proef** en klik **Uitvoeren**. Geef toestemming met je schoolaccount. Het logboek onderaan toont wie vandaag een herinnering zou krijgen. Er vertrekt nog geen mail.
+6. Kies de functie **installeer** en klik **Uitvoeren**. Nu vertrekt de herinnering elke dag rond 16 uur.
+7. Ga naar het dashboard → **Coaches en instellingen**. Vink **Herinneringen versturen** aan, controleer de vrije dagen en klik **Bewaar**.
+
+De mails vertrekken vanaf jouw schooladres. Vul elk schooljaar de vrije dagen en vakanties opnieuw in.
 
 ## Firebase koppelen (één keer)
 

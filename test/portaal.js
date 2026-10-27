@@ -134,6 +134,10 @@ const DB = {
   await p.waitForSelector('.lb-melding');
   check((await p.textContent('.lb-melding')).includes('schoolaccount'), 'ander domein geweigerd');
 
+  await aanmelden(p, '#logboek', { uid:'m', email:'mo@svsl.be', displayName:'Mo Claes' });
+  await p.waitForSelector('.lb-kaart');
+  check((await p.textContent('.lb-melding.rood')).includes('Vergeet niet tijdig je logboek aan te vullen'), 'leerling met ontbrekend logboek ziet de herinnering in de site');
+
   console.log('5b. Nieuw schooljaar, export met e-mail, aanmeldpoging en stoppen');
   await aanmelden(p, '#dashboard', TOM); await p.click('[data-tab="klaslijst"]'); await p.waitForSelector('#kl-bestand', { state: 'attached' });
   await p.click('details.lb-hist summary');
@@ -180,6 +184,17 @@ const DB = {
   await p.click('[data-tab="beheer"]'); await p.waitForSelector('#code-in');
   await p.fill('#coach-mail', 'kris@svsl.be'); await p.fill('#coach-naam', 'Van Landeghem K.'); await p.click('#coach-voegtoe'); await wacht(700);
   d = await fakedb(p); check(d['coaches/kris@svsl.be'] && d['coaches/kris@svsl.be'].naam === 'Van Landeghem K.', 'beheerder voegt een coach toe');
+  check(await p.inputValue('#her-vrij') !== '' && (await p.inputValue('#her-vrij')).includes('2026-12-21 2027-01-03'), 'vrije dagen 2026-2027 staan voorgesteld');
+  await p.fill('#her-vrij', 'kerstvakantie'); await p.click('#her-bewaar');
+  check((await p.textContent('#her-fb')).includes('begrijp ik niet'), 'onleesbare vrije dag wordt geweigerd');
+  await p.fill('#her-vrij', '2026-12-21 2027-01-03\n2026-11-11'); await p.check('#her-aan'); await p.click('#her-bewaar'); await wacht(600);
+  d = await fakedb(p); check(d['instellingen/herinnering'] && d['instellingen/herinnering'].aan === true && d['instellingen/herinnering'].vrij.includes('2026-11-11'), 'herinneringen aangezet met vrije dagen');
+  await p.click('[data-tab="leerlingen"]'); await p.waitForSelector('tr[data-ll="mo@svsl.be"]');
+  await p.uncheck('tr[data-ll="mo@svsl.be"] [data-her]'); await wacht(600);
+  d = await fakedb(p); check(d['leerlingen/mo@svsl.be'].herinnering === false, 'herinnering uitgevinkt voor Mo');
+  await p.click('[data-tab="overzicht"]'); await p.waitForSelector('.db-rij[data-ll="mo@svsl.be"]');
+  check(await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-pill.rood').count() === 0 && await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-pill.oranje').count() === 1, 'zonder herinnering staat een ontbrekend logboek niet in het rood');
+  await p.click('[data-tab="beheer"]'); await p.waitForSelector('#code-in');
   await p.fill('#code-in', 'verkeerde-code'); await p.click('#code-bewaar'); await wacht(2500);
   check((await p.textContent('#code-fb')).includes('opent de coachfiches niet'), 'verkeerde coachcode wordt niet bewaard');
   if (process.env.CSF_COACHCODE) {

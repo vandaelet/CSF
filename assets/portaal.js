@@ -225,12 +225,14 @@
     Promise.all([lijst("logboeken", ["leerling", "==", mail()]), lijst("feedback", ["leerling", "==", mail()], ["gelezen", "==", false])]).then(function (r) {
       var lbs = r[0], fbOpen = r[1].length;
       var kaarten = lbs.map(function (lb) {
-        var st = status(lb);
+        var st = status(lb, rol.leerling);
         return '<a class="lb-kaart" href="#logboek-' + esc(lb.project) + '"><b>' + esc(lb.projectnaam) + '</b><span class="hint">' + (lb.lessen || []).length + " lesuren · gestart op " + datum(lb.gestart) + '</span><span class="lb-pill ' + st[0] + '">' + st[1] + "</span></a>";
       }).join("");
       var opties = CSF.projecten.filter(function (p) { return !lbs.some(function (l) { return l.project === p.id; }); }).map(function (p) {
         return '<option value="' + esc(p.id) + '">' + esc((p.soort === "vak" ? CSF.ui.label(p) : "oefenproject") + " · " + p.naam.split(":")[0]) + "</option>"; }).join("");
-      doel.innerHTML = (fbOpen ? '<div class="lb-melding oranje">Je hebt ' + fbOpen + " nieuwe feedback van je coach. Open je project om ze te lezen.</div>" : "") +
+      var vergeten = lbs.some(function (lb) { return status(lb, rol.leerling)[0] === "rood"; });
+      doel.innerHTML = (vergeten ? '<div class="lb-melding rood"><b>Vergeet niet tijdig je logboek aan te vullen.</b> Vul eerst het einde van je vorige lesuur in.</div>' : "") +
+        (fbOpen ? '<div class="lb-melding oranje">Je hebt ' + fbOpen + " nieuwe feedback van je coach. Open je project om ze te lezen.</div>" : "") +
         "<p>Coach: <b>" + esc(rol.leerling.coachNaam || "nog niet toegewezen") + "</b> · Klas: <b>" + esc(rol.leerling.klas || "–") + "</b></p>" +
         "<h3>Mijn projecten</h3>" + (kaarten ? '<div class="lb-kaarten">' + kaarten + "</div>" : '<p class="hint">Je hebt nog geen project gestart.</p>') +
         '<h3>Start een nieuw project</h3><div class="crij"><select id="lb-nieuw" aria-label="Kies een project">' + opties + '</select><button type="button" class="btn" id="lb-start">Start het logboek</button></div>';
@@ -405,17 +407,20 @@
   };
 
   /* ---------- status van een logboek ---------- */
-  function status(lb) {
+  function status(lb, ll) {
     if (!lb) return ["grijs", "Nog niet gestart"];
     if (lb.status === "afgerond") return ["groen", "Afgerond"];
     var ls = lb.lessen || [], l = ls[ls.length - 1];
     if (!l) return ["turkoois", "Opstart ingevuld"];
-    if (!l.einde) return l.datum < vandaag() ? ["rood", "Einde-logboek ontbreekt (lesuur " + l.nr + ")"] : ["oranje", "Lesuur " + l.nr + " bezig"];
+    if (!l.einde) return l.datum >= vandaag() ? ["oranje", "Lesuur " + l.nr + " bezig"]
+      : ll && ll.herinnering === false ? ["oranje", "Einde-logboek niet ingevuld (lesuur " + l.nr + ")"] : ["rood", "Einde-logboek ontbreekt (lesuur " + l.nr + ")"];
     return ["groen", "In orde · " + ls.length + " lesuren"];
   }
   var RANG = { rood: 0, oranje: 1, turkoois: 2, groen: 3, grijs: 4 };
 
   /* ---------- dashboard ---------- */
+  /* vrije dagen schooljaar 2026-2027 (Vlaanderen), voorstel voor de herinneringen */
+  var VRIJ_2026 = "2026-11-02 2026-11-08\n2026-11-11\n2026-12-21 2027-01-03\n2027-02-08 2027-02-14\n2027-03-29 2027-04-11\n2027-05-06 2027-05-07\n2027-05-17\n2027-07-01 2027-08-31";
   var D = { tab: "overzicht", coachFilter: "alle", zoek: "", open: null, data: null };
   function dashboard(doel) {
     if (!rol.coach && !rol.vak.length) {
@@ -424,11 +429,12 @@
     var leeg = Promise.resolve([]), niets = Promise.resolve(null), opt = function (p) { return p.catch(function () { return null; }); };
     var taken = rol.coach
       ? [lijst("leerlingen"), lijst("logboeken"), lijst("feedback"), lijst("coaches"), rol.beheerder ? opt(haal("instellingen/coachfiches")) : niets,
-         lijst("klaslijst"), lijst("aanmeldingen"), opt(haal("instellingen/schooljaar"))]
+         lijst("klaslijst"), lijst("aanmeldingen"), opt(haal("instellingen/schooljaar")), rol.beheerder ? opt(haal("instellingen/herinnering")) : niets]
       : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), leeg, leeg, niets, leeg, leeg, niets];
     Promise.all(taken).then(function (r) {
       D.data = { leerlingen: r[0], logboeken: r[1], feedback: r[2], coaches: r[3], codeIngesteld: !!(r[4] && r[4].exists && r[4].exists() && r[4].data().code),
-        klaslijst: r[5], aanmeldingen: r[6], schooljaar: r[7] && r[7].exists && r[7].exists() ? r[7].data().jaar || "" : "" };
+        klaslijst: r[5], aanmeldingen: r[6], schooljaar: r[7] && r[7].exists && r[7].exists() ? r[7].data().jaar || "" : "",
+        herinnering: r[8] && r[8].exists && r[8].exists() ? r[8].data() : { aan: false, vrij: VRIJ_2026 } };
       if (!rol.coach) D.tab = "overzicht";
       tekenDashboard(doel);
     }).catch(function (e) { melding(doel, "Het dashboard kon niet laden. (" + esc(e && (e.code || e.message)) + ")", "rood"); });
@@ -440,7 +446,7 @@
     d.logboeken.forEach(function (lb) { (perLl[lb.leerling] = perLl[lb.leerling] || []).push(lb); });
     return d.leerlingen.filter(function (l) { return l.actief !== false; }).map(function (l) {
       var lbs = (perLl[l._id] || []).sort(function (a, b) { return (a.status === "afgerond") - (b.status === "afgerond") || String(b.gestart).localeCompare(String(a.gestart)); });
-      var hoofd = lbs[0] || null, st = status(hoofd);
+      var hoofd = lbs[0] || null, st = status(hoofd, l);
       var laatste = hoofd && (hoofd.lessen || []).length ? hoofd.lessen[hoofd.lessen.length - 1].datum : hoofd ? hoofd.gestart : "";
       var fbOpen = d.feedback.filter(function (f) { return f.leerling === l._id && !f.gelezen; }).length;
       return { l: l, lbs: lbs, hoofd: hoofd, st: st, laatste: laatste, fbOpen: fbOpen };
@@ -523,7 +529,7 @@
     var fb = d.feedback.filter(function (f) { return f.leerling === l._id; }).sort(function (a, b) { return String(b.datum).localeCompare(String(a.datum)); });
     el.innerHTML = '<div class="lb-detail"><h3>' + esc(l.naam || l._id) + ' <span class="hint">· ' + esc(l.klas || "") + " · coach: " + esc(l.coachNaam || "–") + "</span></h3>" +
       (lbs.length ? lbs.map(function (lb) {
-        var st = status(lb);
+        var st = status(lb, l);
         return '<details class="lb-hist" open><summary>' + esc(lb.projectnaam) + ' <span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span></summary>" +
           "<h4>Opstart</h4>" + opstartHtml(lb.opstart || {}) + ((lb.lessen || []).length ? (lb.lessen || []).slice().reverse().map(lesHtml).join("") : '<p class="hint">Nog geen lesuren.</p>') +
           (lb.afsluiting ? "<h4>Evaluatie en reflectie</h4>" + afsluitingHtml(lb.afsluiting) : "") + "</details>";
@@ -563,12 +569,12 @@
 
   function tabLeerlingen(z, doel) {
     var d = D.data, ll = d.leerlingen.filter(function (l) { return l.actief !== false; }).sort(function (a, b) { return String(a.klas + a.naam).localeCompare(String(b.klas + b.naam), "nl"); });
-    z.innerHTML = '<p class="hint">Wijs elke leerling toe aan een coach. Dit kan je doorheen het jaar wijzigen. Vul bij ‘Vakleerkracht’ het e-mailadres in van de leerkracht wiens les de leerling verlaat: die leerkracht kan dan het logboek lezen. Nieuwe CSF-leerlingen vink je aan in het tabblad <b>Klaslijsten</b>.</p>' +
-      '<div class="lb-tabelwrap"><table class="lb-overzicht lb-bewerk"><thead><tr><th>Leerling</th><th>Klas</th><th>Coach</th><th>Vakleerkracht (e-mail)</th><th></th></tr></thead><tbody>' +
+    z.innerHTML = '<p class="hint">Wijs elke leerling toe aan een coach. Dit kan je doorheen het jaar wijzigen. Vul bij ‘Vakleerkracht’ het e-mailadres in van de leerkracht wiens les de leerling verlaat: die leerkracht kan dan het logboek lezen. Nieuwe CSF-leerlingen vink je aan in het tabblad <b>Klaslijsten</b>.</p><p class="hint">Staat ‘Logboek elke les’ aangevinkt, dan krijgt de leerling een e-mail als hij na zijn CSF-les het logboek niet heeft ingevuld. Een ontbrekend logboek staat dan in het rood. Vink je het uit, dan vult de leerling zijn logboek nog in, maar krijgt hij geen herinnering.</p>' +
+      '<div class="lb-tabelwrap"><table class="lb-overzicht lb-bewerk"><thead><tr><th>Leerling</th><th>Klas</th><th>Coach</th><th>Vakleerkracht (e-mail)</th><th>Logboek elke les</th><th></th></tr></thead><tbody>' +
       (ll.length ? ll.map(function (l, i) {
         return '<tr data-ll="' + esc(l._id) + '"><td><input type="text" id="ll-naam-' + i + '" value="' + esc(l.naam || "") + '" aria-label="Naam"><br><span class="hint">' + esc(l._id) + '</span></td><td><input type="text" id="ll-klas-' + i + '" value="' + esc(l.klas || "") + '" aria-label="Klas" size="5"></td><td>' +
-          coachSelect("ll-coach-" + i, l.coach) + '</td><td><input type="text" id="ll-vak-' + i + '" value="' + esc((l.vakleerkrachten || []).join(", ")) + '" aria-label="Vakleerkracht" placeholder="naam@' + esc(DOMEIN) + '"></td><td class="lb-knoppen"><button type="button" class="btn lb-klein" data-bewaar="' + i + '">Bewaar</button> <button type="button" class="btn donker lb-klein" data-wis="' + i + '">Stopt met CSF</button></td></tr>';
-      }).join("") : '<tr><td colspan="5" class="hint">Nog geen leerlingen. Voeg ze hieronder toe.</td></tr>') + '</tbody></table></div><p class="fb" id="ll-fb" aria-live="polite"></p>' +
+          coachSelect("ll-coach-" + i, l.coach) + '</td><td><input type="text" id="ll-vak-' + i + '" value="' + esc((l.vakleerkrachten || []).join(", ")) + '" aria-label="Vakleerkracht" placeholder="naam@' + esc(DOMEIN) + '"></td><td><label class="lb-chip" for="ll-her-' + i + '"><input type="checkbox" id="ll-her-' + i + '" data-her="1"' + (l.herinnering === false ? "" : " checked") + '><span>herinnering</span></label></td><td class="lb-knoppen"><button type="button" class="btn lb-klein" data-bewaar="' + i + '">Bewaar</button> <button type="button" class="btn donker lb-klein" data-wis="' + i + '">Stopt met CSF</button></td></tr>';
+      }).join("") : '<tr><td colspan="6" class="hint">Nog geen leerlingen. Voeg ze hieronder toe.</td></tr>') + '</tbody></table></div><p class="fb" id="ll-fb" aria-live="polite"></p>' +
       '<h3>Leerling toevoegen</h3><div class="lb-twee">' + veld("nieuw-mail", "E-mailadres", { hint: "naam@" + DOMEIN }) + veld("nieuw-naam", "Naam") + "</div><div class=\"lb-twee\">" + veld("nieuw-klas", "Klas") +
       '<div class="lb-veld"><label for="nieuw-coach">Coach</label>' + coachSelect("nieuw-coach", "") + '</div></div><p class="hint">Enkel nodig voor een leerling die niet op de klaslijst staat.</p><button type="button" class="btn" id="nieuw-voegtoe">Voeg toe</button>';
     var fb = z.querySelector("#ll-fb");
@@ -578,6 +584,14 @@
         fb.textContent = "Bezig met bewaren …";
         bewaarLeerling(email, { naam: z.querySelector("#ll-naam-" + i).value.trim(), klas: z.querySelector("#ll-klas-" + i).value.trim(), coach: z.querySelector("#ll-coach-" + i).value, vakleerkrachten: mails(z.querySelector("#ll-vak-" + i).value) })
           .then(function () { fb.textContent = "Bewaard."; ververs(doel); }).catch(function (e) { fb.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
+      });
+    });
+    z.querySelectorAll("[data-her]").forEach(function (v) {
+      v.addEventListener("change", function () {
+        var email = v.closest("tr").dataset.ll;
+        F.setDoc(ref("leerlingen/" + email), { herinnering: v.checked }, { merge: true })
+          .then(function () { lokaal("leerlingen", email, { herinnering: v.checked }); fb.textContent = v.checked ? "Herinnering aan." : "Herinnering uit."; })
+          .catch(function (e) { fb.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
       });
     });
     z.querySelectorAll("[data-wis]").forEach(function (b) {
@@ -838,7 +852,11 @@
       '</tbody></table></div><div class="lb-twee">' + veld("coach-mail", "E-mailadres van de coach", { hint: "naam@" + DOMEIN }) + veld("coach-naam", "Naam zoals in het logboek", { hint: "bv. Van Daele T." }) +
       '</div><div class="lb-acties"><button type="button" class="btn" id="coach-voegtoe">Voeg coach toe</button><span class="fb" id="coach-fb2" aria-live="polite"></span></div>' +
       "<h3>Coachfiches</h3><p>" + (d.codeIngesteld ? '<span class="lb-pill groen">ingesteld</span> Coaches openen de coachfiches zonder code.' : '<span class="lb-pill oranje">nog niet ingesteld</span> Bewaar de coachcode één keer. Daarna openen coaches de coachfiches zonder code.') + "</p>" +
-      '<div class="crij"><input type="password" id="code-in" autocomplete="off" aria-label="Coachcode" placeholder="Coachcode"><button type="button" class="btn" id="code-bewaar">Bewaar de coachcode</button><span class="fb" id="code-fb" aria-live="polite"></span></div>';
+      '<div class="crij"><input type="password" id="code-in" autocomplete="off" aria-label="Coachcode" placeholder="Coachcode"><button type="button" class="btn" id="code-bewaar">Bewaar de coachcode</button><span class="fb" id="code-fb" aria-live="polite"></span></div>' +
+      "<h3>Herinnering per e-mail</h3><p class=\"hint\">Elke schooldag om 16 uur krijgt een leerling een e-mail als hij die dag CSF had en zijn logboek niet volledig invulde. Dat geldt enkel voor leerlingen met ‘Logboek elke les’ aangevinkt. Het script staat in de map <code>herinnering</code> (zie LEESMIJ.md).</p>" +
+      '<label class="lb-chip" for="her-aan"><input type="checkbox" id="her-aan"' + (d.herinnering.aan ? " checked" : "") + "><span>Herinneringen versturen</span></label>" +
+      '<div class="lb-veld"><label for="her-vrij">Vrije dagen en vakanties</label><textarea id="her-vrij" rows="5" placeholder="2026-11-02 2026-11-08&#10;2026-11-11">' + esc(d.herinnering.vrij || "") + '</textarea><span class="hint">Eén dag of periode per regel: een datum, of een begin- en einddatum. Op die dagen vertrekt geen herinnering.</span></div>' +
+      '<div class="lb-acties"><button type="button" class="btn" id="her-bewaar">Bewaar</button><span class="fb" id="her-fb" aria-live="polite"></span></div>';
     var fb = z.querySelector("#coach-fb2");
     z.querySelector("#coach-voegtoe").addEventListener("click", function () {
       var email = z.querySelector("#coach-mail").value.trim().toLowerCase(), naam = z.querySelector("#coach-naam").value.trim();
@@ -850,6 +868,14 @@
         if (!window.confirm("Verwijder coach " + b.dataset.coachwis + "?")) return;
         F.deleteDoc(ref("coaches/" + b.dataset.coachwis)).then(function () { ververs(doel); });
       });
+    });
+    z.querySelector("#her-bewaar").addEventListener("click", function () {
+      var out = z.querySelector("#her-fb"), vrij = z.querySelector("#her-vrij").value.trim();
+      var fout = vrij.split(/\n/).filter(function (r) { return r.trim() && !/^\s*\d{4}-\d{2}-\d{2}(\s+(t\/m|tot|-)?\s*\d{4}-\d{2}-\d{2})?\s*$/.test(r); });
+      if (fout.length) { out.textContent = "Deze regel begrijp ik niet: " + fout[0] + ". Schrijf bv. 2026-12-21 2027-01-03."; return; }
+      var data = { aan: z.querySelector("#her-aan").checked, vrij: vrij };
+      F.setDoc(ref("instellingen/herinnering"), data).then(function () { d.herinnering = data; out.textContent = "Bewaard."; })
+        .catch(function (e) { out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
     });
     z.querySelector("#code-bewaar").addEventListener("click", function () {
       var code = z.querySelector("#code-in").value.trim(), out = z.querySelector("#code-fb");
