@@ -235,9 +235,9 @@ const DB = {
   const MO = { uid:'m', email:'mo@svsl.be', displayName:'Mo Claes' };
   await p.evaluate(() => sessionStorage.removeItem('fake_user')); await p.goto(B + '#overzicht'); await p.reload(); await p.waitForSelector('#loginBtn');
   check(await p.locator('.kies').count() === 0, 'niet aangemeld: eerst aanmelden, geen projecten');
-  await aanmelden(p, '#start', { uid:'z', email:'zonderklas@svsl.be', displayName:'Zonder Klas' }); await p.waitForSelector('#klas-keuze');
-  await p.selectOption('#klas-keuze', { index: 1 }); await p.click('#lb-klas button[type=submit]'); await p.waitForSelector('.afspraken');
-  d = await fakedb(p); check(/^\d/.test(d['leerlingen/zonderklas@svsl.be'].klas || ''), 'leerling zonder klas duidt één keer zijn klas aan');
+  await aanmelden(p, '#start', { uid:'z', email:'zonderklas@svsl.be', displayName:'Zonder Klas' }); await p.waitForSelector('#jaar-1', { state: 'attached' });
+  await p.check('#jaar-1'); await p.selectOption('#klas-keuze', '1E'); await p.click('#lb-klas button[type=submit]'); await p.waitForSelector('.afspraken');
+  d = await fakedb(p); check(d['leerlingen/zonderklas@svsl.be'].klas === '1E', 'leerling kiest eerst het jaar, dan de klas (1D–1J of 2D–2J)');
   check((await p.textContent('.afspraken-kop')).trim() === 'CSF-afspraken', 'kader heet CSF-afspraken');
   await aanmelden(p, '#start', LIEN); await p.waitForSelector('.afspraken'); await wacht(500);
   check(await p.locator('.deur[href="#oefenproject"]').count() === 0 && await p.locator('.deur[href="#overzicht"]').count() === 1, '2e jaar (Lien, 2A): enkel alle projecten');
@@ -287,9 +287,9 @@ const DB = {
 
   console.log('5d. Testleerling van een coach');
   await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('[data-tab="test"]');
-  await p.click('[data-tab="test"]'); await p.click('#test-start'); await p.waitForSelector('#klas-keuze');
+  await p.click('[data-tab="test"]'); await p.click('#test-start'); await p.waitForSelector('#jaar-1', { state: 'attached' });
   check(await p.locator('#csf-testband').count() === 1, 'testmodus: oranje balk bovenaan');
-  await p.selectOption('#klas-keuze', { index: 1 }); await p.click('#lb-klas button[type=submit]'); await p.waitForSelector('.afspraken');
+  await p.check('#jaar-1'); await p.selectOption('#klas-keuze', '1E'); await p.click('#lb-klas button[type=submit]'); await p.waitForSelector('.afspraken');
   d = await fakedb(p); check(!!d['leerlingen/test--els@svsl.be'].klas && d['leerlingen/test--els@svsl.be'].test === true, 'testleerling kiest een klas zoals een leerling');
   await p.goto(B + '#logboek'); await p.waitForSelector('#lb-start'); await p.click('#lb-start'); await p.waitForSelector('#lb-opstart');
   await p.fill('#vak', 'wiskunde'); await p.fill('#vk-zoek', 'pee'); await p.click('.vk-hit'); await p.check('#dag-1'); await p.check('#lesuur-3'); await p.fill('#motivatie', 'Test.'); await p.check('#evaluatieGelezen-0');

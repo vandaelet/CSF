@@ -37,7 +37,8 @@ service cloud.firestore {
       allow write: if coach();
       // de leerling duidt één keer zelf zijn klas aan, en kiest zijn vakleerkrachten bij de start van een project
       allow update: if wie(email) && opLijst(email)
-                    && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['klas']) && resource.data.get('klas', '') == '')
+                    && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['klas']) && resource.data.get('klas', '') == ''
+                            && request.resource.data.klas.matches('^[12][D-J]$'))
                         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vakleerkrachten']));
     }
     // logboek: document <e-mail>__<project>; de leerling schrijft enkel zijn eigen logboek

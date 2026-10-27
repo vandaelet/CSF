@@ -23,6 +23,9 @@
   var rol = { beheerder: false, coach: false, leerling: null, vak: [], fout: null };
   /* instellingen die ook leerlingen lezen: zichtbaarheid, klassen, lijst van vakleerkrachten */
   var INST = { zicht: { jaar: {}, klas: {} }, klassen: [], vakleerkrachten: [] };
+  /* CSF-klassen waaruit een leerling kiest: eerst het jaar, dan de klas */
+  var LETTERS = ["D", "E", "F", "G", "H", "I", "J"];
+  var KLASSEN = { 1: LETTERS.map(function (l) { return "1" + l; }), 2: LETTERS.map(function (l) { return "2" + l; }) };
   var MIJN = { lbs: [], geladen: false };   /* logboeken van de aangemelde leerling */
   var RES = {};                             /* resultaten per project: leerkaarten, test, controle, quiz */
 
@@ -158,22 +161,31 @@
     app.innerHTML = '<div class="wrap">' + ui.kop() + '<div class="vel lb-vel"><h2 class="banner">CSF · aanmelden</h2><div id="lb-account"></div><div id="lb-inhoud">' + inh + "</div></div>" + ui.footer() + "</div>";
     koppelLogin(app); accountBalk();
     var kf = app.querySelector("#lb-klas");
+    if (kf) klasKoppel(kf);
     if (kf) kf.addEventListener("submit", function (e) {
       e.preventDefault();
       var k = (kf.querySelector("#klas-keuze").value || "").trim().toUpperCase(), fb = kf.querySelector(".fb");
-      if (!/^[1-6]/.test(k)) { fb.textContent = "Kies je klas."; return; }
+      if (!/^[12][D-J]$/.test(k)) { fb.textContent = kf.querySelector('input[name="klasjaar"]:checked') ? "Kies je klas." : "Kies eerst je jaar."; return; }
       fb.textContent = "Bezig met bewaren …";
       F.setDoc(ref("leerlingen/" + mail()), { klas: k }, { merge: true }).then(function () { rol.leerling.klas = k; herteken(); })
         .catch(function (err) { fb.textContent = "Bewaren lukte niet. (" + (err.code || err.message) + ")"; });
     });
   };
   function klasKiezen() {
-    var lijstK = INST.klassen.slice().sort(function (a, b) { return a.localeCompare(b, "nl", { numeric: true }); });
     return '<div class="lb-melding">Welkom, <b>' + esc(rol.leerling.naam || wieNaam()) + "</b>! Duid één keer je klas aan. Daarna open je de projecten en je logboek.</div>" +
-      '<form id="lb-klas" class="lb-form" novalidate><div class="lb-veld"><label for="klas-keuze">Mijn klas</label>' +
-      (lijstK.length ? '<select id="klas-keuze"><option value="">– kies je klas –</option>' + lijstK.map(function (k) { return '<option value="' + esc(k) + '">' + esc(k) + "</option>"; }).join("") + "</select>"
-        : '<input type="text" id="klas-keuze" placeholder="bv. 1B" maxlength="12">') +
-      '</div><div class="lb-acties"><button type="submit" class="btn">Bewaar mijn klas</button><span class="fb" aria-live="polite"></span></div></form>';
+      '<form id="lb-klas" class="lb-form" novalidate><fieldset class="lb-keuze"><legend>1. In welk jaar zit je?</legend><div class="lb-chips">' +
+      [1, 2].map(function (j) { return '<label class="lb-chip" for="jaar-' + j + '"><input type="radio" name="klasjaar" id="jaar-' + j + '" value="' + j + '"><span>' + (j === 1 ? "Eerste jaar" : "Tweede jaar") + "</span></label>"; }).join("") +
+      '</div></fieldset><div class="lb-veld" id="klas-stap" hidden><label for="klas-keuze">2. In welke klas zit je?</label><select id="klas-keuze"><option value="">– kies je klas –</option></select></div>' +
+      '<div class="lb-acties"><button type="submit" class="btn">Bewaar mijn klas</button><span class="fb" aria-live="polite"></span></div></form>';
+  }
+  function klasKoppel(kf) {
+    kf.querySelectorAll('input[name="klasjaar"]').forEach(function (r) {
+      r.addEventListener("change", function () {
+        var sel = kf.querySelector("#klas-keuze");
+        sel.innerHTML = '<option value="">– kies je klas –</option>' + KLASSEN[r.value].map(function (k) { return '<option value="' + k + '">' + k + "</option>"; }).join("");
+        kf.querySelector("#klas-stap").hidden = false; sel.focus();
+      });
+    });
   }
 
   /* ---------- resultaten: leerkaarten gelezen, test, controle en quiz (enkel toevoegen) ---------- */
@@ -1207,7 +1219,7 @@
   }
   function tabZicht(z, doel) {
     var d = D.data, zi = d.zicht || { jaar: {}, klas: {} };
-    var klassen = []; d.leerlingen.forEach(function (l) { if (l.actief !== false && l.klas && klassen.indexOf(l.klas) < 0) klassen.push(l.klas); });
+    var klassen = KLASSEN[1].concat(KLASSEN[2]); d.leerlingen.forEach(function (l) { if (l.actief !== false && l.klas && klassen.indexOf(l.klas) < 0) klassen.push(l.klas); });
     klassen.sort(function (a, b) { return a.localeCompare(b, "nl", { numeric: true }); });
     z.innerHTML = '<p class="hint">Bepaal wat leerlingen op de startpagina zien. Een instelling per leerling (tabblad CSF-leerlingen) gaat voor op de klas. De klas gaat voor op het jaar.</p>' +
       "<h3>Per jaar</h3>" + '<table class="lb-overzicht"><tr><th>1e jaar</th><td>' + zichtSelect("zj-1", zi.jaar[1] || "beide") + "</td></tr><tr><th>2e jaar</th><td>" + zichtSelect("zj-2", zi.jaar[2] || "alle") + "</td></tr></table>" +
