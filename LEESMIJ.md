@@ -89,6 +89,12 @@ Elke projectpagina heeft tabbladen: **1. Start: leerkaarten en oefeningen** (lee
 - **Goedkeuren.** Een afgewerkt project keurt de coach goed in het dashboard (klik op de leerling → ‘Keur project goed’). Pas dan kiest de leerling een nieuw project. Goedgekeurde projecten staan in zijn **portfolio**. Met ‘Annuleer’ wis je een logboek; de leerling kiest dan opnieuw.
 - **Resultaten.** Welke leerkaarten de leerling las en wat hij antwoordde bij ‘Test jezelf’, ‘Controleer je oplossing’ en de quizzen, komt in zijn logboek. De leerling kan een antwoord niet meer wijzigen. De coach ziet de scores en de antwoorden in het dashboard.
 
+## Leidraad en feedback in het logboek
+
+- Na het begin van een lesuur staat de **leidraad van vandaag** als afvinklijst in het logboek. Afvinken wordt meteen bewaard. Wat niet afgevinkt is (behalve de vaste logboekstappen), komt automatisch in de volgende les, met het label *nog af te werken*. Pas als alles af is, komt het volgende lesuur van de leidraad. De leerling kan het volgende lesuur ook zelf toevoegen (‘Alles af? Voeg lesuur … toe’). De coach ziet per lesuur wat afgevinkt is.
+- **Feedback** staat bovenaan, zowel bij de leerling als in het detail van het dashboard, met de status gelezen of nog niet gelezen. De leerling kan op elke feedback antwoorden. Een nieuw antwoord verschijnt in het overzicht als *nieuw antwoord op feedback*.
+- Lesuren staan met het laatste lesuur bovenaan; de opstart staat onderaan.
+
 ## Testleerling voor coaches
 
 Elke coach heeft een eigen testleerling (`test--<e-mail van de coach>`). Open Dashboard → **Testleerling** → ‘Maak mijn testleerling en start’. Je ziet de site dan precies zoals een leerling: klas kiezen, project kiezen, leerkaarten, vragen, logboek, vragen aan de coach. Een oranje balk bovenaan wisselt naar ‘Bekijk als coach’ (detail van de testleerling in het overzicht) of stopt de testmodus. ‘Zet de testleerling terug op nul’ wist alle logboeken, antwoorden, feedback en vragen. De testleerling staat in het overzicht met het label *test*, komt niet in de export en krijgt geen herinneringsmails. Kies jezelf als vakleerkracht, dan ziet geen collega de testleerling.

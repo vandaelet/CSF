@@ -95,6 +95,10 @@ const DB = {
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-begin');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
   check(await p.locator('.lb-stappen').count() === 1, 'stappenplan van lesuur 1 verschijnt na het begin-logboek');
+  check(await p.locator('.lb-leidraad [data-ld]').count() > 2, 'leidraad van lesuur 1 staat als afvinklijst in het logboek');
+  const afTekst = (await p.locator('.lb-vinklijst li:not(.lb) .w').first().textContent()).trim();
+  await p.locator('.lb-vinklijst li:not(.lb) input').first().check(); await wacht(400);
+  d = await fakedb(p); { const L1 = d['logboeken/peeters.lien@svsl.be__wetenschappen'].lessen[0].leidraad; check(L1.les === 1 && L1.items.filter(x => x.af).length === 1, 'afvinken wordt meteen bewaard'); }
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
   check(await p.locator('.les.lb-slot').count() === 2, 'projectpagina: lesuur 1 open, 2 en 3 vergrendeld');
   check((await p.textContent('.lb-projectblok')).includes('Logboek einde les invullen') && await p.locator('.lb-zweef').count() === 1, 'projectpagina: knop ‘Logboek einde les invullen’');
@@ -150,6 +154,10 @@ const DB = {
   check(VR.length === 1 && VR[0][1].open === true && VR[0][1].coach === 'els@svsl.be' && VR[0][1].project === 'wetenschappen', 'vraag aan de coach bewaard');
   await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
+  { const tk = await p.textContent('.lb-leidraad');
+    check(tk.includes('nog af te werken') && tk.includes('Lesuur 1') && !tk.includes(afTekst), 'wat niet afgevinkt is, schuift door naar de volgende les'); }
+  await p.click('#ld-meer'); await wacht(300);
+  check((await p.textContent('.lb-leidraad')).includes('Lesuur 2'), 'leerling voegt het volgende lesuur van de leidraad toe');
   await p.fill('#gemist', 'Breuken'); await p.fill('#ingehaald', 'Cursus gelezen.'); await p.check('#vragen-1'); await p.check('#geslaagd-0');
   await p.click('#lb-einde button[type=submit]'); await p.waitForSelector('#lb-naar-afsluiten');
   await p.click('#lb-naar-afsluiten'); await p.waitForSelector('#lb-afsluit');
