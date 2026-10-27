@@ -1067,6 +1067,7 @@
 
   /* op elke pagina: aanpassingen van coaches laden; is een leerling aangemeld, vraag dan naar het begin-logboek */
   if (P.actief) laad().then(function () { laadAanpassingen(); vraagBegin(); }).catch(function () {});
+  P.isCoach = function () { return !!(rol && (rol.coach || (rol.vak && rol.vak.length))); };
   /* app.js vult P.testCode in (ontsleutelen van coach/coachfiches.js) */
   P.testCode = function () { return Promise.resolve(true); };
 })();

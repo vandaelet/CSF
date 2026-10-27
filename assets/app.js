@@ -105,6 +105,23 @@
       '<span class="pj">' + sterren(p) + "<span>" + esc(p.tijd) + "</span>" + (isFiche(p) ? '<span class="status">werkbundel volgt</span>' : "") + "</span></a>";
   }
 
+  /* ---------- Wat wordt van mij verwacht? (één keer, op de startpagina) ---------- */
+  function verwachtBlok() {
+    return '<div class="vel" id="verwacht"><h2 class="banner">Wat wordt van mij verwacht?</h2><p class="hint">Deze afspraken gelden voor elk CSF-project.</p><div class="verwachtingen">' +
+      (CSF.verwachtingen || []).map(function (v) { return '<div class="verw"><h3>' + esc(v.titel) + "</h3><ol>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ol></div>"; }).join("") + "</div></div>";
+  }
+
+  /* ---------- Leerkaarten: eerst lezen, dan pas de werkbundel ---------- */
+  function gelezen(p) { try { return JSON.parse(store.get("lk-" + p.id) || "[]"); } catch (e) { return []; } }
+  function magAfdrukken(p) {
+    var n = (p.leerkaarten || []).length, g = gelezen(p);
+    if (!n) return true;
+    if (CSF.portaal && CSF.portaal.isCoach && CSF.portaal.isCoach()) return true;
+    try { if (sessionStorage.getItem("csf-coach")) return true; } catch (e) {}
+    for (var i = 0; i < n; i++) if (g.indexOf(i) < 0) return false;
+    return true;
+  }
+
   /* ---------- Weergaven ---------- */
   function vStart() {
     var oef = oefen();
@@ -114,7 +131,7 @@
       oef.map(function (p) { return '<span style="--h:var(' + kleur(p) + ')">' + esc(label(p)) + "</span>"; }).join("") + '</span><span class="pijl">Naar de oefenprojecten →</span></a>' +
       '<a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar · stap 2</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: projectfiche, lesplanning en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a>' +
       "</div>" + (CSF.portaal && CSF.portaal.actief ? '<p class="lb-start"><a class="btn" href="#logboek">Mijn logboek</a> <span class="hint">Meld je aan met je schoolaccount. Vul je logboek in bij het begin en op het einde van elk lesuur.</span></p>' : "") +
-      "</div>" + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
+      "</div>" + verwachtBlok() + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
   }
 
   function vOefen() {
@@ -160,7 +177,6 @@
       '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + "</div>" +
       (p.kort ? '<p class="lead">' + p.kort + "</p>" : "") +
-      '<div class="acties"><button type="button" class="btn donker" id="verwacht-knop">Wat wordt van mij verwacht?</button></div>' +
       '<div class="kiesuit"><div><b>Inhoud</b><span>' + (p.kort || "–") + "</span></div><div><b>Uitdagingsniveau</b><span>" + (sterren(p) || "–") + "</span></div><div><b>Voorziene tijd</b><span>" + esc(p.tijd) + "</span></div></div>" +
       '<div class="blok"><h3 class="banner">Over dit project</h3>' + (p.voorWie ? '<p><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") + "<p>" + (p.omschrijving || "") + "</p></div>" +
       '<div class="leeg"><b>De werkbundel van dit project volgt nog.</b><span>Wil je dit project kiezen? Bespreek het met je CSF-coach. Je coach bezorgt je het materiaal.</span></div>' +
@@ -197,25 +213,39 @@
       }).join("") + '</ol><label class="klaar" for="' + id + '"><input type="checkbox" id="' + id + '" data-p="' + p.id + '"> Dit lesuur is af</label></div>';
     }).join("");
     var links = (p.links || []).map(function (l) { return '<a class="btn licht" href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + " ↗</a>"; }).join("");
+    var lk = p.leerkaarten || [], g = gelezen(p), nGel = lk.filter(function (_, i) { return g.indexOf(i) >= 0; }).length, open = magAfdrukken(p);
+    var kaarten = lk.map(function (k, i) {
+      var ok = g.indexOf(i) >= 0;
+      return '<details class="kaart lk' + (ok ? " gelezen" : "") + '" data-i="' + i + '"><summary><span class="lk-vink" aria-hidden="true">' + (ok ? "✓" : (i + 1)) + "</span>" + k[0] + "</summary><p>" + k[1] + '</p><p class="lk-knop">' +
+        (ok ? '<span class="hint">✓ Gelezen</span>' : '<button type="button" class="btn licht lb-klein" data-lees="' + i + '">Ik heb deze leerkaart gelezen</button>') + "</p></details>";
+    }).join("");
+    var tabs = [["start", "1. Start: leerkaarten"], ["fiche", "Projectfiche"], ["leidraad", "Leidraad per lesuur"]]
+      .concat(quizzen || controle ? [["controle", "Controleer je oplossing"]] : []).concat([["evaluatie", "Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "Werkbundel"]]);
+    var actief = "start"; try { actief = sessionStorage.getItem("tab-" + p.id) || "start"; } catch (e) {}
+    if (!tabs.some(function (t) { return t[0] === actief; })) actief = "start";
+    var paneel = function (id, inhoud) { return '<div class="tabpaneel" id="tp-' + id + '" role="tabpanel"' + (actief === id ? "" : " hidden") + ">" + inhoud + "</div>"; };
     return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], terug, [label(p)]]) +
       '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + '<span class="tag">uitwerking op papier</span></div>' +
       '<p class="lead">' + p.kort + "</p>" + (p.voorWie ? '<p class="hint" style="margin-top:6px"><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") +
-      '<div class="acties"><button type="button" class="btn donker" id="verwacht-knop">Wat wordt van mij verwacht?</button><a class="btn" href="#wb-' + p.id + '">Bekijk en druk de werkbundel af</a>' + links + "</div>" +
       '<div id="logboek-blok"></div>' +
-      '<div class="voortgang" aria-live="polite"><div class="balk"><span></span></div><span class="vtekst"></span></div>' +
-      '<div class="grid2"><div class="blok"><h3 class="banner">Projectfiche</h3><dl>' +
-      "<dt>Omschrijving project</dt><dd>" + p.omschrijving + "</dd><dt>Doel van het project</dt><dd>" + p.doel + "</dd>" +
-      "<dt>Bereikte vaardigheden</dt><dd>" + lijst(p.bereikt) + "</dd><dt>Vaardigheden die ik moet toepassen</dt><dd>" + lijst(p.toepassen) + "</dd>" +
-      "<dt>Materiële benodigdheden</dt><dd>" + lijst(p.materiaal) + "</dd><dt>Waar kan ik de oplossing vinden?</dt><dd>" + p.oplossing + "</dd><dt>Eindproduct</dt><dd>" + p.product + "</dd></dl></div>" +
-      '<div><div class="blok"><h3 class="banner">Leerkaarten</h3><p class="hint">Nieuwe leerstof, buiten de gewone lessen.</p>' +
-      (p.leerkaarten || []).map(function (k) { return '<details class="kaart"><summary>' + k[0] + "</summary><p>" + k[1] + "</p></details>"; }).join("") + "</div>" +
-      (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") + "</div></div>" +
-      inv +
-      (quizzen ? '<div class="blok"><h3 class="banner">' + esc(p.quizTitel || "Quiz per fragment") + '</h3><p class="hint">' + (p.quizUitleg || "Bekijk het fragment. Beantwoord daarna de vragen. Je ziet meteen of je antwoord juist is.") + "</p>" + quizzen + "</div>" : "") +
-      (controle ? '<div class="blok"><h3 class="banner">Controleer je oplossing</h3><p class="hint">Schrijf je antwoord eerst in je werkbundel. Tik het daarna hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle + "</div>" : "") +
-      '<div class="blok"><h3 class="banner">Zo verloopt je project</h3><p class="hint">Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat een eenvoudig stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’.</p><div class="lessen">' + lessen + "</div></div>" +
-      '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>" +
+      '<div class="ptabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="ptab' + (t[0] === "werkbundel" && !open ? " slot" : "") + '" role="tab" data-tab="' + t[0] + '" aria-selected="' + (actief === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
+      paneel("start", '<div class="blok"><h3 class="banner">Start hier: lees de leerkaarten</h3><p>De leerkaarten geven je de nieuwe leerstof die je nodig hebt voor dit project. Open elke leerkaart. Lees ze aandachtig. Klik daarna op <b>‘Ik heb deze leerkaart gelezen’</b>. Pas als je alle leerkaarten gelezen hebt, kan je de werkbundel afdrukken.</p>' +
+        '<div class="lk-stand' + (open ? " klaar" : "") + '" aria-live="polite"><div class="balk"><span style="width:' + (lk.length ? 100 * nGel / lk.length : 100) + '%"></span></div><span>' + (lk.length ? nGel + " van " + lk.length + " leerkaarten gelezen" : "Dit project heeft geen leerkaarten.") + (open ? ' · <a href="#wb-' + p.id + '">Naar de werkbundel →</a>' : "") + "</span></div>" + kaarten + "</div>" +
+        (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><p class="hint">Begrijp je de leerkaarten? Test het hier.</p><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") +
+        (links ? '<div class="blok"><h3 class="banner">Handige links</h3><div class="acties">' + links + "</div></div>" : "")) +
+      paneel("fiche", '<div class="blok"><h3 class="banner">Projectfiche</h3><dl>' +
+        "<dt>Omschrijving project</dt><dd>" + p.omschrijving + "</dd><dt>Doel van het project</dt><dd>" + p.doel + "</dd>" +
+        "<dt>Bereikte vaardigheden</dt><dd>" + lijst(p.bereikt) + "</dd><dt>Vaardigheden die ik moet toepassen</dt><dd>" + lijst(p.toepassen) + "</dd>" +
+        "<dt>Materiële benodigdheden</dt><dd>" + lijst(p.materiaal) + "</dd><dt>Waar kan ik de oplossing vinden?</dt><dd>" + p.oplossing + "</dd><dt>Voorziene tijd</dt><dd>" + esc(p.tijd) + "</dd><dt>Eindproduct</dt><dd>" + p.product + "</dd></dl></div>") +
+      paneel("leidraad", inv + '<div class="blok"><h3 class="banner">Leidraad per lesuur</h3><p class="hint">Dit is een leidraad, geen strak schema. Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat hetzelfde stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’.</p>' +
+        '<div class="voortgang" aria-live="polite"><div class="balk"><span></span></div><span class="vtekst"></span></div><div class="lessen">' + lessen + "</div></div>") +
+      (quizzen || controle ? paneel("controle", (quizzen ? '<div class="blok"><h3 class="banner">' + esc(p.quizTitel || "Quiz per fragment") + '</h3><p class="hint">' + (p.quizUitleg || "Bekijk het fragment. Beantwoord daarna de vragen. Je ziet meteen of je antwoord juist is.") + "</p>" + quizzen + "</div>" : "") +
+        (controle ? '<div class="blok"><h3 class="banner">Controleer je oplossing</h3><p class="hint">Schrijf je antwoord eerst in je werkbundel. Tik het daarna hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle + "</div>" : "")) : "") +
+      paneel("evaluatie", '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>") +
+      paneel("werkbundel", '<div class="blok"><h3 class="banner">Werkbundel</h3>' + (open
+        ? '<p>Je las alle leerkaarten. Bekijk de werkbundel en druk hem af op A4.</p><p><a class="btn" href="#wb-' + p.id + '">🖨 Bekijk en druk de werkbundel af</a></p>'
+        : '<div class="lb-melding oranje">🔒 <b>Lees eerst alle leerkaarten.</b> Je las er ' + nGel + " van " + lk.length + '. Ga naar het tabblad <a href="#" data-naartab="start">1. Start: leerkaarten</a>.</div>') + "</div>") +
       '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
   }
 
@@ -313,21 +343,6 @@
 
   if (CSF.portaal) CSF.portaal.testCode = function (c) { return ontsleutel(c).then(function () { return true; }, function () { return false; }); };
 
-  /* ---------- Venster: Wat wordt van mij verwacht? ---------- */
-  function openVerwacht() {
-    var m = document.createElement("div");
-    m.className = "modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-labelledby", "verw-titel");
-    m.innerHTML = '<div class="modal-doos"><div class="modal-kop"><h2 id="verw-titel">Wat wordt van mij verwacht?</h2><button type="button" class="btn donker" id="verw-sluit">Sluiten</button></div><div class="modal-inhoud">' +
-      CSF.verwachtingen.map(function (v) { return '<div class="verw"><h3>' + esc(v.titel) + "</h3><ol>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ol></div>"; }).join("") + "</div></div>";
-    document.body.appendChild(m);
-    var sluit = function () { m.remove(); document.removeEventListener("keydown", esc2); };
-    var esc2 = function (e) { if (e.key === "Escape") sluit(); };
-    document.addEventListener("keydown", esc2);
-    m.addEventListener("click", function (e) { if (e.target === m) sluit(); });
-    m.querySelector("#verw-sluit").addEventListener("click", sluit);
-    m.querySelector("#verw-sluit").focus();
-  }
-
   /* ---------- Interactie na het tekenen ---------- */
   function koppel(view, p) {
     var app = document.getElementById("app");
@@ -349,7 +364,19 @@
     }
     if (view === "project") {
       if (CSF.portaal && CSF.portaal.project) CSF.portaal.project(p, app);
-      document.getElementById("verwacht-knop").addEventListener("click", openVerwacht);
+      var tabKies = function (id) {
+        app.querySelectorAll(".ptab").forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.tab === id)); });
+        app.querySelectorAll(".tabpaneel").forEach(function (x) { x.hidden = x.id !== "tp-" + id; });
+        try { sessionStorage.setItem("tab-" + p.id, id); } catch (e) {}
+      };
+      app.querySelectorAll(".ptab").forEach(function (b) { b.addEventListener("click", function () { tabKies(b.dataset.tab); }); });
+      app.querySelectorAll("[data-naartab]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); tabKies(a.dataset.naartab); }); });
+      app.querySelectorAll("[data-lees]").forEach(function (b) { b.addEventListener("click", function () {
+        var g = gelezen(p), i = Number(b.dataset.lees); if (g.indexOf(i) < 0) g.push(i);
+        store.set("lk-" + p.id, JSON.stringify(g));
+        var y = window.scrollY; teken(); window.scrollTo(0, y);
+        var vlg = app.querySelector('details.lk:not(.gelezen)'); if (vlg) vlg.open = true;
+      }); });
       app.querySelectorAll(".optie").forEach(function (o) { o.addEventListener("click", function () {
         var v = o.closest(".tvraag"); if (v.dataset.klaar) return; v.dataset.klaar = "1";
         var ok = o.dataset.ok === "1";
@@ -420,6 +447,7 @@
     var h = (location.hash || "#start").slice(1), app = document.getElementById("app"), p;
     if (h.indexOf("p-") === 0 && (p = zoek(h.slice(2)))) { app.innerHTML = vProject(p); koppel("project", p); document.title = p.naam + " · " + CSF.titel; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && isFiche(p)) { location.replace("#p-" + p.id); return; }
+    else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && !magAfdrukken(p)) { try { sessionStorage.setItem("tab-" + p.id, "werkbundel"); } catch (e) {} location.replace("#p-" + p.id); return; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3)))) { app.innerHTML = vWerkbundel(p); koppel("werkbundel", p); document.title = "Werkbundel · " + p.naam; }
     else if (h === "oefenproject") { app.innerHTML = vOefen(); koppel("oefen"); document.title = "Oefenproject · " + CSF.titel; }
     else if (h === "coach") {

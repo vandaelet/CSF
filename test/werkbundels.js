@@ -7,6 +7,7 @@ const { B, context, pagina } = require('./helpers');
   const ids = await p.evaluate(() => CSF.projecten.filter(x => x.werkbundel && x.werkbundel.length && x.status !== 'fiche').map(x => x.id));
   let ok = true;
   for (const id of ids) {
+    await p.evaluate(id => { const q = CSF.ui.zoek(id); localStorage.setItem('lk-' + id, JSON.stringify((q.leerkaarten || []).map((_, i) => i))); }, id);
     await p.goto(B + '#wb-' + id); await p.waitForSelector('.blad');
     const bladen = await p.locator('.blad').count();
     const pdf = (await p.pdf({ format: 'A4', printBackground: true })).toString('latin1');

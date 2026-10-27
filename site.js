@@ -14,7 +14,7 @@ window.CSF = {
 
   welkom: "Hier vind je alle CSF-projecten. Ben je nieuw in CSF? Start met een oefenproject. Daarin leer je de werking van een project. Kies daarna zelf uit alle projecten.",
 
-  /* De knop "Wat wordt van mij verwacht?" (bovenaan elk project).
+  /* "Wat wordt van mij verwacht?" staat één keer op de startpagina en geldt voor elk project.
      Bron: workshop CSF praktisch. */
   verwachtingen: [
     { titel: "Voor de les", punten: [

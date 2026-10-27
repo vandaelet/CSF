@@ -74,6 +74,12 @@ De coachfiches staan **versleuteld** op de site (AES-256). Zonder de code zijn z
 
 Wie de code vergeten is, kan niets terughalen uit het versleutelde bestand: versleutel dan opnieuw vanuit coach-bron.js met een nieuwe code.
 
+## Opbouw van een projectpagina
+
+Elke projectpagina heeft tabbladen: **1. Start: leerkaarten**, **Projectfiche**, **Leidraad per lesuur**, **Controleer je oplossing**, **Evaluatie** en **Werkbundel**.
+- De leerling opent elke leerkaart en klikt op ‘Ik heb deze leerkaart gelezen’. Pas als alle leerkaarten gelezen zijn, opent de werkbundel om af te drukken. Dat wordt per browser onthouden. Coaches (aangemeld of met de coachcode) kunnen de werkbundel altijd openen.
+- ‘Wat wordt van mij verwacht?’ staat één keer op de startpagina (pas de tekst aan in `site.js`, bij `verwachtingen`).
+
 ## Digitaal logboek en dashboard
 
 Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De projecten blijven openbaar; het logboek, het dashboard en de coachfiches vragen aanmelden.

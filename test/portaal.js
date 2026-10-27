@@ -288,9 +288,24 @@ const DB = {
   check((await q.textContent('.lb-melding')).includes('nog niet gekoppeld'), 'logboek meldt dat de koppeling ontbreekt');
   await q.goto(B + '#coach'); await q.waitForSelector('#coach-code');
   check(true, 'coachfiches vallen terug op de code');
-  await q.goto(B + '#p-wetenschappen'); await q.waitForSelector('.les'); await wacht(300);
+  await q.goto(B + '#p-wetenschappen'); await q.waitForSelector('.les', { state: 'attached' }); await wacht(300);
   check(await q.locator('.les.lb-slot').count() === 0, 'projectpagina blijft open zonder koppeling');
-  await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('details.quiz');
+  await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('.ptabs');
+  check(await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 1, 'werkbundel vergrendeld tot de leerkaarten gelezen zijn');
+  await q.goto(B + '#wb-engels-all-about-movies'); await wacht(500);
+  check(q.url().endsWith('#p-engels-all-about-movies') && await q.locator('#tp-werkbundel:not([hidden]) .lb-melding').count() === 1, 'rechtstreekse link naar de werkbundel brengt je terug naar de leerkaarten');
+  await q.click('.ptab[data-tab="start"]');
+  const nLk = await q.locator('details.lk').count();
+  for (let i = 0; i < nLk; i++) {
+    const d = q.locator('details.lk:not(.gelezen)').first();
+    if (!(await d.evaluate(e => e.open))) await d.locator('summary').click();
+    await d.locator('[data-lees]').click(); await wacht(100);
+  }
+  check(await q.locator('details.lk.gelezen').count() === nLk && await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 0, 'na alle leerkaarten is de werkbundel open');
+  await q.goto(B + '#wb-engels-all-about-movies'); await q.waitForSelector('.blad');
+  check(true, 'werkbundel kan nu afgedrukt worden');
+  await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('.ptabs');
+  await q.click('.ptab[data-tab="controle"]'); await q.waitForSelector('details.quiz');
   check(await q.locator('details.quiz').count() === 8, 'Engels: luisterquiz voor elk van de 8 clips');
   await q.click('details.quiz summary'); await q.click('details.quiz .optie[data-ok="1"]');
   check((await q.textContent('details.quiz .fb')).startsWith('Juist'), 'luisterquiz verbetert meteen');
