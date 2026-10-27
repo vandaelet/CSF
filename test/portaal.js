@@ -93,6 +93,8 @@ const DB = {
   check(await p.locator('.lb-stappen').count() === 1, 'stappenplan van lesuur 1 verschijnt na het begin-logboek');
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
   check(await p.locator('.les.lb-slot').count() === 2, 'projectpagina: lesuur 1 open, 2 en 3 vergrendeld');
+  check((await p.textContent('.lb-projectblok')).includes('Logboek einde les invullen') && await p.locator('.lb-zweef').count() === 1, 'projectpagina: knop ‘Logboek einde les invullen’');
+  check(await p.locator('.lb-modaal').count() === 0, 'geen vraag meer als het begin-logboek van vandaag ingevuld is');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-einde');
   await p.goto(B + '#logboek'); await p.waitForSelector('.lb-kaart');
   check((await p.textContent('.lb-kaart')).includes('bezig'), 'mijn logboek: project staat op bezig');
@@ -174,6 +176,25 @@ const DB = {
   await aanmelden(p, '#logboek', { uid:'m', email:'mo@svsl.be', displayName:'Mo Claes' });
   await p.waitForSelector('.lb-kaart');
   check((await p.textContent('.lb-melding.rood')).includes('Vergeet niet tijdig je logboek aan te vullen'), 'leerling met ontbrekend logboek ziet de herinnering in de site');
+
+  console.log('5a. Vraag bij het aanmelden: begin-logboek invullen?');
+  const KOBE = { uid:'k', email:'kobe@svsl.be', displayName:'Kobe Janssens' }, NOOR = { uid:'n', email:'noor@svsl.be', displayName:'Noor Mertens' };
+  const naarStart = async () => { await p.goto(B + '#start'); await p.reload(); };
+  await aanmelden(p, '#logboek', KOBE); await naarStart(); await p.waitForSelector('.lb-modaal');
+  check((await p.textContent('.lb-modaal')).includes('Taalbouwers'), 'leerling krijgt de vraag met zijn project');
+  await p.click('#lb-m-nee'); await wacht(500);
+  d = await fakedb(p);
+  const vandaag = await p.evaluate(() => { const x = new Date(); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); });
+  check(d['gezien/kobe@svsl.be'].antwoorden[vandaag] === 'nee' && d['gezien/kobe@svsl.be'].dagen.includes(vandaag), '‘Neen’ wordt bewaard');
+  await p.reload(); await wacht(1500);
+  check(await p.locator('.lb-modaal').count() === 0, 'dezelfde dag geen tweede keer de vraag');
+  await aanmelden(p, '#logboek', NOOR); await naarStart(); await p.waitForSelector('.lb-modaal');
+  await p.click('#lb-m-ja'); await p.waitForSelector('#lb-begin');
+  check(p.url().endsWith('#logboek-talen'), '‘Ja’ brengt de leerling naar zijn logboek');
+  await aanmelden(p, '#dashboard', TOM); await p.waitForSelector('.db-rij[data-ll="kobe@svsl.be"]');
+  await p.selectOption('#db-coach', 'alle'); await wacht(200);
+  await p.click('.db-rij[data-ll="kobe@svsl.be"]'); await p.waitForSelector('.lb-detail');
+  check((await p.textContent('.lb-detail')).includes('geen logboek nodig op'), 'coach ziet de dagen met ‘Neen’ in het logboek');
 
   console.log('5b. Nieuw schooljaar, export met e-mail, aanmeldpoging en stoppen');
   await aanmelden(p, '#dashboard', TOM); await p.click('[data-tab="klaslijst"]'); await p.waitForSelector('#kl-bestand', { state: 'attached' });

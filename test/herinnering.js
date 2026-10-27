@@ -19,6 +19,7 @@ check(JSON.stringify(r) === '["a@svsl.be","f@svsl.be"]', 'dinsdag: enkel wie CSF
 check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-27', 'DI').find(x => x.email === 'a@svsl.be').voornaam === 'Lien', 'voornaam uit ‘Familienaam Voornaam’');
 check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-29', 'DO').map(x => x.email).join() === 'd@svsl.be', 'donderdag: andere leerling');
 check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-31', '').length === 0, 'weekend: niemand');
+check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-27', 'DI', [{ _id:'a@svsl.be', antwoorden:{ '2026-10-27':'nee' } }]).map(x => x.email).join() === 'f@svsl.be', 'wie ‘Neen’ antwoordde, krijgt geen mail');
 const vrij = '2026-11-02 2026-11-08\n2026-11-11';
 check(ctx.isVrij('2026-11-05', vrij) && ctx.isVrij('2026-11-11', vrij) && !ctx.isVrij('2026-11-10', vrij), 'vrije dagen en vakanties');
 console.log(ok ? 'ALLES OK' : 'ER ZIJN FOUTEN'); process.exit(ok ? 0 : 1);

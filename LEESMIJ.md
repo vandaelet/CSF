@@ -79,6 +79,7 @@ Wie de code vergeten is, kan niets terughalen uit het versleutelde bestand: vers
 Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De projecten blijven openbaar; het logboek, het dashboard en de coachfiches vragen aanmelden.
 
 **Leerling** (`Mijn logboek`, of de knop op een projectpagina):
+0. **Bij het aanmelden** (één keer per dag): de vraag ‘Vul je logboek in’. ‘Ja, ik vul het nu in’ brengt de leerling naar zijn logboek. ‘Neen, ik moet mijn logboek niet aanvullen deze les’ wordt bewaard: de coach ziet die dagen in het logboek, en die dag volgt geen uitroepteken en geen herinneringsmail. Op de projectpagina staat tijdens een lesuur de knop ‘Logboek einde les invullen’.
 1. **Opstart** (één keer per project): klas, vak, vakleerkracht, dag, lesuur, voorziene tijd, motivatie en afgesproken evaluatie.
 2. **Begin van elk lesuur**: TASC-stappen en plan. Pas daarna verschijnt het stappenplan van dat lesuur. Op de projectpagina blijven de volgende lesuren vergrendeld.
 3. **Einde van elk lesuur**: in lesuur 1 de uitwerking en de evaluatie, daarna de ingehaalde leerstof. Een nieuw lesuur start pas als het einde van het vorige ingevuld is.

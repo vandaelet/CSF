@@ -49,7 +49,7 @@
       return new Promise(function (ok) {
         var eerste = true;
         A.onAuthStateChanged(auth, function (u) {
-          bepaalRol(u).then(function () { if (eerste) { eerste = false; ok(); } else herteken(); });
+          bepaalRol(u).then(function () { gevraagd = false; if (eerste) { eerste = false; ok(); } else { herteken(); vraagBegin(); } });
         });
       });
     });
@@ -388,7 +388,9 @@
         var lb = s.exists() ? s.data() : null, ls = lb ? lb.lessen || [] : [], laatste = ls[ls.length - 1];
         var tekst = !lb ? "Je logboek voor dit project is nog niet gestart." : lb.status === "afgerond" ? "Je project is afgerond." :
           laatste && !laatste.einde ? "Lesuur " + laatste.nr + " loopt. Vul op het einde van het lesuur je logboek in." : "Vul bij het begin van het lesuur je logboek in. Daarna verschijnt het stappenplan.";
-        vak.innerHTML = "<p><b>Mijn logboek.</b> " + tekst + '</p><a class="btn" href="#logboek-' + esc(p.id) + '">Open mijn logboek</a>';
+        var bezig = lb && lb.status !== "afgerond" && laatste && !laatste.einde;
+        vak.innerHTML = "<p><b>Mijn logboek.</b> " + tekst + "</p>" + (bezig ? '<a class="btn" href="#logboek-' + esc(p.id) + '">Logboek einde les invullen</a>' : '<a class="btn" href="#logboek-' + esc(p.id) + '">Open mijn logboek</a>');
+        if (bezig) { var z = document.createElement("a"); z.className = "btn lb-zweef"; z.href = "#logboek-" + p.id; z.textContent = "Logboek einde les invullen"; blok.appendChild(z); }
         if (lb && lb.status === "afgerond") return;
         app.querySelectorAll(".les[data-les]").forEach(function (el) {
           if (Number(el.dataset.les) > ls.length) {
@@ -413,6 +415,33 @@
       });
     }).catch(function () { el.innerHTML = '<div class="lb-melding rood">Het portaal kon niet laden.</div>'; });
   };
+
+  /* ---------- bij het aanmelden: vul je begin-logboek in? (één keer per dag) ---------- */
+  var gevraagd = false;
+  function vraagBegin() {
+    if (gevraagd || !rol.leerling || document.querySelector(".lb-modaal")) return;
+    if (/^#?logboek/.test(location.hash)) return;
+    gevraagd = true;
+    var dag = vandaag();
+    Promise.all([haal("gezien/" + mail()).catch(function () { return null; }), lijst("logboeken", ["leerling", "==", mail()])]).then(function (r) {
+      var g = r[0] && r[0].exists() ? r[0].data() : {}, lbs = r[1];
+      if ((g.antwoorden || {})[dag]) return;
+      var lopend = lbs.filter(function (lb) { return lb.status !== "afgerond"; });
+      if (lopend.some(function (lb) { return (lb.lessen || []).some(function (l) { return l.datum === dag; }); })) return;
+      var doel = lopend.length === 1 ? "#logboek-" + lopend[0].project : "#logboek";
+      var m = document.createElement("div");
+      m.className = "lb-modaal";
+      m.innerHTML = '<div class="lb-modaalvak" role="dialog" aria-modal="true" aria-labelledby="lb-mtitel"><h2 id="lb-mtitel">Vul je logboek in</h2>' +
+        "<p>Heb je vandaag CSF? Vul dan nu het begin van je logboek in." + (lopend.length === 1 ? " Je project: <b>" + esc(String(lopend[0].projectnaam).split(":")[0]) + "</b>." : "") + "</p>" +
+        '<div class="lb-acties"><button type="button" class="btn" id="lb-m-ja">Ja, ik vul het nu in</button><button type="button" class="btn licht" id="lb-m-nee">Neen, ik moet mijn logboek niet aanvullen deze les</button></div></div>';
+      document.body.appendChild(m);
+      var antw = function (w) { var a = {}; a[dag] = w; return F.setDoc(ref("gezien/" + mail()), { antwoorden: a, tijd: nu() }, { merge: true }).catch(function () {}); };
+      var sluit = function () { m.remove(); };
+      m.querySelector("#lb-m-ja").addEventListener("click", function () { antw("ja"); sluit(); location.hash = doel; });
+      m.querySelector("#lb-m-nee").addEventListener("click", function () { antw("nee"); sluit(); });
+      m.querySelector("#lb-m-ja").focus();
+    }).catch(function () {});
+  }
 
   /* ---------- leerling: vraag aan de coach (onderaan het projectvenster) ---------- */
   function vragenBlok(el, p) {
@@ -494,7 +523,8 @@
   /* ✓ = logboek in orde · ! = online geweest op de CSF-dag zonder logboek, of einde-logboek ontbreekt */
   var DAGCODE = ["", "MA", "DI", "WOE", "DO", "VRIJ", ""];
   function teken(l, lb, st) {
-    var g = (D.data.gezien.filter(function (x) { return x._id === l._id; })[0] || {}).dagen || [];
+    var gz = D.data.gezien.filter(function (x) { return x._id === l._id; })[0] || {}, nee = gz.antwoorden || {};
+    var g = (gz.dagen || []).filter(function (d) { return nee[d] !== "nee"; });
     var ls = lb ? lb.lessen || [] : [], laatste = ls[ls.length - 1], csfDag = lb && lb.opstart ? lb.opstart.dag : "";
     var sinds = lb ? String(lb.gestart || "").slice(0, 10) : "", datums = ls.map(function (x) { return x.datum; });
     var bezoek = g.filter(function (d) { return d >= sinds && (!csfDag || DAGCODE[new Date(d + "T12:00:00").getDay()] === csfDag); }).sort().pop();
@@ -613,7 +643,10 @@
     var d = D.data, l = d.leerlingen.filter(function (x) { return x._id === D.open; })[0]; if (!l) return;
     var lbs = d.logboeken.filter(function (lb) { return lb.leerling === l._id; });
     var fb = d.feedback.filter(function (f) { return f.leerling === l._id; }).sort(function (a, b) { return String(b.datum).localeCompare(String(a.datum)); });
+    var ant = (d.gezien.filter(function (x) { return x._id === l._id; })[0] || {}).antwoorden || {};
+    var neeDagen = Object.keys(ant).filter(function (k) { return ant[k] === "nee"; }).sort();
     el.innerHTML = '<div class="lb-detail"><h3>' + esc(l.naam || l._id) + ' <span class="hint">· ' + esc(l.klas || "") + " · coach: " + esc(l.coachNaam || "–") + "</span></h3>" +
+      (neeDagen.length ? '<p class="hint">Volgens de leerling geen logboek nodig op: ' + neeDagen.map(datum).join(", ") + ".</p>" : "") +
       (lbs.length ? lbs.map(function (lb) {
         var st = status(lb, l);
         return '<details class="lb-hist" open><summary>' + esc(lb.projectnaam) + ' <span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span></summary>" +
@@ -974,6 +1007,8 @@
       }).catch(function (e) { out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
     });
   }
+  /* op elke pagina: is een leerling aangemeld, vraag dan naar het begin-logboek */
+  if (P.actief) laad().then(vraagBegin).catch(function () {});
   /* app.js vult P.testCode in (ontsleutelen van coach/coachfiches.js) */
   P.testCode = function () { return Promise.resolve(true); };
 })();

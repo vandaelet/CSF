@@ -26,7 +26,7 @@ function stuurHerinneringen(enkelTonen) {
   var inst = haalDoc("instellingen/herinnering") || {};
   if (inst.aan !== true && enkelTonen !== true) { Logger.log("Herinneringen staan uit in het dashboard."); return; }
   if (isVrij(vandaag, inst.vrij)) { Logger.log(vandaag + " is een vrije dag."); return; }
-  var lijst = wieKrijgtHerinnering(haalAlles("leerlingen"), haalAlles("logboeken"), vandaag, DAGCODES[weekdag]);
+  var lijst = wieKrijgtHerinnering(haalAlles("leerlingen"), haalAlles("logboeken"), vandaag, DAGCODES[weekdag], haalAlles("gezien"));
   lijst.forEach(function (x) {
     if (enkelTonen === true) { Logger.log("zou mailen naar " + x.email + " (" + x.projectnaam + ")"); return; }
     MailApp.sendEmail({
@@ -41,11 +41,12 @@ function stuurHerinneringen(enkelTonen) {
 }
 
 /* Wie krijgt vandaag een herinnering? (zuivere functie, ook getest in test/herinnering.js) */
-function wieKrijgtHerinnering(leerlingen, logboeken, vandaag, dagcode) {
+function wieKrijgtHerinnering(leerlingen, logboeken, vandaag, dagcode, gezien) {
   if (!dagcode) return [];
-  var uit = [];
+  var uit = [], nee = {};
+  (gezien || []).forEach(function (g) { if (g.antwoorden && g.antwoorden[vandaag] === "nee") nee[g._id] = true; });
   leerlingen.forEach(function (l) {
-    if (l.actief === false || l.herinnering === false) return;
+    if (l.actief === false || l.herinnering === false || nee[l._id]) return;   // ‘Neen, ik moet mijn logboek niet aanvullen’
     var lopend = logboeken.filter(function (lb) { return lb.leerling === l._id && lb.status !== "afgerond"; });
     var vandaagCsf = lopend.filter(function (lb) { return lb.opstart && lb.opstart.dag === dagcode; });
     if (!vandaagCsf.length) return;

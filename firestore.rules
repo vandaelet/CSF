@@ -86,11 +86,11 @@ service cloud.firestore {
                         && request.resource.data.gelezen == true);
       allow delete: if coach();
     }
-    // op welke dagen een leerling online was (voor het uitroepteken in het dashboard)
+    // op welke dagen een leerling online was en wat hij antwoordde op ‘Vul je logboek in’ (ja/nee per dag)
     match /gezien/{email} {
-      allow read: if coach();
+      allow read: if coach() || (aangemeld() && mail() == email);
       allow create, update: if aangemeld() && mail() == email
-                            && request.resource.data.keys().hasOnly(['tijd', 'dagen']);
+                            && request.resource.data.keys().hasOnly(['tijd', 'dagen', 'antwoorden']);
     }
     // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, enkel de beheerder schrijft
     match /instellingen/{id} {
