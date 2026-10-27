@@ -130,6 +130,17 @@ const DB = {
   await p.check('.lb-gelezen'); await p.click('#lb-bevestig'); await p.waitForSelector('#lb-begin');
   d = await fakedb(p);
   check(Object.entries(d).filter(([k]) => k.startsWith('feedback/'))[0][1].gelezen === true, 'feedback als gelezen bewaard');
+  check(await p.evaluate(() => { const f = document.querySelector('.lb-fbboven'), b = document.querySelector('#lb-begin'); return !!f && !!b && !!(f.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING); }), 'feedback staat bovenaan het logboek');
+  check((await p.textContent('.lb-fbboven')).includes('gelezen op'), 'leerling ziet dat de feedback gelezen is');
+  await p.click('.lb-antwoordveld summary'); await p.fill('.lb-antwoordveld textarea', 'Dank u, ik noteer ze vanaf nu.'); await p.click('[data-reageer]'); await p.waitForSelector('.lb-reactie');
+  d = await fakedb(p); const FBR = Object.entries(d).filter(([k]) => k.startsWith('feedback/'))[0][1];
+  check(FBR.reactie === 'Dank u, ik noteer ze vanaf nu.' && FBR.reactieGezien === false, 'leerling antwoordt op de feedback');
+  await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('.db-rij[data-ll="peeters.lien@svsl.be"]');
+  check((await p.textContent('.db-rij[data-ll="peeters.lien@svsl.be"]')).includes('nieuw antwoord'), 'coach ziet in het overzicht dat de leerling antwoordde');
+  await p.click('.db-rij[data-ll="peeters.lien@svsl.be"]'); await p.waitForSelector('.lb-detail .lb-fbboven');
+  check((await p.textContent('.lb-detail .lb-fbboven')).includes('Dank u, ik noteer') && (await p.textContent('.lb-fbsam')).includes('1 gelezen'), 'coach ziet bovenaan: feedback gelezen en het antwoord');
+  await wacht(400); d = await fakedb(p); check(Object.entries(d).filter(([k]) => k.startsWith('feedback/'))[0][1].reactieGezien === true, 'antwoord als gezien gemarkeerd');
+  await aanmelden(p, '#logboek-wetenschappen', LIEN); await p.waitForSelector('#lb-begin');
   await p.waitForSelector('#lb-vraag');
   await p.click('#lb-vraag button[type=submit]');
   check((await p.textContent('#lb-vraag .fb')).includes('Typ eerst'), 'lege vraag wordt geweigerd');

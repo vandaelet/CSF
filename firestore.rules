@@ -59,14 +59,16 @@ service cloud.firestore {
                         && request.resource.data.get('goedgekeurd', false) == resource.data.get('goedgekeurd', false));
       allow delete: if coach();
     }
-    // feedback van de coach; de leerling mag enkel bevestigen dat hij ze gelezen heeft
+    // feedback van de coach; de leerling bevestigt dat hij ze gelezen heeft en mag antwoorden
     match /feedback/{id} {
       allow read: if coach() || (aangemeld() && resource.data.leerling == mail());
       allow create: if coach() && request.resource.data.coach == mail() && request.resource.data.gelezen == false;
       allow update: if coach()
                     || (aangemeld() && resource.data.leerling == mail()
-                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gelezen', 'gelezenOp'])
-                        && request.resource.data.gelezen == true);
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gelezen', 'gelezenOp', 'reactie', 'reactieOp', 'reactieGezien'])
+                        && request.resource.data.gelezen == true
+                        && (!('reactie' in request.resource.data) || (request.resource.data.reactie is string && request.resource.data.reactie.size() <= 1000))
+                        && request.resource.data.get('reactieGezien', false) == false);
       allow delete: if coach();
     }
     // klaslijsten van de school: enkel coaches lezen en vinken aan (nooit op GitHub)
