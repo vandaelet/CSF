@@ -35,6 +35,7 @@ CSF.lijst = [
   "projecten/vakken/nederlands-gezelschapsspel.js",
   "projecten/vakken/nederlands-start-to-podcast.js",
   "projecten/vakken/nederlands-schimmige-schaduwen.js",
+  "projecten/vakken/nederlands-er-was-eens.js",
   "projecten/vakken/stem-sport-en-wetenschap-hand-in-hand.js",
   "projecten/vakken/techniek-spintronics-mechanische-circuit.js",
   "projecten/vakken/techniek-kraak-de-knikkercode.js",
