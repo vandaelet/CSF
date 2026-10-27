@@ -278,17 +278,28 @@
     var f = plat(vkFam(v));
     return f.indexOf(q) === 0 || f.replace(/\s/g, "").indexOf(q.replace(/\s/g, "")) === 0 || f.split(" ").some(function (w) { return w.indexOf(q) === 0; });
   }
-  function vkZoeker(label) {
-    return '<fieldset class="lb-keuze vk-zoeker" data-verplicht="1"><legend>' + label + ' <span class="lb-ster">*</span></legend>' +
-      '<input type="text" id="vk-zoek" autocomplete="off" placeholder="Typ de familienaam" aria-label="Zoek een leerkracht op familienaam">' +
-      '<div class="vk-resultaten lb-chips" id="vk-resultaten" aria-live="polite"></div><div class="lb-chips" id="vk-gekozen"></div></fieldset>';
+  /* lessen die de leerling verlaat: dag, lesuur, vak en leerkracht; met + voegt hij er een les bij */
+  function optHtml(lijstO, leeg) { return '<option value="">' + leeg + "</option>" + lijstO.map(function (x) { return '<option value="' + esc(x) + '">' + esc(x) + "</option>"; }).join(""); }
+  function momentRij(i) {
+    var metLijst = INST.vakleerkrachten.length;
+    return '<div class="moment" data-i="' + i + '"><div class="moment-kop"><b>Les ' + (i + 1) + "</b>" + (i ? '<button type="button" class="lb-klein moment-weg" aria-label="Verwijder les ' + (i + 1) + '">✕ verwijder</button>' : "") + "</div>" +
+      '<div class="moment-velden"><div class="lb-veld"><label for="m-dag-' + i + '">Dag</label><select id="m-dag-' + i + '" class="m-dag" required>' + optHtml(DAGEN, "– dag –") + "</select></div>" +
+      '<div class="lb-veld"><label for="m-uur-' + i + '">Lesuur</label><select id="m-uur-' + i + '" class="m-uur" required>' + optHtml(LESUREN, "– lesuur –") + "</select></div>" +
+      '<div class="lb-veld"><label for="m-vak-' + i + '">Vak</label><input type="text" id="m-vak-' + i + '" class="m-vak" required></div></div>' +
+      (metLijst ? '<fieldset class="lb-keuze vk-zoeker" data-verplicht="1"><legend>Leerkracht</legend><input type="text" id="m-zoek-' + i + '" class="vk-zoek" autocomplete="off" placeholder="Typ de familienaam" aria-label="Zoek de leerkracht van les ' + (i + 1) + ' op familienaam">' +
+        '<div class="vk-resultaten lb-chips" aria-live="polite"></div><div class="lb-chips vk-keuze"></div></fieldset>'
+        : '<div class="lb-veld"><label for="m-lk-' + i + '">Leerkracht (mevrouw/meneer)</label><input type="text" id="m-lk-' + i + '" class="m-lk" required></div>') + "</div>";
   }
-  function vkKoppel(form) {
-    var zoek = form.querySelector("#vk-zoek"), res = form.querySelector("#vk-resultaten"), gek = form.querySelector("#vk-gekozen");
-    if (!zoek) return;
-    function gekozen() { return [].map.call(gek.querySelectorAll("input"), function (i) { return i.value; }); }
+  function momentenBlok() {
+    return '<div class="lb-veld momenten-blok"><span class="lb-label">Deze lessen verlaat ik voor CSF <span class="lb-ster">*</span></span>' +
+      '<div id="momenten">' + momentRij(0) + '</div><button type="button" class="btn licht lb-klein" id="moment-plus">+ Nog een les die ik verlaat</button>' +
+      '<span class="hint">Verlaat je nog een les: een andere dag, een ander lesuur of bij een andere leerkracht? Klik op het plusteken.</span></div>';
+  }
+  function vkRij(box) {
+    var zoek = box.querySelector(".vk-zoek"); if (!zoek) return;
+    var res = box.querySelector(".vk-resultaten"), gek = box.querySelector(".vk-keuze");
     function toon() {
-      var q = zoek.value, al = gekozen(), hits = INST.vakleerkrachten.filter(function (v) { return al.indexOf(v.email) < 0 && vkPast(v, q); }).slice(0, 8);
+      var q = zoek.value, hits = INST.vakleerkrachten.filter(function (v) { return vkPast(v, q); }).slice(0, 8);
       res.innerHTML = plat(q).trim().length < 2 ? "" : hits.length ? hits.map(function (v) { return '<button type="button" class="lb-chip vk-hit" data-mail="' + esc(v.email) + '">+ ' + esc(v.naam) + "</button>"; }).join("")
         : '<span class="hint">Geen leerkracht gevonden. Controleer de familienaam.</span>';
     }
@@ -297,11 +308,37 @@
     res.addEventListener("click", function (e) {
       var b = e.target.closest(".vk-hit"); if (!b) return;
       var v = INST.vakleerkrachten.filter(function (x) { return x.email === b.dataset.mail; })[0]; if (!v) return;
-      gek.insertAdjacentHTML("beforeend", '<label class="lb-chip vk-gekozen" title="Klik om te verwijderen"><input type="checkbox" name="vkLijst" value="' + esc(v.email) + '" checked><span>' + esc(v.naam) + " ✕</span></label>");
-      zoek.value = ""; toon(); zoek.focus();
+      gek.innerHTML = '<label class="lb-chip vk-gekozen" title="Klik om te wijzigen"><input type="checkbox" class="m-mail" value="' + esc(v.email) + '" data-naam="' + esc(v.naam) + '" checked><span>' + esc(v.naam) + " ✕</span></label>";
+      zoek.value = ""; toon(); zoek.hidden = true;
     });
-    gek.addEventListener("change", function (e) { if (!e.target.checked) { e.target.closest("label").remove(); toon(); } });
+    gek.addEventListener("change", function (e) { if (!e.target.checked) { gek.innerHTML = ""; zoek.hidden = false; zoek.focus(); } });
   }
+  function momentenKoppel(form) {
+    var box = form.querySelector("#momenten"); if (!box) return;
+    var hernummer = function () {
+      [].forEach.call(box.querySelectorAll(".moment"), function (m, i) { m.querySelector(".moment-kop b").textContent = "Les " + (i + 1); });
+    };
+    vkRij(box.querySelector(".moment"));
+    form.querySelector("#moment-plus").addEventListener("click", function () {
+      var n = Number(box.lastElementChild.dataset.i) + 1;
+      box.insertAdjacentHTML("beforeend", momentRij(n));
+      var m = box.lastElementChild, vorig = m.previousElementSibling;
+      /* handig: neem dag en vak van de vorige les over */
+      m.querySelector(".m-dag").value = vorig.querySelector(".m-dag").value;
+      vkRij(m); hernummer(); m.querySelector(".m-dag").focus();
+    });
+    box.addEventListener("click", function (e) { var w = e.target.closest(".moment-weg"); if (w) { w.closest(".moment").remove(); hernummer(); } });
+  }
+  function leesMomenten(form) {
+    return [].map.call(form.querySelectorAll("#momenten .moment"), function (m) {
+      var ch = m.querySelector(".m-mail"), lk = m.querySelector(".m-lk");
+      return { dag: m.querySelector(".m-dag").value, lesuur: m.querySelector(".m-uur").value, vak: m.querySelector(".m-vak").value.trim(),
+        leerkracht: ch ? ch.dataset.naam : lk ? lk.value.trim() : "", email: ch ? ch.value : "" };
+    });
+  }
+  function uniek(a) { return a.filter(function (x, i) { return x && a.indexOf(x) === i; }); }
+  function momentTekst(m) { return m.dag + " · lesuur " + m.lesuur + " · " + m.vak + (m.leerkracht ? " · " + m.leerkracht : ""); }
+  function csfDagen(o) { return o ? (o.momenten && o.momenten.length ? uniek(o.momenten.map(function (m) { return m.dag; })) : o.dag ? [o.dag] : []) : []; }
   function keuze(naam, label, opties, o) {
     o = o || {}; var type = o.meer ? "checkbox" : "radio", gekozen = [].concat(o.waarde || []);
     return '<fieldset class="lb-keuze"' + (o.verplicht ? ' data-verplicht="1"' : "") + "><legend>" + label + (o.verplicht ? ' <span class="lb-ster">*</span>' : "") + '</legend><div class="lb-chips' + (o.lijst ? " lijst" : "") + '">' +
@@ -348,7 +385,7 @@
   }
   function tabel(rijen) { var r = rijen.join(""); return r ? '<table class="lb-tabel">' + r + "</table>" : ""; }
   function opstartHtml(o) {
-    return tabel([rij("Klas", o.klas), rij("Uit de les van", o.vakleerkracht), rij("Vak", o.vak), rij("Moment", (o.dag || "") + (o.lesuur ? " · lesuur " + o.lesuur : "")),
+    return tabel([rij("Klas", o.klas), (o.momenten && o.momenten.length ? rij("Lessen die ik verlaat", o.momenten.map(momentTekst)) : rij("Uit de les van", o.vakleerkracht) + rij("Vak", o.vak) + rij("Moment", (o.dag || "") + (o.lesuur ? " · lesuur " + o.lesuur : ""))),
       rij("Coach", o.coach), rij("Voorziene tijd", o.voorzieneTijd), rij("Motivatie", o.motivatie), rij("Afgesproken evaluatie", o.evaluatieExtra || (o.evaluatieGelezen && o.evaluatieGelezen.length ? "criteria van het project genoteerd" : "")), rij("Link naar het project", o.link)]);
   }
   function lesHtml(l) {
@@ -493,10 +530,7 @@
     var crit = (p.criteria || []).length ? '<div class="lb-veld"><span class="lb-label">Afgesproken evaluatie</span><ul class="vink">' + p.criteria.map(function (c) { return "<li>" + c + "</li>"; }).join("") + "</ul></div>" : "";
     doel.innerHTML = kopje + '<div class="lb-melding">Dit is de <b>opstart</b> van je logboek. Je vult dit één keer in. Daarna vul je bij elk lesuur een begin en een einde in.</div>' +
       formulier("lb-opstart",
-        '<div class="lb-twee">' + veld("klas", "Ik zit in klas", { waarde: L.klas, verplicht: true }) + veld("vak", "Ik ga uit de les voor het vak", { verplicht: true }) + "</div>" +
-        (INST.vakleerkrachten.length ? vkZoeker("Ik ga uit de les van (typ de familienaam en klik op de leerkracht; meer dan één mag)")
-          : veld("vakleerkracht", "Ik ga uit de les van mevrouw/meneer", { verplicht: true })) +
-        keuze("dag", "Op welke dag?", DAGEN, { verplicht: true }) + keuze("lesuur", "Tijdens welk lesuur?", LESUREN, { verplicht: true }) +
+        veld("klas", "Ik zit in klas", { waarde: L.klas, verplicht: true }) + momentenBlok() +
         '<p class="lb-vast">Mijn CSF-coach: <b>' + esc(L.coachNaam || "nog niet toegewezen") + "</b> · Project: <b>" + esc(p.naam) + "</b></p>" +
         veld("voorzieneTijd", "Voorziene tijd", { waarde: p.tijd, verplicht: true }) +
         veld("motivatie", "Motivatie: ik koos voor dit project omdat …", { lang: true, verplicht: true }) +
@@ -504,15 +538,19 @@
         veld("evaluatieExtra", "Extra afspraken met mijn coach", { lang: true, rijen: 2 }) +
         veld("link", "Link naar mijn project (als je online werkt)", { hint: "Zet de link openbaar of geef je coach toegang." }),
         "Bewaar mijn opstart");
-    vkKoppel(doel.querySelector("#lb-opstart"));
-    bij(doel.querySelector("#lb-opstart"), function (d) {
+    var fo = doel.querySelector("#lb-opstart");
+    momentenKoppel(fo);
+    bij(fo, function (d) {
       d.coach = L.coachNaam || "";
-      var kijkers = L.vakleerkrachten || [], eerst = Promise.resolve();
-      if (d.vkLijst) {
-        var gekozen = INST.vakleerkrachten.filter(function (v) { return d.vkLijst.indexOf(v.email) >= 0; });
-        d.vakleerkracht = gekozen.map(function (v) { return v.naam; }).join(", ");
-        kijkers = gekozen.map(function (v) { return String(v.email || "").toLowerCase(); }).filter(Boolean);
-        delete d.vkLijst;
+      var ms = leesMomenten(fo), kijkers = L.vakleerkrachten || [], eerst = Promise.resolve();
+      d.momenten = ms;
+      /* samenvatting in de oude velden (eerste les, alle vakken en leerkrachten) */
+      d.dag = ms[0].dag; d.lesuur = ms[0].lesuur;
+      d.vak = uniek(ms.map(function (m) { return m.vak; })).join(", ");
+      d.vakleerkracht = uniek(ms.map(function (m) { return m.leerkracht; })).join(", ");
+      var mails = uniek(ms.map(function (m) { return String(m.email || "").toLowerCase(); }));
+      if (mails.length) {
+        kijkers = mails;
         eerst = F.setDoc(ref("leerlingen/" + mail()), { vakleerkrachten: kijkers }, { merge: true }).then(function () { L.vakleerkrachten = kijkers; });
       }
       var data = { leerling: mail(), naam: wieNaam() || L.naam || "", project: p.id, projectnaam: p.naam, gestart: nu(), status: "bezig", opstart: d, lessen: [], kijkers: kijkers };
@@ -745,9 +783,9 @@
   function teken(l, lb, st) {
     var gz = D.data.gezien.filter(function (x) { return x._id === l._id; })[0] || {}, nee = gz.antwoorden || {};
     var g = (gz.dagen || []).filter(function (d) { return nee[d] !== "nee"; });
-    var ls = lb ? lb.lessen || [] : [], laatste = ls[ls.length - 1], csfDag = lb && lb.opstart ? lb.opstart.dag : "";
+    var ls = lb ? lb.lessen || [] : [], laatste = ls[ls.length - 1], csfDag = csfDagen(lb && lb.opstart);
     var sinds = lb ? String(lb.gestart || "").slice(0, 10) : "", datums = ls.map(function (x) { return x.datum; });
-    var bezoek = g.filter(function (d) { return d >= sinds && (!csfDag || DAGCODE[new Date(d + "T12:00:00").getDay()] === csfDag); }).sort().pop();
+    var bezoek = g.filter(function (d) { return d >= sinds && (!csfDag.length || csfDag.indexOf(DAGCODE[new Date(d + "T12:00:00").getDay()]) >= 0); }).sort().pop();
     if (lb && lb.status === "afgerond") return ["ok", "Project afgerond"];
     if (st[0] === "rood") return ["uit", st[1]];
     if (bezoek && datums.indexOf(bezoek) < 0 && (!laatste || bezoek > laatste.datum))

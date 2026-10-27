@@ -48,7 +48,7 @@ function wieKrijgtHerinnering(leerlingen, logboeken, vandaag, dagcode, gezien) {
   leerlingen.forEach(function (l) {
     if (l.actief === false || l.herinnering === false || nee[l._id] || String(l._id).indexOf("test--") === 0) return;   // testleerlingen van coaches nooit mailen   // ‘Neen, ik moet mijn logboek niet aanvullen’
     var lopend = logboeken.filter(function (lb) { return lb.leerling === l._id && lb.status !== "afgerond"; });
-    var vandaagCsf = lopend.filter(function (lb) { return lb.opstart && lb.opstart.dag === dagcode; });
+    var vandaagCsf = lopend.filter(function (lb) { return lb.opstart && (lb.opstart.momenten && lb.opstart.momenten.length ? lb.opstart.momenten.some(function (m) { return m.dag === dagcode; }) : lb.opstart.dag === dagcode); });
     if (!vandaagCsf.length) return;
     var inOrde = lopend.some(function (lb) {
       return (lb.lessen || []).some(function (les) { return les.datum === vandaag && les.einde; });

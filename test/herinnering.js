@@ -15,12 +15,14 @@ const L = [
 const lb = (l, dag, lessen, status) => ({ leerling:l, project:'wetenschappen', projectnaam:'Wetenschappen', opstart:{ dag }, lessen, status: status || 'bezig' });
 const LB = [lb('a@svsl.be','DI',[{ datum:'2026-10-20', einde:{} }]), lb('b@svsl.be','DI',[{ datum:'2026-10-27', begin:{}, einde:{} }]), lb('c@svsl.be','DI',[]),
   lb('d@svsl.be','DO',[]), lb('e@svsl.be','DI',[]), lb('f@svsl.be','DI',[{ datum:'2026-10-27', begin:{} }]), lb('g@svsl.be','DI',[], 'afgerond'), lb('test--tom@svsl.be','DI',[])];
+L.push({ _id:'h@svsl.be', naam:'Wouters Lars' });   // DO en DI (twee lessen verlaten)
+LB.push({ leerling:'h@svsl.be', project:'x', projectnaam:'X', opstart:{ dag:'DO', momenten:[{ dag:'DO' }, { dag:'DI' }] }, lessen:[], status:'bezig' });
 const r = ctx.wieKrijgtHerinnering(L, LB, '2026-10-27', 'DI').map(x => x.email).sort();
-check(JSON.stringify(r) === '["a@svsl.be","f@svsl.be"]', 'dinsdag: enkel wie CSF had en het logboek niet afwerkte (' + r + ')');
+check(JSON.stringify(r) === '["a@svsl.be","f@svsl.be","h@svsl.be"]', 'dinsdag: enkel wie CSF had en het logboek niet afwerkte (' + r + ')');
 check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-27', 'DI').find(x => x.email === 'a@svsl.be').voornaam === 'Lien', 'voornaam uit ‘Familienaam Voornaam’');
-check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-29', 'DO').map(x => x.email).join() === 'd@svsl.be', 'donderdag: andere leerling');
+check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-29', 'DO').map(x => x.email).sort().join() === 'd@svsl.be,h@svsl.be', 'donderdag: andere leerling');
 check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-31', '').length === 0, 'weekend: niemand');
-check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-27', 'DI', [{ _id:'a@svsl.be', antwoorden:{ '2026-10-27':'nee' } }]).map(x => x.email).join() === 'f@svsl.be', 'wie ‘Neen’ antwoordde, krijgt geen mail');
+check(ctx.wieKrijgtHerinnering(L, LB, '2026-10-27', 'DI', [{ _id:'a@svsl.be', antwoorden:{ '2026-10-27':'nee' } }]).map(x => x.email).sort().join() === 'f@svsl.be,h@svsl.be', 'wie ‘Neen’ antwoordde, krijgt geen mail');
 const vrij = '2026-11-02 2026-11-08\n2026-11-11';
 check(ctx.isVrij('2026-11-05', vrij) && ctx.isVrij('2026-11-11', vrij) && !ctx.isVrij('2026-11-10', vrij), 'vrije dagen en vakanties');
 console.log(ok ? 'ALLES OK' : 'ER ZIJN FOUTEN'); process.exit(ok ? 0 : 1);

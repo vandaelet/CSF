@@ -78,8 +78,7 @@ const DB = {
   await p.waitForSelector('#lb-opstart');
   await p.click('#lb-opstart button[type=submit]');
   check((await p.textContent('#lb-opstart .fb')).includes('verplichte'), 'opstart zonder antwoorden wordt geweigerd');
-  await p.fill('#vak', 'wiskunde'); await p.fill('#vakleerkracht', 'meneer Peeters');
-  await p.check('#dag-0'); await p.check('#lesuur-2'); await p.fill('#motivatie', 'Ik hou van speurwerk.'); await p.check('#evaluatieGelezen-0');
+  await p.selectOption('#m-dag-0', 'MA'); await p.selectOption('#m-uur-0', '3'); await p.fill('#m-vak-0', 'wiskunde'); await p.fill('#m-lk-0', 'meneer Peeters'); await p.fill('#motivatie', 'Ik hou van speurwerk.'); await p.check('#evaluatieGelezen-0');
   await p.click('#lb-opstart button[type=submit]');
   await p.waitForSelector('#lb-begin');
   d = await fakedb(p);
@@ -279,11 +278,15 @@ const DB = {
   check((await p.textContent('#lb-inhoud')).includes('Mijn portfolio') && await p.locator('.lb-kaart .lb-pill.groen').count() >= 1, 'goedgekeurd project staat in het portfolio');
   const keuze = await p.locator('#lb-nieuw option').first().getAttribute('value');
   await p.click('#lb-start'); await p.waitForSelector('#lb-opstart');
-  await p.fill('#vak', 'wiskunde'); await p.fill('#vk-zoek', 'bes'); await p.waitForSelector('.vk-hit'); check((await p.textContent('#vk-resultaten')).includes('Tim van Besien'), 'zoeken op familienaam toont de leerkracht');
-  await p.fill('#vk-zoek', 'pee'); await p.click('.vk-hit'); await p.check('#dag-1'); await p.check('#lesuur-3'); await p.fill('#motivatie', 'Nieuw project.'); await p.check('#evaluatieGelezen-0');
+  await p.selectOption('#m-dag-0', 'DI'); await p.selectOption('#m-uur-0', '3'); await p.fill('#m-vak-0', 'wiskunde');
+  await p.fill('#m-zoek-0', 'bes'); await p.waitForSelector('.vk-hit'); check((await p.textContent('.moment .vk-resultaten')).includes('Tim van Besien'), 'zoeken op familienaam toont de leerkracht');
+  await p.fill('#m-zoek-0', 'pee'); await p.click('.vk-hit');
+  await p.click('#moment-plus'); await p.waitForSelector('#m-dag-1');
+  await p.selectOption('#m-dag-1', 'DO'); await p.selectOption('#m-uur-1', '5'); await p.fill('#m-vak-1', 'Frans'); await p.fill('#m-zoek-1', 'besien'); await p.click('.moment[data-i="1"] .vk-hit'); await p.fill('#motivatie', 'Nieuw project.'); await p.check('#evaluatieGelezen-0');
   await p.click('#lb-opstart button[type=submit]'); await p.waitForSelector('#lb-begin');
   d = await fakedb(p); const NL = d['logboeken/peeters.lien@svsl.be__' + keuze];
-  check(NL && JSON.stringify(NL.kijkers) === '["peeters.an@svsl.be"]' && NL.opstart.vakleerkracht === 'An Peeters', 'nieuw project met vakleerkracht uit de lijst');
+  check(NL && JSON.stringify(NL.kijkers) === '["peeters.an@svsl.be","vanbesien.tim@svsl.be"]' && NL.opstart.vakleerkracht === 'An Peeters, Tim van Besien', 'nieuw project met vakleerkrachten uit de lijst');
+  check(NL.opstart.momenten.length === 2 && NL.opstart.momenten[1].dag === 'DO' && NL.opstart.momenten[1].lesuur === '5' && NL.opstart.vak === 'wiskunde, Frans', 'met + een tweede les verlaten (andere dag, lesuur, vak en leerkracht)');
 
   console.log('5d. Testleerling van een coach');
   await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('[data-tab="test"]');
@@ -292,7 +295,7 @@ const DB = {
   await p.check('#jaar-1'); await p.selectOption('#klas-keuze', '1E'); await p.click('#lb-klas button[type=submit]'); await p.waitForSelector('.afspraken');
   d = await fakedb(p); check(!!d['leerlingen/test--els@svsl.be'].klas && d['leerlingen/test--els@svsl.be'].test === true, 'testleerling kiest een klas zoals een leerling');
   await p.goto(B + '#logboek'); await p.waitForSelector('#lb-start'); await p.click('#lb-start'); await p.waitForSelector('#lb-opstart');
-  await p.fill('#vak', 'wiskunde'); await p.fill('#vk-zoek', 'pee'); await p.click('.vk-hit'); await p.check('#dag-1'); await p.check('#lesuur-3'); await p.fill('#motivatie', 'Test.'); await p.check('#evaluatieGelezen-0');
+  await p.selectOption('#m-dag-0', 'DI'); await p.selectOption('#m-uur-0', '3'); await p.fill('#m-vak-0', 'wiskunde'); await p.fill('#m-zoek-0', 'pee'); await p.click('.vk-hit'); await p.fill('#motivatie', 'Test.'); await p.check('#evaluatieGelezen-0');
   await p.click('#lb-opstart button[type=submit]'); await p.waitForSelector('#lb-begin');
   d = await fakedb(p); const TL = Object.keys(d).filter(k => k.startsWith('logboeken/test--els@svsl.be__'));
   check(TL.length === 1 && d[TL[0]].leerling === 'test--els@svsl.be', 'testleerling start een project met een logboek');
