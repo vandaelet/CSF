@@ -245,10 +245,9 @@
       p.invalshoek.keuzes.map(function (k) { return '<div class="inv"><b>' + k[0] + "</b><span>" + k[1] + "</span></div>"; }).join("") + "</div>" +
       (p.nogTijd ? '<h4 class="sub">Klaar en nog tijd over?</h4><p>' + p.nogTijd + "</p>" : "") + "</div>" : "";
     var lessen = (p.lessen || []).map(function (l, i) {
-      var id = "klaar-" + p.id + "-" + (i + 1);
       return '<div class="les" data-les="' + (i + 1) + '"><h4><span class="lesnr">Lesuur ' + (i + 1) + "</span>" + l.titel + '</h4><ol class="stappen">' + l.stappen.map(function (s) {
         return '<li class="' + (CSF.logMoment(s[1], s[2]) ? "lb" : "") + '"><span class="t">' + s[0] + '</span><span class="s">' + s[1] + '</span><span class="w">' + s[2] + "</span></li>";
-      }).join("") + '</ol><label class="klaar" for="' + id + '"><input type="checkbox" id="' + id + '" data-p="' + p.id + '"> Dit lesuur is af</label></div>';
+      }).join("") + "</ol></div>";
     }).join("");
     var links = (p.links || []).map(function (l) { return '<a class="btn licht" href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + " ↗</a>"; }).join("");
     var lk = p.leerkaarten || [], g = gelezen(p), nGel = lk.filter(function (_, i) { return g.indexOf(i) >= 0; }).length, open = magAfdrukken(p);
@@ -290,8 +289,8 @@
         "<dt>Omschrijving project</dt><dd>" + p.omschrijving + "</dd><dt>Doel van het project</dt><dd>" + p.doel + "</dd>" +
         "<dt>Bereikte vaardigheden</dt><dd>" + lijst(p.bereikt) + "</dd><dt>Vaardigheden die ik moet toepassen</dt><dd>" + lijst(p.toepassen) + "</dd>" +
         "<dt>Materiële benodigdheden</dt><dd>" + lijst(p.materiaal) + "</dd><dt>Waar kan ik de oplossing vinden?</dt><dd>" + p.oplossing + "</dd><dt>Voorziene tijd</dt><dd>" + esc(p.tijd) + "</dd><dt>Eindproduct</dt><dd>" + p.product + "</dd></dl></div>") +
-      paneel("leidraad", inv + '<div class="blok"><h3 class="banner">Leidraad per lesuur</h3><p class="hint">Dit is een leidraad, geen strak schema. Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat hetzelfde stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’.</p>' +
-        '<div class="voortgang" aria-live="polite"><div class="balk"><span></span></div><span class="vtekst"></span></div><div class="lessen">' + lessen + "</div></div>") +
+      paneel("leidraad", inv + '<div class="blok"><h3 class="banner">Leidraad per lesuur</h3><p class="hint">Dit is een leidraad, geen strak schema. Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat hetzelfde stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’. Wat je gedaan hebt, vink je af in de leidraad van je logboek.</p>' +
+        '<div class="lessen">' + lessen + "</div></div>") +
 
       paneel("evaluatie", '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>") +
       paneel("werkbundel", '<div class="blok"><h3 class="banner">Werkbundel</h3>' + (open
@@ -496,13 +495,6 @@
         c.querySelector(".cknop").addEventListener("click", test);
         inp.addEventListener("keydown", function (e) { if (e.key === "Enter") test(); });
       });
-      if (!app.querySelector(".balk")) return;
-      var boxes = Array.prototype.slice.call(app.querySelectorAll(".klaar input"));
-      var vg = function () { var n = boxes.filter(function (b) { return b.checked; }).length;
-        app.querySelector(".balk span").style.width = (boxes.length ? 100 * n / boxes.length : 0) + "%";
-        app.querySelector(".vtekst").textContent = n + " van " + boxes.length + " lesuren af"; };
-      boxes.forEach(function (b) { b.checked = store.get(b.id) === "1"; b.addEventListener("change", function () { store.set(b.id, b.checked ? "1" : "0"); vg(); }); });
-      vg();
     }
     if (view === "coach") {
       var poort = document.getElementById("coach-poort");
