@@ -7,7 +7,7 @@ async function context(opts = {}){
   const b = await chromium.launch(); const ctx = await b.newContext({ viewport:{ width:opts.breedte || 1280, height:1000 }, acceptDownloads:true });
   const fake = n => fs.readFileSync(path.join(__dirname, 'fake', n + '.js'), 'utf8');
   await ctx.route(/gstatic\.com\/firebasejs\/.*\/firebase-(app|auth|firestore)\.js/, r=>{ const m = r.request().url().match(/firebase-(app|auth|firestore)/)[1]; r.fulfill({ contentType:'text/javascript', body:fake({ app:'app', auth:'auth', firestore:'fs' }[m]) }); });
-  if(!opts.zonderPortaal) await ctx.route(/portaal-config\.js/, r=>r.fulfill({ contentType:'text/javascript', body:CONFIG }));
+  await ctx.route(/portaal-config\.js/, r=>r.fulfill({ contentType:'text/javascript', body: opts.zonderPortaal ? 'CSF.firebaseConfig = null; CSF.domein = "svsl.be";' : CONFIG }));
   await ctx.route(/fonts\.(googleapis|gstatic)/, r=>r.fulfill({ contentType:'text/css', body:'' }));
   return { b, ctx };
 }

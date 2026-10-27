@@ -5,7 +5,14 @@
    (de projecten blijven gewoon zichtbaar).
    Stappen om dit in te vullen: zie LEESMIJ.md, deel ‘Firebase koppelen’.
    ===================================================================== */
-CSF.firebaseConfig = null;
+CSF.firebaseConfig = {
+  apiKey: "AIzaSyDx-0C1zs2f9p-b9pxpuiNSNvQrHdFYls8",
+  authDomain: "campus-lievegem-csf.firebaseapp.com",
+  projectId: "campus-lievegem-csf",
+  storageBucket: "campus-lievegem-csf.firebasestorage.app",
+  messagingSenderId: "277034116240",
+  appId: "1:277034116240:web:ce91bf2f7c66bfdcc82415"
+};
 /* Voorbeeld van hoe het eruitziet na het invullen:
 CSF.firebaseConfig = {
   apiKey: "…",
