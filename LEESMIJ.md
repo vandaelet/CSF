@@ -89,6 +89,10 @@ Elke projectpagina heeft tabbladen: **1. Start: leerkaarten**, **Projectfiche**,
 - **Goedkeuren.** Een afgewerkt project keurt de coach goed in het dashboard (klik op de leerling → ‘Keur project goed’). Pas dan kiest de leerling een nieuw project. Goedgekeurde projecten staan in zijn **portfolio**. Met ‘Annuleer’ wis je een logboek; de leerling kiest dan opnieuw.
 - **Resultaten.** Welke leerkaarten de leerling las en wat hij antwoordde bij ‘Test jezelf’, ‘Controleer je oplossing’ en de quizzen, komt in zijn logboek. De leerling kan een antwoord niet meer wijzigen. De coach ziet de scores en de antwoorden in het dashboard.
 
+## Testleerling voor coaches
+
+Elke coach heeft een eigen testleerling (`test--<e-mail van de coach>`). Open Dashboard → **Testleerling** → ‘Maak mijn testleerling en start’. Je ziet de site dan precies zoals een leerling: klas kiezen, project kiezen, leerkaarten, vragen, logboek, vragen aan de coach. Een oranje balk bovenaan wisselt naar ‘Bekijk als coach’ (detail van de testleerling in het overzicht) of stopt de testmodus. ‘Zet de testleerling terug op nul’ wist alle logboeken, antwoorden, feedback en vragen. De testleerling staat in het overzicht met het label *test*, komt niet in de export en krijgt geen herinneringsmails. Kies jezelf als vakleerkracht, dan ziet geen collega de testleerling.
+
 ## Digitaal logboek en dashboard
 
 Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De projecten blijven openbaar; het logboek, het dashboard en de coachfiches vragen aanmelden.

@@ -46,7 +46,7 @@ function wieKrijgtHerinnering(leerlingen, logboeken, vandaag, dagcode, gezien) {
   var uit = [], nee = {};
   (gezien || []).forEach(function (g) { if (g.antwoorden && g.antwoorden[vandaag] === "nee") nee[g._id] = true; });
   leerlingen.forEach(function (l) {
-    if (l.actief === false || l.herinnering === false || nee[l._id]) return;   // ‘Neen, ik moet mijn logboek niet aanvullen’
+    if (l.actief === false || l.herinnering === false || nee[l._id] || String(l._id).indexOf("test--") === 0) return;   // testleerlingen van coaches nooit mailen   // ‘Neen, ik moet mijn logboek niet aanvullen’
     var lopend = logboeken.filter(function (lb) { return lb.leerling === l._id && lb.status !== "afgerond"; });
     var vandaagCsf = lopend.filter(function (lb) { return lb.opstart && lb.opstart.dag === dagcode; });
     if (!vandaagCsf.length) return;

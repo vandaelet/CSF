@@ -13,6 +13,13 @@
   var P = CSF.portaal = { actief: !!CSF.firebaseConfig };
   var DOMEIN = CSF.domein || "svsl.be", V = "10.12.2";
   var A, F, auth, db, gereed = null, gebruiker = null;
+  /* testleerling: een coach bekijkt de site als leerling "test--<e-mail van de coach>" */
+  var TEST = false, TESTSLEUTEL = "csf-testleerling";
+  function echteMail() { return gebruiker ? gebruiker.email.toLowerCase() : ""; }
+  function testId(m) { return "test--" + (m || echteMail()); }
+  function isTest(id) { return String(id || "").indexOf("test--") === 0; }
+  function testGewenst() { try { return localStorage.getItem(TESTSLEUTEL) === echteMail(); } catch (e) { return false; } }
+  function zetTest(aan) { try { if (aan) localStorage.setItem(TESTSLEUTEL, echteMail()); else localStorage.removeItem(TESTSLEUTEL); } catch (e) {} }
   var rol = { beheerder: false, coach: false, leerling: null, vak: [], fout: null };
   /* instellingen die ook leerlingen lezen: zichtbaarheid, klassen, lijst van vakleerkrachten */
   var INST = { zicht: { jaar: {}, klas: {} }, klassen: [], vakleerkrachten: [] };
@@ -29,7 +36,8 @@
 
   /* ---------- kleine hulpjes ---------- */
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
-  function mail() { return gebruiker ? gebruiker.email.toLowerCase() : ""; }
+  function mail() { return gebruiker ? (TEST ? testId() : echteMail()) : ""; }
+  function wieNaam() { return TEST ? (rol.leerling && rol.leerling.naam) || "Testleerling" : gebruiker.displayName || ""; }
   function nu() { return new Date().toISOString(); }
   function vandaag() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   function datum(s) { if (!s) return "–"; var d = new Date(s.length === 10 ? s + "T12:00:00" : s); return isNaN(d) ? s : d.toLocaleDateString("nl-BE", { day: "numeric", month: "short", year: "numeric" }); }
@@ -60,8 +68,9 @@
     return gereed;
   }
   function bepaalRol(u) {
-    gebruiker = u && u.email ? u : null;
+    gebruiker = u && u.email ? u : null; TEST = false;
     rol = { beheerder: false, coach: false, coachNaam: "", leerling: null, vak: [], fout: null };
+    testBand();
     if (!gebruiker) return Promise.resolve();
     var m = mail();
     if (m.slice(-(DOMEIN.length + 1)) !== "@" + DOMEIN) { rol.fout = "domein"; return Promise.resolve(); }
@@ -81,6 +90,17 @@
       rol.leerling = ll && ll.actief !== false ? ll : null;
       rol.gestopt = !!(ll && ll.actief === false);
       rol.vak = (r[3] || []).filter(function (x) { return x.actief !== false; });
+      /* testmodus: de coach ziet en doet alles zoals een leerling */
+      if (rol.coach && testGewenst()) {
+        return veilig(haal("leerlingen/" + testId(m))).then(function (t) {
+          if (!t || !t.exists()) { zetTest(false); return; }
+          rol = { beheerder: false, coach: false, coachNaam: "", leerling: t.data(), vak: [], fout: null, test: { coach: rol.coachNaam, beheerder: rol.beheerder } };
+          TEST = true; testBand();
+          var tm = mail();
+          F.setDoc(ref("gezien/" + tm), { tijd: nu(), dagen: F.arrayUnion(vandaag()) }, { merge: true }).catch(function () {});
+          return lijst("logboeken", ["leerling", "==", tm]).then(function (lbs) { MIJN = { lbs: lbs, geladen: true }; }).catch(function () {});
+        });
+      }
       /* niet op de CSF-lijst? Bewaar de aanmeldpoging, zodat een coach het adres kan koppelen */
       /* bijhouden op welke dagen de leerling online was (voor het uitroepteken bij de coach) */
       if (rol.leerling) F.setDoc(ref("gezien/" + m), { tijd: nu(), dagen: F.arrayUnion(vandaag()) }, { merge: true }).catch(function () {});
@@ -149,7 +169,7 @@
   };
   function klasKiezen() {
     var lijstK = INST.klassen.slice().sort(function (a, b) { return a.localeCompare(b, "nl", { numeric: true }); });
-    return '<div class="lb-melding">Welkom, <b>' + esc(rol.leerling.naam || gebruiker.displayName || "") + "</b>! Duid één keer je klas aan. Daarna open je de projecten en je logboek.</div>" +
+    return '<div class="lb-melding">Welkom, <b>' + esc(rol.leerling.naam || wieNaam()) + "</b>! Duid één keer je klas aan. Daarna open je de projecten en je logboek.</div>" +
       '<form id="lb-klas" class="lb-form" novalidate><div class="lb-veld"><label for="klas-keuze">Mijn klas</label>' +
       (lijstK.length ? '<select id="klas-keuze"><option value="">– kies je klas –</option>' + lijstK.map(function (k) { return '<option value="' + esc(k) + '">' + esc(k) + "</option>"; }).join("") + "</select>"
         : '<input type="text" id="klas-keuze" placeholder="bv. 1B" maxlength="12">') +
@@ -217,8 +237,8 @@
   }
   function accountBalk() {
     var el = document.getElementById("lb-account"); if (!el || !gebruiker) return;
-    var r = rol.beheerder ? "beheerder" : rol.coach ? "coach" : rol.leerling ? "leerling" : rol.vak.length ? "vakleerkracht" : "";
-    el.innerHTML = '<div class="lb-account"><span>Aangemeld als <b>' + esc(gebruiker.displayName || mail()) + "</b>" + (r ? ' <span class="lb-pill grijs">' + r + "</span>" : "") +
+    var r = TEST ? "testleerling" : rol.beheerder ? "beheerder" : rol.coach ? "coach" : rol.leerling ? "leerling" : rol.vak.length ? "vakleerkracht" : "";
+    el.innerHTML = '<div class="lb-account"><span>Aangemeld als <b>' + esc(TEST ? wieNaam() : gebruiker.displayName || mail()) + "</b>" + (r ? ' <span class="lb-pill grijs">' + r + "</span>" : "") +
       '</span><button type="button" class="btn donker lb-klein" id="lb-afmelden">Afmelden</button></div>';
     el.querySelector("#lb-afmelden").addEventListener("click", P.afmelden);
   }
@@ -483,7 +503,7 @@
         delete d.vkLijst;
         eerst = F.setDoc(ref("leerlingen/" + mail()), { vakleerkrachten: kijkers }, { merge: true }).then(function () { L.vakleerkrachten = kijkers; });
       }
-      var data = { leerling: mail(), naam: gebruiker.displayName || L.naam || "", project: p.id, projectnaam: p.naam, gestart: nu(), status: "bezig", opstart: d, lessen: [], kijkers: kijkers };
+      var data = { leerling: mail(), naam: wieNaam() || L.naam || "", project: p.id, projectnaam: p.naam, gestart: nu(), status: "bezig", opstart: d, lessen: [], kijkers: kijkers };
       return eerst.then(function () { return F.setDoc(ref("logboeken/" + id), data); }).then(function () { MIJN.lbs = MIJN.lbs.filter(function (x) { return x.project !== p.id; }).concat([data]); });
     });
   }
@@ -649,7 +669,7 @@
         if (!t) { fb.textContent = "Typ eerst je vraag."; return; }
         fb.textContent = "Bezig met versturen …";
         var ll = rol.leerling;
-        F.setDoc(ref("vragen/" + nieuwId()), { leerling: mail(), naam: ll.naam || (gebruiker.displayName || ""), klas: ll.klas || "", coach: ll.coach || "", coachNaam: ll.coachNaam || "",
+        F.setDoc(ref("vragen/" + nieuwId()), { leerling: mail(), naam: ll.naam || wieNaam(), klas: ll.klas || "", coach: ll.coach || "", coachNaam: ll.coachNaam || "",
           project: p.id, projectnaam: p.naam, tekst: t, datum: nu(), open: true, antwoord: "", gelezen: false })
           .then(function () { vragenBlok(el, p); }).catch(function (err) { fb.textContent = "Versturen lukte niet. (" + (err.code || err.message) + ")"; });
       });
@@ -727,7 +747,7 @@
 
   function tekenDashboard(doel) {
     var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
-    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
+    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"], ["test", "Testleerling"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
     doel.innerHTML = (D.geweigerd && D.geweigerd.length ? '<div class="lb-melding rood"><b>De toegangsregels in Firebase zijn niet up-to-date.</b> ' + (rol.beheerder ? "Plak de volledige inhoud van <code>firestore.rules</code> uit GitHub in Firebase → Firestore Database → Rules en klik op Publish." : "Vraag de beheerder om de regels opnieuw te publiceren.") + ' <span class="hint">(geen toegang tot: ' + esc(D.geweigerd.join(", ")) + ")</span></div>" : "") +
       '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
       '</div><div id="db-inhoud"></div>';
@@ -740,6 +760,7 @@
     if (D.tab === "zicht" && rol.coach) return tabZicht(z, doel);
     if (D.tab === "beheer" && rol.beheerder) return tabBeheer(z, doel);
     if (D.tab === "vak") return tabVak(z);
+    if (D.tab === "test" && rol.coach) return tabTest(z, doel);
     tabOverzicht(z, doel);
   }
 
@@ -760,7 +781,7 @@
       (rol.coach ? '<div class="crij lb-export"><button type="button" class="btn licht lb-klein" id="db-kopieer">Kopieer overzicht voor Google Sheets</button><button type="button" class="btn licht lb-klein" id="db-csv">Download overzicht (CSV)</button><button type="button" class="btn licht lb-klein" id="db-csv-les">Download alle lesuren (CSV)</button><span class="fb" id="db-exportfb" aria-live="polite"></span></div>' : "") +
       '<div class="lb-tabelwrap"><table class="lb-overzicht"><thead><tr><th><span class="sr">Teken</span></th><th>Leerling</th><th>Klas</th><th>Coach</th><th>Project</th><th>Lesuren</th><th>Laatste logboek</th><th>Status</th><th>Feedback en vragen</th></tr></thead><tbody>' +
       (r.length ? r.map(function (x) {
-        return '<tr class="db-rij' + (D.open === x.l._id ? " open" : "") + '" data-ll="' + esc(x.l._id) + '" tabindex="0"><td class="lb-tekencel">' + tekenHtml(x.teken) + '</td><td><b>' + esc(x.l.naam || x.l._id) + '</b><br><span class="hint">' + esc(x.l._id) + "</span></td><td>" + esc(x.l.klas || "–") +
+        return '<tr class="db-rij' + (D.open === x.l._id ? " open" : "") + '" data-ll="' + esc(x.l._id) + '" tabindex="0"><td class="lb-tekencel">' + tekenHtml(x.teken) + '</td><td><b>' + esc(x.l.naam || x.l._id) + '</b>' + (isTest(x.l._id) ? ' <span class="lb-pill oranje">test</span>' : "") + '<br><span class="hint">' + esc(x.l._id) + "</span></td><td>" + esc(x.l.klas || "–") +
           "</td><td>" + esc(x.l.coachNaam || "–") + "</td><td>" + (x.hoofd ? esc(x.hoofd.projectnaam.split(":")[0]) : "–") + "</td><td>" + (x.hoofd ? (x.hoofd.lessen || []).length : 0) +
           "</td><td>" + datum(x.laatste) + '</td><td><span class="lb-pill ' + x.st[0] + '">' + esc(x.st[1]) + "</span></td><td>" + (x.fbOpen ? '<span class="lb-pill oranje">' + x.fbOpen + " ongelezen</span>" : "") + (x.vragen ? ' <span class="lb-pill turkoois">' + x.vragen + (x.vragen > 1 ? " vragen" : " vraag") + "</span>" : "") + "</td></tr>";
       }).join("") : '<tr><td colspan="9" class="hint">Geen leerlingen gevonden.' + (rol.coach ? " Voeg leerlingen toe in het tabblad Leerlingen." : "") + "</td></tr>") +
@@ -809,6 +830,7 @@
     });
   }
   function exportRijen(alle) {
+    alle = alle.filter(function (x) { return !isTest(x.l._id); });
     return [["Leerling", "E-mail", "Klas", "Coach", "Project", "Lesuren", "Laatste logboek", "Status", "Ongelezen feedback"]].concat(alle.map(function (x) {
       return [x.l.naam || "", x.l._id, x.l.klas || "", x.l.coachNaam || "", x.hoofd ? x.hoofd.projectnaam : "", x.hoofd ? (x.hoofd.lessen || []).length : 0, x.laatste ? String(x.laatste).slice(0, 10) : "", x.st[1], x.fbOpen];
     }));
@@ -817,6 +839,7 @@
     var kop = ["Leerling", "E-mail", "Project", "Lesuur", "Datum", "Stappen", "Minuten", "Plan", "Einde ingevuld", "Tijd", "Reden", "Moeilijk", "Gemiste leerstof", "Zo ingehaald", "Nog vragen", "Werkwijze"];
     var out = [kop];
     D.data.logboeken.forEach(function (lb) {
+      if (isTest(lb.leerling)) return;
       (lb.lessen || []).forEach(function (l) {
         var b = l.begin || {}, e = l.einde || {};
         out.push([lb.naam || "", lb.leerling, lb.projectnaam, l.nr, l.datum, (b.stappen || []).join(" | "), b.minuten || "", b.plan || "", l.einde ? "ja" : "nee", e.tijd || "", e.reden || "", e.moeilijk || "", e.gemist || "", e.ingehaald || "", e.vragen || "", e.geslaagd || ""]);
@@ -1198,6 +1221,58 @@
         .catch(function (e) { out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
     });
   }
+
+  /* ---------- testleerling ---------- */
+  function tabTest(z, doel) {
+    var d = D.data, tid = testId(), t = d.leerlingen.filter(function (l) { return l._id === tid; })[0];
+    var lbs = d.logboeken.filter(function (lb) { return lb.leerling === tid; }), x = t ? rijen().filter(function (r) { return r.l._id === tid; })[0] : null;
+    z.innerHTML = "<h3>Je eigen testleerling</h3><p>Met de testleerling probeer je alles uit zoals een leerling: klas kiezen, een project starten, leerkaarten en vragen invullen, het logboek bijhouden, een vraag stellen en een project afwerken. Daarna bekijk je als coach wat je van die leerling ziet.</p>" +
+      '<ul class="vink"><li>De testleerling hoort bij jou: <b>' + esc(tid) + '</b>. Elke coach heeft zijn eigen testleerling.</li><li>Ze staat in het overzicht met het label <span class="lb-pill oranje">test</span>. Ze komt niet in de export en krijgt geen herinneringsmails.</li>' +
+      "<li>Kies jezelf als vakleerkracht. Zo krijgt geen collega de testleerling te zien.</li><li>Bovenaan elke pagina staat dan een oranje balk. Daarmee wissel je tussen testleerling en coach.</li></ul>" +
+      (t ? '<p><span class="lb-pill turkoois">bestaat</span> Klas: <b>' + esc(t.klas || "nog niet gekozen") + "</b> · Project: <b>" + (x && x.hoofd ? esc(x.hoofd.projectnaam.split(":")[0]) : "geen") + "</b> · Logboeken: <b>" + lbs.length + "</b></p>" : "") +
+      '<div class="lb-acties"><button type="button" class="btn" id="test-start">' + (t ? "Werk verder als testleerling" : "Maak mijn testleerling en start") + "</button>" +
+      (t ? ' <button type="button" class="btn licht" id="test-bekijk">Bekijk als coach</button> <button type="button" class="btn donker" id="test-wis">Zet de testleerling terug op nul</button>' : "") +
+      '<span class="fb" id="test-fb" aria-live="polite"></span></div>';
+    var fb = z.querySelector("#test-fb");
+    z.querySelector("#test-start").addEventListener("click", function () {
+      fb.textContent = "Bezig …";
+      var data = { naam: "Testleerling " + (rol.coachNaam || gebruiker.displayName || ""), actief: true, test: true, coach: mail(), coachNaam: rol.coachNaam || gebruiker.displayName || mail(), herinnering: false };
+      if (!t) { data.klas = ""; data.vakleerkrachten = []; }
+      F.setDoc(ref("leerlingen/" + tid), data, { merge: true }).then(function () { return P.testStart(); })
+        .catch(function (e) { fb.textContent = "Dat lukte niet. (" + (e.code || e.message) + ") Publiceer de nieuwste firestore.rules."; });
+    });
+    var bk = z.querySelector("#test-bekijk");
+    if (bk) bk.addEventListener("click", function () { D.tab = "overzicht"; D.coachFilter = "alle"; D.zoek = ""; D.open = tid; tekenDashboard(doel); });
+    var wis = z.querySelector("#test-wis");
+    if (wis) wis.addEventListener("click", function () {
+      if (!confirm("Alles van je testleerling wissen? Logboeken, antwoorden, feedback en vragen verdwijnen. De testleerling kiest opnieuw een klas.")) return;
+      fb.textContent = "Bezig met wissen …";
+      var docs = function (col, veld) { return lijst(col, [veld, "==", tid]).then(function (r) { return r.map(function (x) { return col + "/" + x._id; }); }).catch(function () { return []; }); };
+      Promise.all([docs("logboeken", "leerling"), docs("resultaten", "leerling"), docs("feedback", "leerling"), docs("vragen", "leerling")]).then(function (r) {
+        var paden = [].concat.apply([], r).concat(["gezien/" + tid]);
+        return Promise.all(paden.map(function (pd) { return F.deleteDoc(ref(pd)).catch(function () {}); }));
+      }).then(function () { return F.setDoc(ref("leerlingen/" + tid), { klas: "", vakleerkrachten: [], zicht: F.deleteField() }, { merge: true }); })
+        .then(function () { D.tab = "test"; ververs(doel); })
+        .catch(function (e) { fb.textContent = "Wissen lukte niet. (" + (e.code || e.message) + ")"; });
+    });
+  }
+  P.testStart = function () { zetTest(true); return bepaalRol(gebruiker).then(function () { if (location.hash === "#start") herteken(); else location.hash = "#start"; }); };
+  P.testStop = function (naarDetail) {
+    zetTest(false);
+    if (naarDetail) { D.tab = "overzicht"; D.coachFilter = "alle"; D.zoek = ""; D.open = testId(); }
+    return bepaalRol(gebruiker).then(function () { var doelH = naarDetail ? "#dashboard" : "#start"; if (location.hash === doelH) herteken(); else location.hash = doelH; });
+  };
+  function testBand() {
+    var b = document.getElementById("csf-testband");
+    if (!TEST) { if (b) b.remove(); document.body.classList.remove("testmodus"); return; }
+    if (!b) { b = document.createElement("div"); b.id = "csf-testband"; document.body.insertBefore(b, document.body.firstChild); }
+    document.body.classList.add("testmodus");
+    b.innerHTML = "<span><b>Testmodus</b> · Je ziet de site zoals een leerling (" + esc(wieNaam()) + ").</span>" +
+      '<button type="button" class="btn lb-klein" id="tb-coach">Bekijk als coach</button><button type="button" class="btn donker lb-klein" id="tb-stop">Stop de testmodus</button>';
+    b.querySelector("#tb-coach").addEventListener("click", function () { P.testStop(true); });
+    b.querySelector("#tb-stop").addEventListener("click", function () { P.testStop(false); });
+  }
+  P.isTest = function () { return TEST; };
 
   function tabVak(z) {
     var d = D.data;

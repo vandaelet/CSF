@@ -285,6 +285,22 @@ const DB = {
   d = await fakedb(p); const NL = d['logboeken/peeters.lien@svsl.be__' + keuze];
   check(NL && JSON.stringify(NL.kijkers) === '["peeters.an@svsl.be"]' && NL.opstart.vakleerkracht === 'An Peeters', 'nieuw project met vakleerkracht uit de lijst');
 
+  console.log('5d. Testleerling van een coach');
+  await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('[data-tab="test"]');
+  await p.click('[data-tab="test"]'); await p.click('#test-start'); await p.waitForSelector('#klas-keuze');
+  check(await p.locator('#csf-testband').count() === 1, 'testmodus: oranje balk bovenaan');
+  await p.selectOption('#klas-keuze', { index: 1 }); await p.click('#lb-klas button[type=submit]'); await p.waitForSelector('.afspraken');
+  d = await fakedb(p); check(!!d['leerlingen/test--els@svsl.be'].klas && d['leerlingen/test--els@svsl.be'].test === true, 'testleerling kiest een klas zoals een leerling');
+  await p.goto(B + '#logboek'); await p.waitForSelector('#lb-start'); await p.click('#lb-start'); await p.waitForSelector('#lb-opstart');
+  await p.fill('#vak', 'wiskunde'); await p.fill('#vk-zoek', 'pee'); await p.click('.vk-hit'); await p.check('#dag-1'); await p.check('#lesuur-3'); await p.fill('#motivatie', 'Test.'); await p.check('#evaluatieGelezen-0');
+  await p.click('#lb-opstart button[type=submit]'); await p.waitForSelector('#lb-begin');
+  d = await fakedb(p); const TL = Object.keys(d).filter(k => k.startsWith('logboeken/test--els@svsl.be__'));
+  check(TL.length === 1 && d[TL[0]].leerling === 'test--els@svsl.be', 'testleerling start een project met een logboek');
+  await p.click('#tb-coach'); await p.waitForSelector('.lb-detail');
+  check(await p.locator('#csf-testband').count() === 0 && (await p.textContent('.db-rij.open')).includes('test'), 'bekijk als coach: detail van de testleerling met label test');
+  await p.click('[data-tab="test"]'); await p.click('#test-wis'); await wacht(800);
+  d = await fakedb(p); check(!Object.keys(d).some(k => k.startsWith('logboeken/test--')) && d['leerlingen/test--els@svsl.be'].klas === '', 'testleerling terug op nul');
+
   console.log('6. Coachfiches via de rol en export');
   await aanmelden(p, '#coach', LIEN); await p.waitForSelector('#coach-poort .lb-melding');
   check((await p.textContent('#coach-poort')).includes('enkel voor de CSF-coaches'), 'leerling kan de coachfiches niet openen');
@@ -293,7 +309,7 @@ const DB = {
   await aanmelden(p, '#dashboard', TOM); await p.waitForSelector('#db-csv');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#db-csv')]);
   const csv = require('fs').readFileSync(await dl.path(), 'utf8');
-  check(dl.suggestedFilename().startsWith('csf-overzicht-') && csv.includes('Peeters Lien') && csv.includes('Status'), 'overzicht als CSV gedownload');
+  check(dl.suggestedFilename().startsWith('csf-overzicht-') && csv.includes('Peeters Lien') && csv.includes('Status') && !csv.includes('test--'), 'overzicht als CSV gedownload');
   await p.click('[data-tab="beheer"]'); await p.waitForSelector('#code-in');
   await p.fill('#coach-mail', 'kris@svsl.be'); await p.fill('#coach-naam', 'Van Landeghem K.'); await p.click('#coach-voegtoe'); await wacht(700);
   d = await fakedb(p); check(d['coaches/kris@svsl.be'] && d['coaches/kris@svsl.be'].naam === 'Van Landeghem K.', 'beheerder voegt een coach toe');

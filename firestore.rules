@@ -13,9 +13,11 @@ service cloud.firestore {
     function mail() { return request.auth.token.email.lower(); }
     function beheerder() { return aangemeld() && exists(/databases/$(database)/documents/beheerders/$(mail())); }
     function coach() { return aangemeld() && (beheerder() || exists(/databases/$(database)/documents/coaches/$(mail()))); }
-    function opLijst() {
-      return exists(/databases/$(database)/documents/leerlingen/$(mail()))
-        && get(/databases/$(database)/documents/leerlingen/$(mail())).data.get('actief', true) == true;
+    // testleerling: elke coach heeft een eigen testleerling "test--<e-mail van de coach>" en handelt als die leerling
+    function wie(e) { return aangemeld() && (e == mail() || (coach() && e == 'test--' + mail())); }
+    function opLijst(e) {
+      return exists(/databases/$(database)/documents/leerlingen/$(e))
+        && get(/databases/$(database)/documents/leerlingen/$(e)).data.get('actief', true) == true;
     }
 
     // beheerders: de beheerder beheert de lijst; iedereen mag nagaan of hij zelf beheerder is
@@ -34,7 +36,7 @@ service cloud.firestore {
                   || (aangemeld() && mail() in resource.data.get('vakleerkrachten', []));
       allow write: if coach();
       // de leerling duidt één keer zelf zijn klas aan, en kiest zijn vakleerkrachten bij de start van een project
-      allow update: if aangemeld() && mail() == email && opLijst()
+      allow update: if wie(email) && opLijst(email)
                     && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['klas']) && resource.data.get('klas', '') == '')
                         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vakleerkrachten']));
     }
@@ -43,12 +45,11 @@ service cloud.firestore {
       allow read: if coach()
                   || (aangemeld() && resource.data.leerling == mail())
                   || (aangemeld() && mail() in resource.data.get('kijkers', []));
-      allow create: if aangemeld() && opLijst()
-                    && id.split('__')[0] == mail()
-                    && request.resource.data.leerling == mail()
+      allow create: if wie(request.resource.data.leerling) && opLijst(request.resource.data.leerling)
+                    && id.split('__')[0] == request.resource.data.leerling
                     && request.resource.data.get('goedgekeurd', false) == false
                     && request.resource.data.get('kijkers', []) ==
-                       get(/databases/$(database)/documents/leerlingen/$(mail())).data.get('vakleerkrachten', []);
+                       get(/databases/$(database)/documents/leerlingen/$(request.resource.data.leerling)).data.get('vakleerkrachten', []);
       allow update: if coach()
                     || (aangemeld() && resource.data.leerling == mail()
                         && request.resource.data.leerling == mail()
@@ -80,8 +81,7 @@ service cloud.firestore {
     // vragen van leerlingen aan hun coach; de leerling mag enkel bevestigen dat hij het antwoord las
     match /vragen/{id} {
       allow read: if coach() || (aangemeld() && resource.data.leerling == mail());
-      allow create: if aangemeld() && opLijst()
-                    && request.resource.data.leerling == mail()
+      allow create: if wie(request.resource.data.leerling) && opLijst(request.resource.data.leerling)
                     && request.resource.data.open == true
                     && request.resource.data.antwoord == ''
                     && request.resource.data.keys().hasOnly(['leerling', 'naam', 'klas', 'coach', 'coachNaam', 'project', 'projectnaam', 'tekst', 'datum', 'open', 'antwoord', 'gelezen'])
@@ -95,8 +95,9 @@ service cloud.firestore {
     // op welke dagen een leerling online was en wat hij antwoordde op ‘Vul je logboek in’ (ja/nee per dag)
     match /gezien/{email} {
       allow read: if coach() || (aangemeld() && mail() == email);
-      allow create, update: if aangemeld() && mail() == email
+      allow create, update: if wie(email)
                             && request.resource.data.keys().hasOnly(['tijd', 'dagen', 'antwoorden']);
+      allow delete: if coach();
     }
     // aanpassingen van coaches aan sterren, tijd en inleidende teksten: iedereen leest, coaches schrijven
     match /projectinfo/{id} {
@@ -110,8 +111,8 @@ service cloud.firestore {
     // resultaten van leerkaarten, test, controle en quiz: de leerling kan enkel toevoegen, nooit wijzigen of wissen
     match /resultaten/{id} {
       allow read: if coach() || (aangemeld() && id.split('__')[0] == mail());
-      allow create: if aangemeld() && opLijst() && id.split('__')[0] == mail() && request.resource.data.leerling == mail();
-      allow update: if aangemeld() && opLijst() && id.split('__')[0] == mail()
+      allow create: if wie(id.split('__')[0]) && opLijst(id.split('__')[0]) && request.resource.data.leerling == id.split('__')[0];
+      allow update: if wie(id.split('__')[0]) && opLijst(id.split('__')[0])
                     && request.resource.data.diff(resource.data).changedKeys().size() == 0
                     && request.resource.data.diff(resource.data).removedKeys().size() == 0;
       allow delete: if coach();
