@@ -230,7 +230,8 @@
         var st = status(lb, rol.leerling);
         return '<a class="lb-kaart" href="#logboek-' + esc(lb.project) + '"><b>' + esc(lb.projectnaam) + '</b><span class="hint">' + (lb.lessen || []).length + " lesuren · gestart op " + datum(lb.gestart) + '</span><span class="lb-pill ' + st[0] + '">' + st[1] + "</span></a>";
       }).join("");
-      var opties = CSF.projecten.filter(function (p) { return !lbs.some(function (l) { return l.project === p.id; }); }).map(function (p) {
+      var jaar = P.leerjaar();
+      var opties = CSF.projecten.filter(function (p) { return !lbs.some(function (l) { return l.project === p.id; }) && (p.soort === "vak" || jaar !== 2); }).map(function (p) {
         return '<option value="' + esc(p.id) + '">' + esc((p.soort === "vak" ? CSF.ui.label(p) : "oefenproject") + " · " + p.naam.split(":")[0]) + "</option>"; }).join("");
       var vergeten = lbs.some(function (lb) { return status(lb, rol.leerling)[0] === "rood"; });
       doel.innerHTML = (vergeten ? '<div class="lb-melding rood"><b>Vergeet niet tijdig je logboek aan te vullen.</b> Vul eerst het einde van je vorige lesuur in.</div>' : "") +
@@ -1066,7 +1067,17 @@
   }
 
   /* op elke pagina: aanpassingen van coaches laden; is een leerling aangemeld, vraag dan naar het begin-logboek */
-  if (P.actief) laad().then(function () { laadAanpassingen(); vraagBegin(); }).catch(function () {});
+  if (P.actief) laad().then(function () {
+    P.rolBekend = true;
+    /* de startpagina en de oefenprojecten hangen af van het leerjaar: opnieuw tekenen nu de rol gekend is */
+    var hh = location.hash.replace(/^#/, ""), pr = hh.indexOf("p-") === 0 && CSF.ui && CSF.ui.zoek(hh.slice(2));
+    if (CSF.gestart && (hh === "" || hh === "start" || hh === "oefenproject" || (pr && pr.soort !== "vak"))) herteken();
+    laadAanpassingen(); vraagBegin();
+  }).catch(function () { P.rolBekend = true; });
+  P.rolBekend = false;
+  P.isAangemeld = function () { return !!gebruiker; };
+  /* leerjaar uit de klas van de leerling (‘1B’ → 1, ‘2C-E&O’ → 2) */
+  P.leerjaar = function () { var k = rol && rol.leerling && String(rol.leerling.klas || ""); var m = k && k.match(/^\s*(\d)/); return m ? Number(m[1]) : null; };
   P.isCoach = function () { return !!(rol && (rol.coach || (rol.vak && rol.vak.length))); };
   /* app.js vult P.testCode in (ontsleutelen van coach/coachfiches.js) */
   P.testCode = function () { return Promise.resolve(true); };

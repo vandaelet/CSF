@@ -12,7 +12,7 @@ window.CSF = {
   werkgroep: "Werkgroep CSF · 1e en 2e jaar",
   titel: "CSF-projecten",
 
-  welkom: "Hier vind je alle CSF-projecten. Ben je nieuw in CSF? Start met een oefenproject. Daarin leer je de werking van een project. Kies daarna zelf uit alle projecten.",
+  welkom: "Hier vind je alle CSF-projecten. Lees eerst de afspraken hierboven. Kies daarna een project in het overzicht.",
 
   /* "Wat wordt van mij verwacht?" staat één keer op de startpagina en geldt voor elk project.
      Bron: workshop CSF praktisch. */

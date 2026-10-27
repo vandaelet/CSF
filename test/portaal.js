@@ -230,6 +230,15 @@ const DB = {
   await p.waitForSelector('.lb-melding');
   check(await p.locator('#lb-opstart').count() === 0, 'gestopte leerling start geen logboek');
 
+  console.log('5c. Oefenprojecten enkel voor het 1e jaar');
+  await aanmelden(p, '#logboek', LIEN); await p.goto(B + '#start'); await p.reload(); await p.waitForSelector('.afspraken'); await wacht(1200);
+  check(await p.locator('.starttab').count() === 0, '2e jaar (Lien, nu 2A) ziet het tabblad oefenprojecten niet');
+  await p.goto(B + '#oefenproject'); await wacht(400);
+  check((await p.textContent('#app')).includes('enkel voor leerlingen van het 1e jaar'), '2e jaar: oefenprojecten afgeschermd');
+  await aanmelden(p, '#logboek', { uid:'m', email:'mo@svsl.be', displayName:'Mo Claes' }); await p.goto(B + '#start'); await p.reload(); await p.waitForSelector('.afspraken'); await wacht(1200);
+  check(await p.locator('.starttab').count() === 1, '1e jaar (Mo, 1B) ziet het tabblad oefenprojecten');
+  check(await p.locator('.afspraken').evaluate(e => e.getBoundingClientRect().top) < await p.locator('.poort').evaluate(e => e.getBoundingClientRect().top), 'afspraken staan vóór de projecten');
+
   console.log('6. Coachfiches via de rol en export');
   await aanmelden(p, '#coach', LIEN); await p.waitForSelector('#coach-poort .lb-melding');
   check((await p.textContent('#coach-poort')).includes('enkel voor de CSF-coaches'), 'leerling kan de coachfiches niet openen');

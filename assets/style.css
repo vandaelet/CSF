@@ -356,3 +356,15 @@ footer { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justif
 .lk-knop { padding:0 12px 12px !important; }
 .verwachtingen { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
 @media (max-width:960px) { .verwachtingen { grid-template-columns:1fr; } }
+
+/* afspraken bovenaan de startpagina */
+.afspraken { border:2px solid var(--oranje); background:#fff8e8; margin:0 0 18px; font-size:.88rem; }
+.afspraken-kop { background:var(--oranje); color:var(--wit); font-family:var(--f-kop); font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:6px 12px; }
+.afspraken-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px 18px; padding:8px 12px 10px; }
+.afspraken-grid ul { margin:4px 0 0; padding-left:18px; }
+.afspraken-grid li { margin-bottom:2px; line-height:1.35; }
+.starttabs { display:flex; justify-content:flex-end; gap:6px; margin-top:6px; min-height:4px; }
+.starttab { font-family:var(--f-kop); font-weight:700; font-size:.9rem; text-decoration:none; color:var(--turkoois-donker); border:1.5px solid var(--turkoois); border-bottom:none; padding:5px 12px; background:var(--zacht); }
+.starttab span { font-weight:400; color:#666; font-size:.8rem; }
+.poort.een { grid-template-columns:1fr; margin-top:0; }
+@media (max-width:960px) { .afspraken-grid { grid-template-columns:1fr; } }

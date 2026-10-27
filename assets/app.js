@@ -123,15 +123,32 @@
   }
 
   /* ---------- Weergaven ---------- */
+  /* Oefenprojecten: enkel voor het 1e jaar (en voor coaches). Zonder portaal of nog onbekende rol: zichtbaar. */
+  function toonOefen() {
+    var P = CSF.portaal;
+    if (!P || !P.actief) return true;
+    if (!P.rolBekend) return true;
+    if (P.isCoach && P.isCoach()) return true;
+    return P.leerjaar && P.leerjaar() === 1;
+  }
+  function afsprakenKader() {
+    return '<div class="afspraken" id="verwacht"><div class="afspraken-kop">Eerst lezen: de afspraken van CSF</div><div class="afspraken-grid">' +
+      (CSF.verwachtingen || []).map(function (v) { return '<div><b>' + esc(v.titel) + "</b><ul>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("") + "</div></div>";
+  }
   function vStart() {
-    var oef = oefen();
+    var oef = oefen(), P = CSF.portaal, toon = toonOefen(), aangemeld = P && P.actief && P.rolBekend && P.isAangemeld && P.isAangemeld();
     return '<div class="wrap">' + kop() + kruimel([["Start"]]) +
-      '<div class="vel"><h2 class="banner">Welkom</h2><p>' + esc(CSF.welkom) + '</p><div class="poort">' +
-      '<a class="deur" href="#oefenproject"><span class="dt">Oefenproject</span><span class="wie">1e jaar · stap 1</span><span class="dd">Kies één van de korte oefenprojecten (3 lesuren). Leer zo de aanpak van een CSF-project.</span><span class="doms">' +
-      oef.map(function (p) { return '<span style="--h:var(' + kleur(p) + ')">' + esc(label(p)) + "</span>"; }).join("") + '</span><span class="pijl">Naar de oefenprojecten →</span></a>' +
-      '<a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar · stap 2</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: projectfiche, lesplanning en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a>' +
-      "</div>" + (CSF.portaal && CSF.portaal.actief ? '<p class="lb-start"><a class="btn" href="#logboek">Mijn logboek</a> <span class="hint">Meld je aan met je schoolaccount. Vul je logboek in bij het begin en op het einde van elk lesuur.</span></p>' : "") +
-      "</div>" + verwachtBlok() + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
+      '<div class="vel">' + afsprakenKader() + '<h2 class="banner">Welkom</h2><p>' + esc(CSF.welkom) + "</p>" +
+      '<div class="starttabs">' + (toon ? '<a class="starttab" href="#oefenproject">Oefenprojecten <span>enkel 1e jaar</span></a>' : "") + "</div>" +
+      '<div class="poort een"><a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: leerkaarten, projectfiche, leidraad per lesuur en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a></div>' +
+      (toon ? '<p class="hint">Ben je in het 1e jaar en nieuw in CSF? Start met een kort <a href="#oefenproject">oefenproject</a> (3 lesuren). Daarin leer je de aanpak van een CSF-project.</p>'
+        : (P && P.actief && !aangemeld ? '<p class="hint">Eerstejaars: meld je aan via ‘Mijn logboek’ om de oefenprojecten te zien.</p>' : "")) +
+      (CSF.portaal && CSF.portaal.actief ? '<p class="lb-start"><a class="btn" href="#logboek">Mijn logboek</a> <span class="hint">Meld je aan met je schoolaccount. Vul je logboek in bij het begin en op het einde van elk lesuur.</span></p>' : "") +
+      "</div>" + tascBlok("Elk project volgt de acht TASC-stappen") + footer() + "</div>";
+  }
+  function vGeenOefen() {
+    return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], ["Oefenproject"]]) +
+      '<div class="vel"><h2 class="banner">Oefenprojecten</h2><div class="lb-melding oranje">De oefenprojecten zijn enkel voor leerlingen van het 1e jaar. Kies een project in het <a href="#overzicht">projectenoverzicht</a>.</div></div>' + footer() + "</div>";
   }
 
   function vOefen() {
@@ -449,6 +466,7 @@
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && isFiche(p)) { location.replace("#p-" + p.id); return; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3))) && !magAfdrukken(p)) { try { sessionStorage.setItem("tab-" + p.id, "werkbundel"); } catch (e) {} location.replace("#p-" + p.id); return; }
     else if (h.indexOf("wb-") === 0 && (p = zoek(h.slice(3)))) { app.innerHTML = vWerkbundel(p); koppel("werkbundel", p); document.title = "Werkbundel · " + p.naam; }
+    else if ((h === "oefenproject" || (h.indexOf("p-") === 0 && (p = zoek(h.slice(2))) && p.soort !== "vak")) && !toonOefen()) { app.innerHTML = vGeenOefen(); document.title = "Oefenproject · " + CSF.titel; }
     else if (h === "oefenproject") { app.innerHTML = vOefen(); koppel("oefen"); document.title = "Oefenproject · " + CSF.titel; }
     else if (h === "coach") {
       var bewaard = null; try { bewaard = sessionStorage.getItem("csf-coach"); } catch (x) {}
