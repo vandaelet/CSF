@@ -460,9 +460,11 @@
       return melding(doel, "Het dashboard is enkel voor CSF-coaches en vakleerkrachten van CSF-leerlingen." + (rol.leerling ? ' Ga naar <a href="#logboek">Mijn logboek</a>.' : ""), "oranje");
     }
     var leeg = Promise.resolve([]), niets = Promise.resolve(null), opt = function (p) { return p.catch(function () { return null; }); };
+    /* nieuwere collecties: lukt het lezen niet (oude regels), dan laadt de rest van het dashboard toch */
+    var geweigerd = [], zacht = function (naam) { return lijst(naam).catch(function () { geweigerd.push(naam); return []; }); };
     var taken = rol.coach
       ? [lijst("leerlingen"), lijst("logboeken"), lijst("feedback"), lijst("coaches"), rol.beheerder ? opt(haal("instellingen/coachfiches")) : niets,
-         lijst("klaslijst"), lijst("aanmeldingen"), opt(haal("instellingen/schooljaar")), rol.beheerder ? opt(haal("instellingen/herinnering")) : niets, lijst("gezien"), lijst("vragen")]
+         zacht("klaslijst"), zacht("aanmeldingen"), opt(haal("instellingen/schooljaar")), rol.beheerder ? opt(haal("instellingen/herinnering")) : niets, zacht("gezien"), zacht("vragen")]
       : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), leeg, leeg, niets, leeg, leeg, niets, niets, leeg, leeg];
     Promise.all(taken).then(function (r) {
       D.data = { leerlingen: r[0], logboeken: r[1], feedback: r[2], coaches: r[3], codeIngesteld: !!(r[4] && r[4].exists && r[4].exists() && r[4].data().code),
@@ -471,6 +473,7 @@
       /* een coach ziet eerst zijn eigen leerlingen */
       if (!D.filterGezet) { D.filterGezet = true; if (rol.coach && r[0].some(function (l) { return l.coach === mail() && l.actief !== false; })) D.coachFilter = mail(); }
       if (!rol.coach) D.tab = "overzicht";
+      D.geweigerd = geweigerd;
       tekenDashboard(doel);
     }).catch(function (e) { melding(doel, "Het dashboard kon niet laden. (" + esc(e && (e.code || e.message)) + ")", "rood"); });
   }
@@ -507,7 +510,8 @@
   function tekenDashboard(doel) {
     var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
     var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
-    doel.innerHTML = '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
+    doel.innerHTML = (D.geweigerd && D.geweigerd.length ? '<div class="lb-melding rood"><b>De toegangsregels in Firebase zijn niet up-to-date.</b> ' + (rol.beheerder ? "Plak de volledige inhoud van <code>firestore.rules</code> uit GitHub in Firebase → Firestore Database → Rules en klik op Publish." : "Vraag de beheerder om de regels opnieuw te publiceren.") + ' <span class="hint">(geen toegang tot: ' + esc(D.geweigerd.join(", ")) + ")</span></div>" : "") +
+      '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
       '</div><div id="db-inhoud"></div>';
     doel.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { D.tab = b.dataset.tab; D.open = null; tekenDashboard(doel); }); });
     var z = doel.querySelector("#db-inhoud");
