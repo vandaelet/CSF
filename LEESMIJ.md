@@ -88,12 +88,29 @@ Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De 
 **Coach** (`Dashboard coaches`):
 - **Overzicht** van alle leerlingen. Een ontbrekend einde-logboek staat in het **rood**. Klik op een leerling om het volledige logboek te lezen en feedback te geven.
 - **Kopieer overzicht voor Google Sheets** (plakken met Ctrl+V) of download het overzicht of alle lesuren als CSV.
-- **Leerlingen**: voeg leerlingen toe (of plak een lijst uit Excel of Smartschool: e-mail, naam, klas), wijs een coach toe en vul het e-mailadres van de vakleerkracht in. Dat kan je doorheen het jaar wijzigen.
+- **Klaslijsten**: vink aan wie CSF volgt en kies een coach (zie hieronder).
+- **CSF-leerlingen**: wijzig de coach en vul het e-mailadres van de vakleerkracht in. Dat kan je doorheen het jaar wijzigen. Een leerling die niet op de klaslijst staat, voeg je hier met de hand toe.
 - **Coachfiches**: een coach opent ze zonder code.
 
 **Vakleerkracht**: staat zijn e-mailadres bij een leerling, dan leest hij via het dashboard het logboek van die leerling (zonder iets te kunnen wijzigen).
 
 **Beheerder** (tabblad `Coaches en instellingen`): coaches toevoegen en verwijderen, en de coachcode één keer bewaren zodat coaches de coachfiches zonder code openen.
+
+## Klaslijsten en CSF-leerlingen
+
+De klaslijsten staan enkel in Firebase, nooit op GitHub. Zet een echte klaslijst dus nooit in deze map.
+
+1. **Importeren** (beheerder, één keer per schooljaar): Dashboard → **Klaslijsten** → vul het schooljaar in (bv. `2026-2027`) → kies het Excel-bestand → **Importeer**.
+   - Een Smartschool-klaslijst met één blad per klas (`Klaslijst 1B`, kolommen Nr. en Leerling) werkt.
+   - Een export met de kolommen Klas, Familienaam, Voornaam en E-mail werkt ook. Die is beter: dan zijn de e-mailadressen zeker.
+2. **Aanvinken** (elke coach): filter op klas en vink de CSF-leerlingen aan. Kies meteen een coach.
+   - Zonder e-mailkolom stelt het portaal `familienaam.voornaam@svsl.be` voor (oranje label **voorstel**). Controleer dat adres en pas het aan als het niet klopt.
+3. **Nieuw schooljaar**: importeer de nieuwe klaslijsten met het nieuwe schooljaar. Elke leerling wordt herkend aan zijn naam.
+   - Wie CSF volgt, blijft aangevinkt en krijgt zijn nieuwe klas. De klas van vorig jaar blijft bewaard, net als coach en logboeken.
+   - Wie niet meer op de lijst staat, blijft bewaard met het grijze label **niet op de klaslijst van …**.
+   - Vink daarna de nieuwe CSF-leerlingen aan.
+4. **Stoppen met CSF**: vink de leerling uit. Hij en zijn logboeken blijven bewaard, maar hij kan geen logboek meer invullen. Je kan hem later opnieuw aanvinken.
+5. **Aanmeldingen**: meldt een leerling zich aan met een adres dat niet op de CSF-lijst staat, dan verschijnt hij bovenaan in het oranje. Klik op de knop om hem met dat adres op CSF te zetten, of op **Negeer**.
 
 ## Firebase koppelen (één keer)
 
@@ -105,7 +122,7 @@ Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De 
 6. **Firestore Database → Data → Start collection**: naam `beheerders`, Document ID = jouw schooladres in kleine letters (bv. `voornaam.naam@svsl.be`). Voeg één veld toe (bv. `naam`, tekst, je naam) en klik **Save**. Nu ben je beheerder.
 7. **Projectinstellingen (tandwiel) → General → Your apps → Web (`</>`)**: bijnaam `csf-site`, geen hosting. Kopieer het blok `firebaseConfig`.
 8. Plak dat blok in `portaal-config.js` op de plaats van `CSF.firebaseConfig = null;` (of geef het aan Claude). Na een paar minuten werkt het logboek.
-9. Open de site → **Dashboard coaches** → **Coaches en instellingen**: voeg de coaches toe en bewaar de coachcode. Voeg daarna in **Leerlingen** de CSF-leerlingen toe.
+9. Open de site → **Dashboard coaches** → **Coaches en instellingen**: voeg de coaches toe en bewaar de coachcode. Importeer daarna de klaslijsten en vink de CSF-leerlingen aan (zie hierboven).
 
 De gegevens in `firebaseConfig` zijn niet geheim. De beveiliging zit in `firestore.rules`.
 

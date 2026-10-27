@@ -4,8 +4,9 @@
    - #logboek               overzicht van mijn projecten (leerling)
    - #logboek-<project-id>  logboek van één project: opstart, begin en einde per lesuur, evaluatie en reflectie
    - #dashboard             coaches: overzicht, leerlingen, feedback, export · beheerder: coaches en coachcode
-   Gegevens (Firestore): leerlingen/<e-mail>, coaches/<e-mail>, beheerders/<e-mail>,
-   logboeken/<e-mail>__<project-id>, feedback/<id>, instellingen/coachfiches.
+   Gegevens (Firestore): leerlingen/<e-mail> (CSF-leerlingen), klaslijst/<naamsleutel> (alle leerlingen van de school),
+   coaches/<e-mail>, beheerders/<e-mail>, logboeken/<e-mail>__<project-id>, feedback/<id>, aanmeldingen/<e-mail>,
+   instellingen/coachfiches en instellingen/schooljaar.
    ===================================================================== */
 (function () {
   "use strict";
@@ -66,8 +67,12 @@
       rol.beheerder = !!(r[0] && r[0].exists());
       rol.coach = rol.beheerder || !!(r[1] && r[1].exists());
       rol.coachNaam = r[1] && r[1].exists() ? r[1].data().naam || "" : "";
-      rol.leerling = r[2] && r[2].exists() ? r[2].data() : null;
-      rol.vak = r[3] || [];
+      var ll = r[2] && r[2].exists() ? r[2].data() : null;
+      rol.leerling = ll && ll.actief !== false ? ll : null;
+      rol.gestopt = !!(ll && ll.actief === false);
+      rol.vak = (r[3] || []).filter(function (x) { return x.actief !== false; });
+      /* niet op de CSF-lijst? Bewaar de aanmeldpoging, zodat een coach het adres kan koppelen */
+      if (!rol.leerling && !rol.coach && !rol.vak.length) F.setDoc(ref("aanmeldingen/" + m), { naam: gebruiker.displayName || "", tijd: nu() }, { merge: true }).catch(function () {});
     });
   }
   function aanmelden() {
@@ -213,7 +218,7 @@
   /* ---------- leerling: overzicht van mijn projecten ---------- */
   function nietOpLijst(doel) {
     if (rol.coach || rol.vak.length) return melding(doel, 'Je bent aangemeld als leerkracht. Open het <a href="#dashboard">dashboard</a>.');
-    melding(doel, "Je staat nog niet op de CSF-lijst. Vraag je coach om je toe te voegen. Daarna kan je je logboek invullen.", "oranje");
+    melding(doel, (rol.gestopt ? "Je staat niet meer op de CSF-lijst." : "Je staat nog niet op de CSF-lijst.") + " Vraag je coach om je toe te voegen. Je coach ziet dat je je aanmeldde met <b>" + esc(mail()) + "</b>. Daarna kan je je logboek invullen.", "oranje");
   }
   function hub(doel) {
     if (!rol.leerling) return nietOpLijst(doel);
@@ -416,11 +421,14 @@
     if (!rol.coach && !rol.vak.length) {
       return melding(doel, "Het dashboard is enkel voor CSF-coaches en vakleerkrachten van CSF-leerlingen." + (rol.leerling ? ' Ga naar <a href="#logboek">Mijn logboek</a>.' : ""), "oranje");
     }
+    var leeg = Promise.resolve([]), niets = Promise.resolve(null), opt = function (p) { return p.catch(function () { return null; }); };
     var taken = rol.coach
-      ? [lijst("leerlingen"), lijst("logboeken"), lijst("feedback"), lijst("coaches"), rol.beheerder ? haal("instellingen/coachfiches").catch(function () { return null; }) : Promise.resolve(null)]
-      : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), Promise.resolve([]), Promise.resolve([]), Promise.resolve(null)];
+      ? [lijst("leerlingen"), lijst("logboeken"), lijst("feedback"), lijst("coaches"), rol.beheerder ? opt(haal("instellingen/coachfiches")) : niets,
+         lijst("klaslijst"), lijst("aanmeldingen"), opt(haal("instellingen/schooljaar"))]
+      : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), leeg, leeg, niets, leeg, leeg, niets];
     Promise.all(taken).then(function (r) {
-      D.data = { leerlingen: r[0], logboeken: r[1], feedback: r[2], coaches: r[3], codeIngesteld: !!(r[4] && r[4].exists && r[4].exists() && r[4].data().code) };
+      D.data = { leerlingen: r[0], logboeken: r[1], feedback: r[2], coaches: r[3], codeIngesteld: !!(r[4] && r[4].exists && r[4].exists() && r[4].data().code),
+        klaslijst: r[5], aanmeldingen: r[6], schooljaar: r[7] && r[7].exists && r[7].exists() ? r[7].data().jaar || "" : "" };
       if (!rol.coach) D.tab = "overzicht";
       tekenDashboard(doel);
     }).catch(function (e) { melding(doel, "Het dashboard kon niet laden. (" + esc(e && (e.code || e.message)) + ")", "rood"); });
@@ -430,7 +438,7 @@
   function rijen() {
     var d = D.data, perLl = {};
     d.logboeken.forEach(function (lb) { (perLl[lb.leerling] = perLl[lb.leerling] || []).push(lb); });
-    return d.leerlingen.map(function (l) {
+    return d.leerlingen.filter(function (l) { return l.actief !== false; }).map(function (l) {
       var lbs = (perLl[l._id] || []).sort(function (a, b) { return (a.status === "afgerond") - (b.status === "afgerond") || String(b.gestart).localeCompare(String(a.gestart)); });
       var hoofd = lbs[0] || null, st = status(hoofd);
       var laatste = hoofd && (hoofd.lessen || []).length ? hoofd.lessen[hoofd.lessen.length - 1].datum : hoofd ? hoofd.gestart : "";
@@ -439,12 +447,13 @@
     });
   }
   function tekenDashboard(doel) {
-    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["leerlingen", "Leerlingen"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
+    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
     doel.innerHTML = '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
       '</div><div id="db-inhoud"></div>';
     doel.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { D.tab = b.dataset.tab; D.open = null; tekenDashboard(doel); }); });
     var z = doel.querySelector("#db-inhoud");
     if (D.tab === "leerlingen" && rol.coach) return tabLeerlingen(z, doel);
+    if (D.tab === "klaslijst" && rol.coach) return tabKlaslijst(z, doel);
     if (D.tab === "beheer" && rol.beheerder) return tabBeheer(z, doel);
     tabOverzicht(z, doel);
   }
@@ -545,7 +554,7 @@
   }
   function mails(s) { return String(s || "").split(/[\s,;]+/).map(function (x) { return x.trim().toLowerCase(); }).filter(function (x) { return x.indexOf("@") > 0; }); }
   function bewaarLeerling(email, d) {
-    var data = { naam: d.naam, klas: d.klas, coach: d.coach || "", coachNaam: d.coach ? coachNaam(d.coach) : "", vakleerkrachten: d.vakleerkrachten || [] };
+    var data = { naam: d.naam, klas: d.klas, coach: d.coach || "", coachNaam: d.coach ? coachNaam(d.coach) : "", vakleerkrachten: d.vakleerkrachten || [], actief: true };
     return F.setDoc(ref("leerlingen/" + email), data, { merge: true }).then(function () {
       /* vakleerkrachten mogen meelezen: zet ze ook bij de logboeken van deze leerling */
       return Promise.all(D.data.logboeken.filter(function (lb) { return lb.leerling === email; }).map(function (lb) { return F.updateDoc(ref("logboeken/" + lb._id), { kijkers: data.vakleerkrachten }); }));
@@ -553,17 +562,15 @@
   }
 
   function tabLeerlingen(z, doel) {
-    var d = D.data, ll = d.leerlingen.slice().sort(function (a, b) { return String(a.klas + a.naam).localeCompare(String(b.klas + b.naam), "nl"); });
-    z.innerHTML = '<p class="hint">Wijs elke leerling toe aan een coach. Dit kan je doorheen het jaar wijzigen. Vul bij ‘Vakleerkracht’ het e-mailadres in van de leerkracht wiens les de leerling verlaat: die leerkracht kan dan het logboek lezen.</p>' +
+    var d = D.data, ll = d.leerlingen.filter(function (l) { return l.actief !== false; }).sort(function (a, b) { return String(a.klas + a.naam).localeCompare(String(b.klas + b.naam), "nl"); });
+    z.innerHTML = '<p class="hint">Wijs elke leerling toe aan een coach. Dit kan je doorheen het jaar wijzigen. Vul bij ‘Vakleerkracht’ het e-mailadres in van de leerkracht wiens les de leerling verlaat: die leerkracht kan dan het logboek lezen. Nieuwe CSF-leerlingen vink je aan in het tabblad <b>Klaslijsten</b>.</p>' +
       '<div class="lb-tabelwrap"><table class="lb-overzicht lb-bewerk"><thead><tr><th>Leerling</th><th>Klas</th><th>Coach</th><th>Vakleerkracht (e-mail)</th><th></th></tr></thead><tbody>' +
       (ll.length ? ll.map(function (l, i) {
         return '<tr data-ll="' + esc(l._id) + '"><td><input type="text" id="ll-naam-' + i + '" value="' + esc(l.naam || "") + '" aria-label="Naam"><br><span class="hint">' + esc(l._id) + '</span></td><td><input type="text" id="ll-klas-' + i + '" value="' + esc(l.klas || "") + '" aria-label="Klas" size="5"></td><td>' +
-          coachSelect("ll-coach-" + i, l.coach) + '</td><td><input type="text" id="ll-vak-' + i + '" value="' + esc((l.vakleerkrachten || []).join(", ")) + '" aria-label="Vakleerkracht" placeholder="naam@' + esc(DOMEIN) + '"></td><td class="lb-knoppen"><button type="button" class="btn lb-klein" data-bewaar="' + i + '">Bewaar</button> <button type="button" class="btn donker lb-klein" data-wis="' + i + '">Verwijder</button></td></tr>';
+          coachSelect("ll-coach-" + i, l.coach) + '</td><td><input type="text" id="ll-vak-' + i + '" value="' + esc((l.vakleerkrachten || []).join(", ")) + '" aria-label="Vakleerkracht" placeholder="naam@' + esc(DOMEIN) + '"></td><td class="lb-knoppen"><button type="button" class="btn lb-klein" data-bewaar="' + i + '">Bewaar</button> <button type="button" class="btn donker lb-klein" data-wis="' + i + '">Stopt met CSF</button></td></tr>';
       }).join("") : '<tr><td colspan="5" class="hint">Nog geen leerlingen. Voeg ze hieronder toe.</td></tr>') + '</tbody></table></div><p class="fb" id="ll-fb" aria-live="polite"></p>' +
       '<h3>Leerling toevoegen</h3><div class="lb-twee">' + veld("nieuw-mail", "E-mailadres", { hint: "naam@" + DOMEIN }) + veld("nieuw-naam", "Naam") + "</div><div class=\"lb-twee\">" + veld("nieuw-klas", "Klas") +
-      '<div class="lb-veld"><label for="nieuw-coach">Coach</label>' + coachSelect("nieuw-coach", "") + '</div></div><button type="button" class="btn" id="nieuw-voegtoe">Voeg toe</button>' +
-      '<h3>Een lijst plakken</h3><p class="hint">Kopieer de kolommen uit Excel of Smartschool: e-mail, naam, klas (en eventueel het e-mailadres van de coach). Eén leerling per regel.</p>' +
-      '<textarea id="plak-lijst" rows="6" placeholder="lien.peeters@' + esc(DOMEIN) + '\tLien Peeters\t1A"></textarea><div class="lb-acties"><button type="button" class="btn" id="plak-import">Importeer de lijst</button><span class="fb" id="plak-fb" aria-live="polite"></span></div>';
+      '<div class="lb-veld"><label for="nieuw-coach">Coach</label>' + coachSelect("nieuw-coach", "") + '</div></div><p class="hint">Enkel nodig voor een leerling die niet op de klaslijst staat.</p><button type="button" class="btn" id="nieuw-voegtoe">Voeg toe</button>';
     var fb = z.querySelector("#ll-fb");
     z.querySelectorAll("[data-bewaar]").forEach(function (b) {
       b.addEventListener("click", function () {
@@ -576,8 +583,10 @@
     z.querySelectorAll("[data-wis]").forEach(function (b) {
       b.addEventListener("click", function () {
         var email = b.closest("tr").dataset.ll;
-        if (!window.confirm("Verwijder " + email + " van de CSF-lijst? De logboeken blijven bewaard.")) return;
-        F.deleteDoc(ref("leerlingen/" + email)).then(function () { ververs(doel); }).catch(function (e) { fb.textContent = "Verwijderen lukte niet. (" + (e.code || e.message) + ")"; });
+        if (!window.confirm(email + " stopt met CSF? De leerling en zijn logboeken blijven bewaard. Je kan hem later opnieuw aanvinken.")) return;
+        var l = D.data.leerlingen.filter(function (x) { return x._id === email; })[0] || {};
+        Promise.all([F.setDoc(ref("leerlingen/" + email), { actief: false }, { merge: true })].concat(l.sleutel ? [F.setDoc(ref("klaslijst/" + l.sleutel), { csf: false }, { merge: true })] : []))
+          .then(function () { ververs(doel); }).catch(function (e) { fb.textContent = "Verwijderen lukte niet. (" + (e.code || e.message) + ")"; });
       });
     });
     z.querySelector("#nieuw-voegtoe").addEventListener("click", function () {
@@ -586,20 +595,238 @@
       bewaarLeerling(email, { naam: z.querySelector("#nieuw-naam").value.trim(), klas: z.querySelector("#nieuw-klas").value.trim(), coach: z.querySelector("#nieuw-coach").value, vakleerkrachten: [] })
         .then(function () { ververs(doel); }).catch(function (e) { fb.textContent = "Toevoegen lukte niet. (" + (e.code || e.message) + ")"; });
     });
-    z.querySelector("#plak-import").addEventListener("click", function () {
-      var out = z.querySelector("#plak-fb"), regels = z.querySelector("#plak-lijst").value.split(/\r?\n/), ok = [], fout = [];
-      regels.forEach(function (r) {
-        if (!r.trim()) return;
-        var k = r.split(/\t|;/).map(function (x) { return x.trim(); }); if (k.length === 1) k = r.split(",").map(function (x) { return x.trim(); });
-        var email = (k[0] || "").toLowerCase();
-        if (email.slice(-(DOMEIN.length + 1)) !== "@" + DOMEIN) { fout.push(r.trim()); return; }
-        var coach = (k[3] || "").toLowerCase(), bestaand = D.data.leerlingen.filter(function (x) { return x._id === email; })[0] || {};
-        ok.push(bewaarLeerling(email, { naam: k[1] || bestaand.naam || "", klas: k[2] || bestaand.klas || "", coach: coach && D.data.coaches.some(function (c) { return c._id === coach; }) ? coach : bestaand.coach || "", vakleerkrachten: bestaand.vakleerkrachten || [] }));
+  }
+
+  /* ---------- klaslijsten: alle leerlingen van de school, CSF-leerlingen aanvinken ---------- */
+  function normNaam(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  /* naamsleutel: woorden zonder accenten, alfabetisch (zo is ‘Peeters Lien’ dezelfde als ‘Lien Peeters’) */
+  function sleutel(naam) { return normNaam(naam).replace(/['’`]/g, "").replace(/[^a-z0-9\s-]/g, " ").split(/[\s-]+/).filter(Boolean).sort().join("_"); }
+  function mailDeel(s) { return normNaam(s).replace(/[\s'’`]+/g, "").replace(/[^a-z0-9.-]/g, ""); }
+  /* voorstel volgens het schoolpatroon familienaam.voornaam@domein (de klaslijst zet de familienaam eerst) */
+  function voorstelMail(fam, voor) {
+    if (voor == null) { var w = String(fam).trim().split(/\s+/); if (w.length < 2) return ""; voor = w.pop(); fam = w.join(" "); }
+    return mailDeel(fam) + "." + mailDeel(voor) + "@" + DOMEIN;
+  }
+  function huidigSchooljaar() { var d = new Date(), j = d.getFullYear() - (d.getMonth() < 7 ? 1 : 0); return j + "-" + (j + 1); }
+
+  /* Excel (.xlsx) lezen in de browser, zonder externe bibliotheek */
+  function leesXlsx(buf) {
+    var u8 = new Uint8Array(buf), dv = new DataView(buf), eocd = -1;
+    for (var i = u8.length - 22; i >= Math.max(0, u8.length - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) return Promise.reject(new Error("Dit is geen Excel-bestand (.xlsx)."));
+    var n = dv.getUint16(eocd + 10, true), p = dv.getUint32(eocd + 16, true), files = {}, td = new TextDecoder();
+    for (var k = 0; k < n; k++) {
+      var nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+      var start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
+      files[td.decode(u8.subarray(p + 46, p + 46 + nl))] = { methode: dv.getUint16(p + 10, true), data: u8.subarray(start, start + dv.getUint32(p + 20, true)) };
+      p += 46 + nl + el + cl;
+    }
+    function tekst(naam) {
+      var f = files[naam]; if (!f) return Promise.resolve(null);
+      if (f.methode === 0) return Promise.resolve(td.decode(f.data));
+      return new Response(new Blob([f.data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+    }
+    var xml = function (s) { return new DOMParser().parseFromString(s, "application/xml"); };
+    var alle = function (el, tag) { return [].slice.call(el.getElementsByTagName(tag)); };
+    return Promise.all([tekst("xl/workbook.xml"), tekst("xl/_rels/workbook.xml.rels"), tekst("xl/sharedStrings.xml")]).then(function (r) {
+      if (!r[0]) throw new Error("Dit is geen Excel-bestand (.xlsx).");
+      var rels = {}, gedeeld = [];
+      alle(xml(r[1] || "<x/>"), "Relationship").forEach(function (x) { rels[x.getAttribute("Id")] = x.getAttribute("Target"); });
+      if (r[2]) alle(xml(r[2]), "si").forEach(function (si) { gedeeld.push(alle(si, "t").map(function (t) { return t.textContent; }).join("")); });
+      var bladen = alle(xml(r[0]), "sheet").map(function (s) {
+        var t = (rels[s.getAttribute("r:id")] || "").replace(/^\//, ""); if (t.indexOf("xl/") !== 0) t = "xl/" + t;
+        return { naam: s.getAttribute("name"), pad: t };
       });
-      if (!ok.length) { out.textContent = fout.length ? "Geen geldige regels. Elke regel begint met een schooladres (…@" + DOMEIN + ")." : "Plak eerst een lijst."; return; }
-      out.textContent = "Bezig met importeren …";
-      Promise.all(ok).then(function () { out.textContent = ok.length + " leerlingen bewaard." + (fout.length ? " Overgeslagen: " + fout.length + "." : ""); setTimeout(function () { ververs(doel); }, 600); })
-        .catch(function (e) { out.textContent = "Importeren lukte niet. (" + (e.code || e.message) + ")"; });
+      return Promise.all(bladen.map(function (b) {
+        return tekst(b.pad).then(function (s) {
+          var rijen = [];
+          if (s) alle(xml(s), "row").forEach(function (row) {
+            var rij = [];
+            alle(row, "c").forEach(function (c) {
+              var m = (c.getAttribute("r") || "").match(/^[A-Z]+/), kol = 0;
+              if (m) { for (var j = 0; j < m[0].length; j++) kol = kol * 26 + m[0].charCodeAt(j) - 64; kol--; } else kol = rij.length;
+              var t = c.getAttribute("t"), v = c.getElementsByTagName("v")[0], w;
+              if (t === "s") w = gedeeld[Number(v && v.textContent)] || "";
+              else if (t === "inlineStr") w = alle(c, "t").map(function (x) { return x.textContent; }).join("");
+              else w = v ? v.textContent : "";
+              rij[kol] = String(w).trim();
+            });
+            var nr = Number(row.getAttribute("r")) - 1;
+            rijen[nr >= 0 ? nr : rijen.length] = Array.from(rij, function (x) { return x == null ? "" : x; });
+          });
+          return { naam: b.naam, rijen: Array.from(rijen, function (x) { return x || []; }) };
+        });
+      }));
+    });
+  }
+  /* twee vormen: (1) een blad per klas zoals de Smartschool-klaslijst (‘Klaslijst 1B’, kolommen Nr. en Leerling);
+     (2) één tabel met kolommen Klas, Familienaam, Voornaam en eventueel E-mail */
+  function leesKlaslijsten(bladen) {
+    var uit = [], fouten = [];
+    bladen.forEach(function (b) {
+      var rijen = b.rijen, kop = -1, kol = {};
+      for (var i = 0; i < Math.min(rijen.length, 15); i++) {
+        var r = rijen[i].map(function (c) { return String(c || "").toLowerCase(); });
+        if (r.some(function (c) { return c.indexOf("familienaam") === 0; }) && r.some(function (c) { return c.indexOf("voornaam") === 0; })) {
+          kop = i;
+          r.forEach(function (c, j) { if (c.indexOf("familienaam") === 0) kol.fam = j; else if (c.indexOf("voornaam") === 0) kol.voor = j; else if (/^(e-?mail|mail)/.test(c)) kol.mail = j; else if (c.indexOf("klas") === 0) kol.klas = j; });
+          break;
+        }
+      }
+      if (kop >= 0) {
+        rijen.slice(kop + 1).forEach(function (r) {
+          var fam = r[kol.fam] || "", voor = r[kol.voor] || ""; if (!fam && !voor) return;
+          var m = kol.mail != null ? String(r[kol.mail] || "").trim().toLowerCase() : "";
+          uit.push({ naam: (fam + " " + voor).trim(), klas: (kol.klas != null && r[kol.klas]) || b.naam, email: m || voorstelMail(fam, voor), zeker: !!m });
+        });
+        return;
+      }
+      var titel = rijen.map(function (r) { return r[0] || ""; }).filter(function (c) { return /^klaslijst\s+/i.test(c); })[0];
+      var klas = titel ? titel.replace(/^klaslijst\s+/i, "").trim() : b.naam, start = -1;
+      rijen.some(function (r, i) { if (/^nr/i.test(r[0] || "") && /leerling|naam/i.test(r[1] || "")) { start = i; return true; } return false; });
+      if (start < 0) { fouten.push(b.naam); return; }
+      rijen.slice(start + 1).forEach(function (r) { var naam = r[1] || ""; if (naam) uit.push({ naam: naam, klas: klas, email: voorstelMail(naam), zeker: false }); });
+    });
+    return { rijen: uit, fouten: fouten };
+  }
+  function schrijfAlles(ops) {
+    var stukken = []; for (var i = 0; i < ops.length; i += 400) stukken.push(ops.slice(i, i + 400));
+    return stukken.reduce(function (pr, stuk) {
+      return pr.then(function () { var b = F.writeBatch(db); stuk.forEach(function (o) { b.set(ref(o[0]), o[1], { merge: true }); }); return b.commit(); });
+    }, Promise.resolve());
+  }
+  function importeer(gelezen, jaar) {
+    var bestaand = {}, gezien = {}, ops = [], csf = 0, klassen = {};
+    D.data.klaslijst.forEach(function (k) { bestaand[k._id] = k; });
+    gelezen.rijen.forEach(function (r) {
+      var s = sleutel(r.naam) || "leerling", id = s, i = 2;
+      while (gezien[id]) id = s + "_" + i++;
+      gezien[id] = 1; klassen[r.klas] = 1;
+      var oud = bestaand[id] || {}, email = oud.emailZeker ? oud.email : (r.zeker ? r.email : (oud.email || r.email));
+      ops.push(["klaslijst/" + id, { naam: r.naam, klas: r.klas, schooljaar: jaar, email: email || "", emailZeker: !!(oud.emailZeker || r.zeker), csf: !!oud.csf }]);
+      if (oud.csf && email) { var kl = {}; kl[jaar] = r.klas; ops.push(["leerlingen/" + email, { klas: r.klas, klassen: kl }]); csf++; }
+    });
+    ops.push(["instellingen/schooljaar", { jaar: jaar }]);
+    var weg = Object.keys(bestaand).filter(function (id) { return !gezien[id]; }).length;
+    return schrijfAlles(ops).then(function () { return { aantal: gelezen.rijen.length, klassen: Object.keys(klassen).length, csf: csf, weg: weg }; });
+  }
+  function lokaal(col, id, patch) {
+    var l = D.data[col], o = l.filter(function (x) { return x._id === id; })[0];
+    if (!o) { o = { _id: id }; l.push(o); }
+    Object.keys(patch).forEach(function (k) { o[k] = patch[k] && typeof patch[k] === "object" && !Array.isArray(patch[k]) && o[k] && typeof o[k] === "object" ? Object.assign({}, o[k], patch[k]) : patch[k]; });
+    return o;
+  }
+  function geldigMail(e) { return /^[^@\s]+@/.test(e) && e.slice(-(DOMEIN.length + 1)) === "@" + DOMEIN; }
+  /* een leerling op CSF zetten of eraf halen; leerling en logboeken blijven altijd bewaard */
+  function zetCsf(k, aan, email) {
+    var schrijf = [], kl = {}; kl[k.schooljaar || huidigSchooljaar()] = k.klas;
+    if (aan) {
+      var oud = D.data.leerlingen.filter(function (x) { return x._id === email; })[0] || {};
+      var p1 = { csf: true, email: email, emailZeker: true }, p2 = { naam: k.naam, klas: k.klas, klassen: kl, actief: true, sleutel: k._id, coach: oud.coach || "", coachNaam: oud.coachNaam || "", vakleerkrachten: oud.vakleerkrachten || [] };
+      if (k.email && k.email !== email && k.csf) { schrijf.push(F.setDoc(ref("leerlingen/" + k.email), { actief: false }, { merge: true })); lokaal("leerlingen", k.email, { actief: false }); }
+      schrijf.push(F.setDoc(ref("klaslijst/" + k._id), p1, { merge: true }), F.setDoc(ref("leerlingen/" + email), p2, { merge: true }));
+      lokaal("klaslijst", k._id, p1); lokaal("leerlingen", email, p2);
+    } else {
+      schrijf.push(F.setDoc(ref("klaslijst/" + k._id), { csf: false }, { merge: true })); lokaal("klaslijst", k._id, { csf: false });
+      if (k.email) { schrijf.push(F.setDoc(ref("leerlingen/" + k.email), { actief: false }, { merge: true })); lokaal("leerlingen", k.email, { actief: false }); }
+    }
+    return Promise.all(schrijf);
+  }
+
+  function tabKlaslijst(z, doel) {
+    var d = D.data, jaar = d.schooljaar, KS = D.ks || (D.ks = { klas: "", zoek: "", enkelCsf: false });
+    var klassen = []; d.klaslijst.forEach(function (k) { if ((!jaar || k.schooljaar === jaar) && klassen.indexOf(k.klas) < 0) klassen.push(k.klas); });
+    klassen.sort(function (a, b) { return a.localeCompare(b, "nl", { numeric: true }); });
+    var actief = {}; d.leerlingen.forEach(function (l) { if (l.actief !== false) actief[l._id] = 1; });
+    var pogingen = d.aanmeldingen.filter(function (a) { return !actief[a._id]; });
+    var r = d.klaslijst.filter(function (k) {
+      if (KS.klas && k.klas !== KS.klas) return false;
+      if (KS.enkelCsf && !k.csf) return false;
+      var q = KS.zoek.toLowerCase(); return !q || (k.naam + " " + (k.email || "")).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return String(a.klas).localeCompare(String(b.klas), "nl", { numeric: true }) || String(a.naam).localeCompare(String(b.naam), "nl"); });
+    var html = "";
+    if (rol.beheerder) html += '<details class="lb-hist"' + (d.klaslijst.length ? "" : " open") + '><summary>Klaslijsten importeren of bijwerken (één keer per schooljaar)</summary>' +
+      '<p class="hint">Kies het Excel-bestand met de klaslijsten uit Smartschool (één blad per klas), of een export met de kolommen Klas, Familienaam, Voornaam en E-mail. Bestaande leerlingen krijgen hun nieuwe klas. Wie CSF volgt, blijft aangevinkt. Wie niet meer op de lijst staat, blijft bewaard.</p>' +
+      '<div class="lb-twee"><div class="lb-veld"><label for="kl-jaar">Schooljaar</label><input type="text" id="kl-jaar" value="' + esc(jaar || huidigSchooljaar()) + '"></div>' +
+      '<div class="lb-veld"><label for="kl-bestand">Excel-bestand</label><input type="file" id="kl-bestand" accept=".xlsx"></div></div>' +
+      '<div class="lb-acties"><button type="button" class="btn" id="kl-import">Importeer</button><span class="fb" id="kl-fb" aria-live="polite"></span></div></details>';
+    else if (!d.klaslijst.length) html += '<div class="lb-melding">De beheerder importeert de klaslijsten één keer per schooljaar.</div>';
+    if (pogingen.length) html += '<div class="lb-melding oranje"><b>Aanmeldingen van leerlingen die niet op de CSF-lijst staan</b>' + pogingen.map(function (a) {
+      var s = sleutel(a.naam), match = d.klaslijst.filter(function (k) { return s && (k._id === s || k._id.indexOf(s + "_") === 0); })[0];
+      return '<div class="lb-poging" data-mail="' + esc(a._id) + '"><span><b>' + esc(a.naam || "?") + "</b> · " + esc(a._id) + " · " + datum(a.tijd) + "</span>" +
+        (match ? '<button type="button" class="btn lb-klein" data-koppel="' + esc(match._id) + '">Zet ' + esc(match.naam) + " (" + esc(match.klas) + ") op CSF met dit adres</button>" : '<span class="hint">Geen leerling met deze naam op de klaslijst.</span>') +
+        ' <button type="button" class="btn donker lb-klein" data-negeer="1">Negeer</button></div>';
+    }).join("") + "</div>";
+    html += (d.klaslijst.length ? '<div class="crij lb-filters"><label for="kl-klas" class="hint">Klas</label><select id="kl-klas"><option value="">Alle klassen</option>' +
+      klassen.map(function (k) { return '<option value="' + esc(k) + '"' + (KS.klas === k ? " selected" : "") + ">" + esc(k) + "</option>"; }).join("") +
+      '</select><input type="search" id="kl-zoek" placeholder="Zoek een leerling" value="' + esc(KS.zoek) + '" aria-label="Zoek een leerling"><label class="lb-chip" for="kl-enkel"><input type="checkbox" id="kl-enkel"' + (KS.enkelCsf ? " checked" : "") + "><span>Enkel CSF</span></label></div>" +
+      '<p class="hint">Vink aan wie CSF volgt. Controleer het e-mailadres: een <span class="lb-pill oranje">voorstel</span> is afgeleid van de naam (familienaam.voornaam@' + esc(DOMEIN) + ").</p>" +
+      '<div class="lb-tabelwrap"><table class="lb-overzicht lb-bewerk"><thead><tr><th>CSF</th><th>Leerling</th><th>Klas</th><th>E-mail</th><th>Coach</th></tr></thead><tbody>' +
+      (r.length ? r.map(function (k, i) {
+        var weg = jaar && k.schooljaar !== jaar;
+        return '<tr data-k="' + esc(k._id) + '"' + (k.csf ? ' class="lb-csf"' : "") + '><td><input type="checkbox" id="kl-csf-' + i + '" aria-label="' + esc(k.naam) + ' volgt CSF"' + (k.csf ? " checked" : "") + "></td><td>" + esc(k.naam) +
+          (weg ? '<br><span class="lb-pill grijs">niet op de klaslijst van ' + esc(jaar) + "</span>" : "") + "</td><td>" + esc(k.klas) +
+          '</td><td><input type="text" id="kl-mail-' + i + '" value="' + esc(k.email || "") + '" aria-label="E-mailadres">' + (k.emailZeker ? "" : ' <span class="lb-pill oranje">voorstel</span>') +
+          "</td><td>" + (k.csf ? coachSelect("kl-coach-" + i, (d.leerlingen.filter(function (l) { return l._id === k.email; })[0] || {}).coach) : "") + "</td></tr>";
+      }).join("") : '<tr><td colspan="5" class="hint">Geen leerlingen voor deze keuze.</td></tr>') + '</tbody></table></div><p class="fb" id="kl-rijfb" aria-live="polite"></p>' : "");
+    z.innerHTML = html;
+    var her = function () { tabKlaslijst(z, doel); };
+    var imp = z.querySelector("#kl-import");
+    if (imp) imp.addEventListener("click", function () {
+      var fb = z.querySelector("#kl-fb"), f = z.querySelector("#kl-bestand").files[0], j = z.querySelector("#kl-jaar").value.trim();
+      if (!/^\d{4}-\d{4}$/.test(j)) { fb.textContent = "Vul het schooljaar in zoals 2026-2027."; return; }
+      if (!f) { fb.textContent = "Kies eerst het Excel-bestand."; return; }
+      fb.textContent = "Bestand lezen …";
+      f.arrayBuffer().then(leesXlsx).then(function (bladen) {
+        var g = leesKlaslijsten(bladen);
+        if (!g.rijen.length) throw new Error("Geen leerlingen gevonden in dit bestand.");
+        fb.textContent = "Bezig met bewaren (" + g.rijen.length + " leerlingen) …";
+        return importeer(g, j).then(function (res) {
+          D.ks.klas = "";
+          ververs(doel);
+          setTimeout(function () { var x = document.querySelector("#kl-fb"); if (x) x.textContent = res.aantal + " leerlingen in " + res.klassen + " klassen bewaard. " + res.csf + " CSF-leerlingen kregen hun nieuwe klas." + (res.weg ? " " + res.weg + " leerlingen staan niet meer op de lijst en blijven bewaard." : "") + (g.fouten.length ? " Overgeslagen bladen: " + g.fouten.join(", ") + "." : ""); }, 900);
+        });
+      }).catch(function (e) { fb.textContent = "Importeren lukte niet: " + (e.code || e.message); });
+    });
+    var sel = z.querySelector("#kl-klas"); if (sel) sel.addEventListener("change", function () { KS.klas = sel.value; her(); });
+    var zk = z.querySelector("#kl-zoek"); if (zk) zk.addEventListener("input", function () { KS.zoek = zk.value; var pos = zk.selectionStart; her(); var n = z.querySelector("#kl-zoek"); n.focus(); n.setSelectionRange(pos, pos); });
+    var en = z.querySelector("#kl-enkel"); if (en) en.addEventListener("change", function () { KS.enkelCsf = en.checked; her(); });
+    var rfb = z.querySelector("#kl-rijfb");
+    z.querySelectorAll("tr[data-k]").forEach(function (tr) {
+      var k = d.klaslijst.filter(function (x) { return x._id === tr.dataset.k; })[0];
+      var vak = tr.querySelector('input[type=checkbox]'), mailIn = tr.querySelector('input[type=text]'), cs = tr.querySelector("select");
+      vak.addEventListener("change", function () {
+        var e = mailIn.value.trim().toLowerCase();
+        if (vak.checked && !geldigMail(e)) { vak.checked = false; rfb.textContent = "Vul eerst een geldig schooladres in voor " + k.naam + " (…@" + DOMEIN + ")."; mailIn.focus(); return; }
+        rfb.textContent = "Bezig met bewaren …";
+        zetCsf(k, vak.checked, e).then(function () { rfb.textContent = k.naam + (vak.checked ? " volgt CSF." : " volgt geen CSF meer."); her(); setTimeout(function () { var x = z.querySelector("#kl-rijfb"); if (x) x.textContent = k.naam + (vak.checked ? " volgt CSF." : " volgt geen CSF meer."); }, 0); })
+          .catch(function (err) { rfb.textContent = "Bewaren lukte niet. (" + (err.code || err.message) + ")"; });
+      });
+      mailIn.addEventListener("change", function () {
+        var e = mailIn.value.trim().toLowerCase();
+        if (!geldigMail(e)) { rfb.textContent = "Dit is geen schooladres (…@" + DOMEIN + ")."; return; }
+        rfb.textContent = "Bezig met bewaren …";
+        (k.csf ? zetCsf(k, true, e) : F.setDoc(ref("klaslijst/" + k._id), { email: e, emailZeker: true }, { merge: true }).then(function () { lokaal("klaslijst", k._id, { email: e, emailZeker: true }); }))
+          .then(function () { her(); var x = z.querySelector("#kl-rijfb"); if (x) x.textContent = "E-mailadres van " + k.naam + " bewaard."; })
+          .catch(function (err) { rfb.textContent = "Bewaren lukte niet. (" + (err.code || err.message) + ")"; });
+      });
+      if (cs) cs.addEventListener("change", function () {
+        var p = { coach: cs.value, coachNaam: cs.value ? coachNaam(cs.value) : "" };
+        F.setDoc(ref("leerlingen/" + k.email), p, { merge: true }).then(function () { lokaal("leerlingen", k.email, p); rfb.textContent = "Coach van " + k.naam + " bewaard."; })
+          .catch(function (err) { rfb.textContent = "Bewaren lukte niet. (" + (err.code || err.message) + ")"; });
+      });
+    });
+    z.querySelectorAll(".lb-poging").forEach(function (rij) {
+      var email = rij.dataset.mail, kb = rij.querySelector("[data-koppel]");
+      if (kb) kb.addEventListener("click", function () {
+        var k = d.klaslijst.filter(function (x) { return x._id === kb.dataset.koppel; })[0];
+        zetCsf(k, true, email).then(function () { return F.deleteDoc(ref("aanmeldingen/" + email)); }).then(function () {
+          d.aanmeldingen = d.aanmeldingen.filter(function (a) { return a._id !== email; }); her();
+        }).catch(function (err) { rij.insertAdjacentHTML("beforeend", ' <span class="fb">Koppelen lukte niet. (' + esc(err.code || err.message) + ")</span>"); });
+      });
+      rij.querySelector("[data-negeer]").addEventListener("click", function () {
+        F.deleteDoc(ref("aanmeldingen/" + email)).then(function () { d.aanmeldingen = d.aanmeldingen.filter(function (a) { return a._id !== email; }); her(); });
+      });
     });
   }
 

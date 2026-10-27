@@ -1,5 +1,6 @@
 /* Test van het portaal met de nep-Firebase: leerlingen importeren, coach toewijzen, logboek (opstart, begin en einde,
    afsluiting), poorten, feedback bevestigen, vakleerkracht, coachfiches via de rol, export en zonder koppeling.
+   Klaslijsten: enkel fictieve namen (test/voorbeeld-*.xlsx).
    Gebruik: test/serve.sh && node test/portaal.js   (coachfiches openen wordt enkel getest met CSF_COACHCODE=…) */
 const { B, context, pagina, aanmelden, fakedb, wacht } = require('./helpers');
 let ok = true; const fout = m => { ok = false; console.log('  FOUT: ' + m); }; const goed = m => console.log('  ok   ' + m);
@@ -7,7 +8,7 @@ const check = (v, m) => v ? goed(m) : fout(m);
 
 const TOM = { uid:'t', email:'tom@svsl.be', displayName:'Tom Van Daele' };
 const ELS = { uid:'e', email:'els@svsl.be', displayName:'Els Van Huffel' };
-const LIEN = { uid:'l', email:'lien@svsl.be', displayName:'Lien Peeters' };
+const LIEN = { uid:'l', email:'peeters.lien@svsl.be', displayName:'Lien Peeters' };
 const AN = { uid:'a', email:'an@svsl.be', displayName:'An Vakleerkracht' };
 const DB = {
   'beheerders/tom@svsl.be': {},
@@ -22,22 +23,39 @@ const DB = {
   const { b, ctx } = await context();
   const p = await pagina(ctx, DB);
 
-  console.log('1. Beheerder: overzicht en leerlingen importeren');
+  console.log('1. Beheerder: klaslijsten importeren en CSF-leerlingen aanvinken');
   await aanmelden(p, '#dashboard', TOM);
   await p.waitForSelector('.lb-overzicht');
   check(await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-pill.rood').count() === 1, 'ontbrekend einde-logboek staat in het rood');
-  await p.click('[data-tab="leerlingen"]');
-  await p.fill('#plak-lijst', 'lien@svsl.be\tLien Peeters\t1A\tels@svsl.be\nfoo@gmail.com\tX\t1A');
-  await p.click('#plak-import'); await wacht(900);
+  await p.click('[data-tab="klaslijst"]'); await p.waitForSelector('#kl-bestand');
+  await p.fill('#kl-jaar', '2026-2027');
+  await p.setInputFiles('#kl-bestand', __dirname + '/voorbeeld-klaslijst-2026.xlsx');
+  await p.click('#kl-import'); await p.waitForSelector('tr[data-k]'); await wacht(1200);
   let d = await fakedb(p);
-  check(d['leerlingen/lien@svsl.be'] && d['leerlingen/lien@svsl.be'].coach === 'els@svsl.be' && d['leerlingen/lien@svsl.be'].coachNaam === 'Van Huffel E.', 'leerling geïmporteerd met coach');
-  check(!d['leerlingen/foo@gmail.com'], 'adres buiten de school overgeslagen');
-  await p.waitForSelector('tr[data-ll="lien@svsl.be"]');
-  const rij = p.locator('tr[data-ll="lien@svsl.be"]');
+  const kl = Object.entries(d).filter(([k]) => k.startsWith('klaslijst/'));
+  check(kl.length === 7, 'klaslijst ingelezen: 7 leerlingen uit 2 klassen (' + kl.length + ')');
+  check(d['klaslijst/lien_peeters'] && d['klaslijst/lien_peeters'].klas === '1A' && d['klaslijst/lien_peeters'].email === 'peeters.lien@svsl.be', 'e-mailvoorstel familienaam.voornaam');
+  check(d['klaslijst/lisa_peeters_vandamme'].email === 'vandamme-peeters.lisa@svsl.be' && d['klaslijst/celik_emir'].email === 'celik.emir@svsl.be', 'voorstel zonder accenten, met koppelteken');
+  check((await p.textContent('#kl-fb')).includes('7 leerlingen in 2 klassen'), 'melding na het importeren');
+  check(!Object.keys(d).some(k => k.startsWith('leerlingen/peeters')), 'nog niemand aangevinkt');
+  await p.selectOption('#kl-klas', '1A'); await wacht(200);
+  check(await p.locator('tr[data-k]').count() === 4, 'filter op klas');
+  await p.locator('tr[data-k="lien_peeters"] input[type=checkbox]').check(); await wacht(700);
+  await p.locator('tr[data-k="arthur_hecke_van"] input[type=text]').fill('nietgeldig');
+  await p.locator('tr[data-k="arthur_hecke_van"] input[type=checkbox]').click(); await wacht(300);
+  check(!(await p.locator('tr[data-k="arthur_hecke_van"] input[type=checkbox]').isChecked()) && (await p.textContent('#kl-rijfb')).includes('geldig schooladres'), 'aanvinken zonder geldig adres wordt geweigerd');
+  d = await fakedb(p);
+  check(d['klaslijst/lien_peeters'].csf === true && d['leerlingen/peeters.lien@svsl.be'] && d['leerlingen/peeters.lien@svsl.be'].actief === true && d['leerlingen/peeters.lien@svsl.be'].klassen['2026-2027'] === '1A', 'Lien aangevinkt: CSF-leerling met klas');
+  await p.selectOption('tr[data-k="lien_peeters"] select', 'els@svsl.be'); await wacht(600);
+  d = await fakedb(p);
+  check(d['leerlingen/peeters.lien@svsl.be'].coach === 'els@svsl.be' && d['leerlingen/peeters.lien@svsl.be'].coachNaam === 'Van Huffel E.', 'coach toegewezen vanuit de klaslijst');
+  await p.click('[data-tab="leerlingen"]');
+  await p.waitForSelector('tr[data-ll="peeters.lien@svsl.be"]');
+  const rij = p.locator('tr[data-ll="peeters.lien@svsl.be"]');
   await rij.locator('input[aria-label="Vakleerkracht"]').fill('an@svsl.be');
   await rij.locator('[data-bewaar]').click(); await wacht(700);
   d = await fakedb(p);
-  check(JSON.stringify(d['leerlingen/lien@svsl.be'].vakleerkrachten) === '["an@svsl.be"]', 'vakleerkracht bewaard');
+  check(JSON.stringify(d['leerlingen/peeters.lien@svsl.be'].vakleerkrachten) === '["an@svsl.be"]', 'vakleerkracht bewaard');
 
   console.log('2. Leerling: opstart en eerste lesuur');
   await aanmelden(p, '#logboek-wetenschappen', LIEN);
@@ -49,7 +67,7 @@ const DB = {
   await p.click('#lb-opstart button[type=submit]');
   await p.waitForSelector('#lb-begin');
   d = await fakedb(p);
-  const LB = 'logboeken/lien@svsl.be__wetenschappen';
+  const LB = 'logboeken/peeters.lien@svsl.be__wetenschappen';
   check(d[LB] && d[LB].opstart.dag === 'MA' && d[LB].opstart.coach === 'Van Huffel E.', 'opstart bewaard');
   check(JSON.stringify(d[LB].kijkers) === '["an@svsl.be"]', 'vakleerkracht mag meelezen');
   check(await p.locator('.lb-stappen').count() === 0, 'stappenplan nog niet zichtbaar voor het begin-logboek');
@@ -71,10 +89,10 @@ const DB = {
 
   console.log('3. Coach: feedback geven');
   await aanmelden(p, '#dashboard', ELS);
-  await p.waitForSelector('.db-rij[data-ll="lien@svsl.be"]');
+  await p.waitForSelector('.db-rij[data-ll="peeters.lien@svsl.be"]');
   check(await p.locator('[data-tab="beheer"]').count() === 0, 'coach ziet geen beheer');
   check(await p.locator('.db-rij').count() === 2, 'coach ziet alle leerlingen');
-  await p.click('.db-rij[data-ll="lien@svsl.be"]'); await p.waitForSelector('#db-fb');
+  await p.click('.db-rij[data-ll="peeters.lien@svsl.be"]'); await p.waitForSelector('#db-fb');
   await p.fill('#db-fb-tekst', 'Mooi begin. Noteer ook je meetwaarden.'); await p.selectOption('#db-fb-les', '1');
   await p.click('#db-fb button[type=submit]'); await wacht(900);
   d = await fakedb(p);
@@ -105,7 +123,7 @@ const DB = {
   console.log('5. Vakleerkracht, onbekende leerling en ander domein');
   await aanmelden(p, '#dashboard', AN);
   await p.waitForSelector('.lb-overzicht');
-  check(await p.locator('.db-rij').count() === 1 && await p.locator('.db-rij[data-ll="lien@svsl.be"]').count() === 1, 'vakleerkracht ziet enkel zijn leerling');
+  check(await p.locator('.db-rij').count() === 1 && await p.locator('.db-rij[data-ll="peeters.lien@svsl.be"]').count() === 1, 'vakleerkracht ziet enkel zijn leerling');
   check(await p.locator('[data-tab="leerlingen"]').count() === 0, 'vakleerkracht kan geen leerlingen beheren');
   await p.click('.db-rij'); await p.waitForSelector('.lb-detail');
   check(await p.locator('#db-fb').count() === 0 && (await p.textContent('.lb-detail')).includes('Chromatogrammen meten'), 'vakleerkracht leest het logboek zonder feedbackvak');
@@ -116,6 +134,40 @@ const DB = {
   await p.waitForSelector('.lb-melding');
   check((await p.textContent('.lb-melding')).includes('schoolaccount'), 'ander domein geweigerd');
 
+  console.log('5b. Nieuw schooljaar, export met e-mail, aanmeldpoging en stoppen');
+  await aanmelden(p, '#dashboard', TOM); await p.click('[data-tab="klaslijst"]'); await p.waitForSelector('#kl-bestand', { state: 'attached' });
+  await p.click('details.lb-hist summary');
+  await p.fill('#kl-jaar', '2027-2028');
+  await p.setInputFiles('#kl-bestand', __dirname + '/voorbeeld-klaslijst-2027.xlsx');
+  await p.click('#kl-import'); await wacht(1500); await p.waitForSelector('tr[data-k]');
+  d = await fakedb(p);
+  const ll = d['leerlingen/peeters.lien@svsl.be'];
+  check(ll.klas === '2A' && ll.klassen['2026-2027'] === '1A' && ll.klassen['2027-2028'] === '2A' && ll.coach === 'els@svsl.be', 'Lien schuift door naar 2A, geschiedenis en coach blijven');
+  check(d[LB] && d[LB].status === 'afgerond', 'logboek van vorig jaar blijft bewaard');
+  check(d['klaslijst/claes_mo'] && d['klaslijst/claes_mo'].schooljaar === '2026-2027' && d['instellingen/schooljaar'].jaar === '2027-2028', 'leerling die niet meer op de lijst staat blijft bewaard');
+  check(await p.locator('tr[data-k="claes_mo"] .lb-pill.grijs').count() === 1, 'gemarkeerd: niet op de klaslijst van 2027-2028');
+  if (!(await p.isVisible('#kl-jaar'))) await p.click('details.lb-hist summary');
+  await p.fill('#kl-jaar', '2027-2028');
+  await p.setInputFiles('#kl-bestand', __dirname + '/voorbeeld-export.xlsx');
+  await p.click('#kl-import'); await wacht(1500); await p.waitForSelector('tr[data-k]');
+  d = await fakedb(p);
+  check(d['klaslijst/dhondt_saar'] && d['klaslijst/dhondt_saar'].email === 'dhondt.saar2@svsl.be' && d['klaslijst/dhondt_saar'].emailZeker === true, 'export: e-mailadres uit het bestand is zeker');
+  check(await p.locator('tr[data-k="dhondt_saar"] .lb-pill.oranje').count() === 0 && await p.locator('tr[data-k="celik_emir"] .lb-pill.oranje').count() === 1, 'voorstel enkel bij afgeleide adressen');
+  await aanmelden(p, '#logboek', { uid:'c', email:'celik.emir2@svsl.be', displayName:'Emir Çelik' });
+  await p.waitForSelector('.lb-melding');
+  check((await p.textContent('.lb-melding')).includes('celik.emir2@svsl.be'), 'leerling ziet zijn adres in de melding');
+  d = await fakedb(p); check(d['aanmeldingen/celik.emir2@svsl.be'] && d['aanmeldingen/celik.emir2@svsl.be'].naam === 'Emir Çelik', 'aanmeldpoging bewaard');
+  await aanmelden(p, '#dashboard', ELS); await p.click('[data-tab="klaslijst"]'); await p.waitForSelector('.lb-poging');
+  await p.click('.lb-poging [data-koppel="celik_emir"]'); await wacht(900);
+  d = await fakedb(p);
+  check(d['leerlingen/celik.emir2@svsl.be'] && d['leerlingen/celik.emir2@svsl.be'].klas === '2C-E&O' && d['klaslijst/celik_emir'].email === 'celik.emir2@svsl.be' && !d['aanmeldingen/celik.emir2@svsl.be'], 'coach koppelt de aanmelding aan de klaslijst');
+  await p.locator('tr[data-k="celik_emir"] input[type=checkbox]').uncheck(); await wacht(700);
+  d = await fakedb(p);
+  check(d['leerlingen/celik.emir2@svsl.be'].actief === false && d['klaslijst/celik_emir'].csf === false, 'uitvinken: leerling blijft bewaard maar is niet actief');
+  await aanmelden(p, '#logboek-wetenschappen', { uid:'c', email:'celik.emir2@svsl.be', displayName:'Emir Çelik' });
+  await p.waitForSelector('.lb-melding');
+  check(await p.locator('#lb-opstart').count() === 0, 'gestopte leerling start geen logboek');
+
   console.log('6. Coachfiches via de rol en export');
   await aanmelden(p, '#coach', LIEN); await p.waitForSelector('#coach-poort .lb-melding');
   check((await p.textContent('#coach-poort')).includes('enkel voor de CSF-coaches'), 'leerling kan de coachfiches niet openen');
@@ -124,7 +176,7 @@ const DB = {
   await aanmelden(p, '#dashboard', TOM); await p.waitForSelector('#db-csv');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#db-csv')]);
   const csv = require('fs').readFileSync(await dl.path(), 'utf8');
-  check(dl.suggestedFilename().startsWith('csf-overzicht-') && csv.includes('Lien Peeters') && csv.includes('Afgerond'), 'overzicht als CSV gedownload');
+  check(dl.suggestedFilename().startsWith('csf-overzicht-') && csv.includes('Peeters Lien') && csv.includes('Afgerond'), 'overzicht als CSV gedownload');
   await p.click('[data-tab="beheer"]'); await p.waitForSelector('#code-in');
   await p.fill('#coach-mail', 'kris@svsl.be'); await p.fill('#coach-naam', 'Van Landeghem K.'); await p.click('#coach-voegtoe'); await wacht(700);
   d = await fakedb(p); check(d['coaches/kris@svsl.be'] && d['coaches/kris@svsl.be'].naam === 'Van Landeghem K.', 'beheerder voegt een coach toe');

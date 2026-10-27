@@ -13,7 +13,10 @@ service cloud.firestore {
     function mail() { return request.auth.token.email.lower(); }
     function beheerder() { return aangemeld() && exists(/databases/$(database)/documents/beheerders/$(mail())); }
     function coach() { return aangemeld() && (beheerder() || exists(/databases/$(database)/documents/coaches/$(mail()))); }
-    function opLijst() { return exists(/databases/$(database)/documents/leerlingen/$(mail())); }
+    function opLijst() {
+      return exists(/databases/$(database)/documents/leerlingen/$(mail()))
+        && get(/databases/$(database)/documents/leerlingen/$(mail())).data.get('actief', true) == true;
+    }
 
     // beheerders: de beheerder beheert de lijst; iedereen mag nagaan of hij zelf beheerder is
     match /beheerders/{email} {
@@ -57,6 +60,16 @@ service cloud.firestore {
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gelezen', 'gelezenOp'])
                         && request.resource.data.gelezen == true);
       allow delete: if coach();
+    }
+    // klaslijsten van de school: enkel coaches lezen en vinken aan (nooit op GitHub)
+    match /klaslijst/{id} {
+      allow read, write: if coach();
+    }
+    // aanmeldpoging van een leerling die (nog) niet op de CSF-lijst staat
+    match /aanmeldingen/{email} {
+      allow create, update: if aangemeld() && mail() == email
+                            && request.resource.data.keys().hasOnly(['naam', 'tijd']);
+      allow read, delete: if coach();
     }
     // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, enkel de beheerder schrijft
     match /instellingen/{id} {
