@@ -86,6 +86,8 @@ Leerlingen en leerkrachten melden zich aan met hun schoolaccount (@svsl.be). De 
 5. **Feedback**: heeft de coach feedback gegeven, dan ziet de leerling die bij de volgende aanmelding. Hij kan pas verder als hij bevestigt dat hij ze gelezen heeft.
 
 **Coach** (`Dashboard coaches`):
+- **Tekens in het overzicht**: een groen vinkje ✓ betekent dat het logboek in orde is. Een rood uitroepteken ! betekent dat de leerling online was op zijn CSF-dag zonder logboek in te vullen, of dat een einde-logboek ontbreekt. Een coach ziet eerst zijn eigen leerlingen. Kies ‘Alle coaches’ om iedereen te zien.
+- **Open vragen**: een leerling stelt onderaan zijn projectvenster een vraag aan zijn coach. De coach beantwoordt ze in het tabblad Open vragen. De leerling ziet het antwoord bij zijn volgende aanmelding.
 - **Overzicht** van alle leerlingen. Een ontbrekend einde-logboek staat in het **rood**. Klik op een leerling om het volledige logboek te lezen en feedback te geven.
 - **Kopieer overzicht voor Google Sheets** (plakken met Ctrl+V) of download het overzicht of alle lesuren als CSV.
 - **Klaslijsten**: vink aan wie CSF volgt en kies een coach (zie hieronder).

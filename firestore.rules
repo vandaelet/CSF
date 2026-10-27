@@ -71,6 +71,27 @@ service cloud.firestore {
                             && request.resource.data.keys().hasOnly(['naam', 'tijd']);
       allow read, delete: if coach();
     }
+    // vragen van leerlingen aan hun coach; de leerling mag enkel bevestigen dat hij het antwoord las
+    match /vragen/{id} {
+      allow read: if coach() || (aangemeld() && resource.data.leerling == mail());
+      allow create: if aangemeld() && opLijst()
+                    && request.resource.data.leerling == mail()
+                    && request.resource.data.open == true
+                    && request.resource.data.antwoord == ''
+                    && request.resource.data.keys().hasOnly(['leerling', 'naam', 'klas', 'coach', 'coachNaam', 'project', 'projectnaam', 'tekst', 'datum', 'open', 'antwoord', 'gelezen'])
+                    && request.resource.data.tekst is string && request.resource.data.tekst.size() <= 1000;
+      allow update: if coach()
+                    || (aangemeld() && resource.data.leerling == mail()
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gelezen'])
+                        && request.resource.data.gelezen == true);
+      allow delete: if coach();
+    }
+    // op welke dagen een leerling online was (voor het uitroepteken in het dashboard)
+    match /gezien/{email} {
+      allow read: if coach();
+      allow create, update: if aangemeld() && mail() == email
+                            && request.resource.data.keys().hasOnly(['tijd', 'dagen']);
+    }
     // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, enkel de beheerder schrijft
     match /instellingen/{id} {
       allow read: if coach();

@@ -16,7 +16,17 @@ const DB = {
   'coaches/els@svsl.be': { naam:'Van Huffel E.' },
   'leerlingen/mo@svsl.be': { naam:'Mo Claes', klas:'1B', coach:'els@svsl.be', coachNaam:'Van Huffel E.', vakleerkrachten:[] },
   'logboeken/mo@svsl.be__talen': { leerling:'mo@svsl.be', naam:'Mo Claes', project:'talen', projectnaam:'Taalbouwers: ontwerp je eigen taal', gestart:'2026-10-01T08:00:00Z', status:'bezig',
-    opstart:{ klas:'1B' }, lessen:[{ nr:1, datum:'2026-10-01', begin:{ stappen:['Wat is de opdracht?'], minuten:50 } }], kijkers:[] }
+    opstart:{ klas:'1B' }, lessen:[{ nr:1, datum:'2026-10-01', begin:{ stappen:['Wat is de opdracht?'], minuten:50 } }], kijkers:[] },
+  // Noor: dinsdag CSF, online op dinsdag 20 oktober zonder logboek → uitroepteken
+  'leerlingen/noor@svsl.be': { naam:'Mertens Noor', klas:'1C', coach:'tom@svsl.be', coachNaam:'Van Daele T.', vakleerkrachten:[] },
+  'logboeken/noor@svsl.be__talen': { leerling:'noor@svsl.be', naam:'Mertens Noor', project:'talen', projectnaam:'Taalbouwers', gestart:'2026-10-01T08:00:00Z', status:'bezig',
+    opstart:{ dag:'DI' }, lessen:[{ nr:1, datum:'2026-10-13', begin:{}, einde:{} }], kijkers:[] },
+  'gezien/noor@svsl.be': { dagen:['2026-10-13', '2026-10-20'] },
+  // Kobe: dinsdag CSF, enkel online op een woensdag → vinkje
+  'leerlingen/kobe@svsl.be': { naam:'Janssens Kobe', klas:'1C', coach:'tom@svsl.be', coachNaam:'Van Daele T.', vakleerkrachten:[] },
+  'logboeken/kobe@svsl.be__talen': { leerling:'kobe@svsl.be', naam:'Janssens Kobe', project:'talen', projectnaam:'Taalbouwers', gestart:'2026-10-01T08:00:00Z', status:'bezig',
+    opstart:{ dag:'DI' }, lessen:[{ nr:1, datum:'2026-10-13', begin:{}, einde:{} }], kijkers:[] },
+  'gezien/kobe@svsl.be': { dagen:['2026-10-13', '2026-10-21'] }
 };
 
 (async () => {
@@ -26,6 +36,11 @@ const DB = {
   console.log('1. Beheerder: klaslijsten importeren en CSF-leerlingen aanvinken');
   await aanmelden(p, '#dashboard', TOM);
   await p.waitForSelector('.lb-overzicht');
+  check(await p.locator('.db-rij').count() === 2 && await p.locator('#db-coach').inputValue() === 'tom@svsl.be', 'coach ziet eerst zijn eigen leerlingen');
+  check(await p.locator('.db-rij[data-ll="noor@svsl.be"] .lb-teken.uit').count() === 1, 'uitroepteken: online op de CSF-dag zonder logboek');
+  check(await p.locator('.db-rij[data-ll="kobe@svsl.be"] .lb-teken.ok').count() === 1, 'vinkje: logboek in orde (online op een andere dag telt niet)');
+  await p.selectOption('#db-coach', 'alle'); await wacht(200);
+  check(await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-teken.uit').count() === 1, 'uitroepteken bij een ontbrekend einde-logboek');
   check(await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-pill.rood').count() === 1, 'ontbrekend einde-logboek staat in het rood');
   await p.click('[data-tab="klaslijst"]'); await p.waitForSelector('#kl-bestand');
   await p.fill('#kl-jaar', '2026-2027');
@@ -91,7 +106,8 @@ const DB = {
   await aanmelden(p, '#dashboard', ELS);
   await p.waitForSelector('.db-rij[data-ll="peeters.lien@svsl.be"]');
   check(await p.locator('[data-tab="beheer"]').count() === 0, 'coach ziet geen beheer');
-  check(await p.locator('.db-rij').count() === 2, 'coach ziet alle leerlingen');
+  check(await p.locator('.db-rij').count() === 2, 'coach ziet eerst zijn eigen leerlingen (Lien en Mo)');
+  check(await p.locator('.db-rij[data-ll="peeters.lien@svsl.be"] .lb-teken.ok').count() === 1, 'groen vinkje: Lien vulde haar logboek in');
   await p.click('.db-rij[data-ll="peeters.lien@svsl.be"]'); await p.waitForSelector('#db-fb');
   await p.fill('#db-fb-tekst', 'Mooi begin. Noteer ook je meetwaarden.'); await p.selectOption('#db-fb-les', '1');
   await p.click('#db-fb button[type=submit]'); await wacht(900);
@@ -108,6 +124,13 @@ const DB = {
   await p.check('.lb-gelezen'); await p.click('#lb-bevestig'); await p.waitForSelector('#lb-begin');
   d = await fakedb(p);
   check(Object.entries(d).filter(([k]) => k.startsWith('feedback/'))[0][1].gelezen === true, 'feedback als gelezen bewaard');
+  await p.waitForSelector('#lb-vraag');
+  await p.click('#lb-vraag button[type=submit]');
+  check((await p.textContent('#lb-vraag .fb')).includes('Typ eerst'), 'lege vraag wordt geweigerd');
+  await p.fill('#lb-vraag-tekst', 'Mag ik ook rode inkt gebruiken?'); await p.click('#lb-vraag button[type=submit]');
+  await p.waitForSelector('.lb-vragen .lb-pill.oranje');
+  d = await fakedb(p); const VR = Object.entries(d).filter(([k]) => k.startsWith('vragen/'));
+  check(VR.length === 1 && VR[0][1].open === true && VR[0][1].coach === 'els@svsl.be' && VR[0][1].project === 'wetenschappen', 'vraag aan de coach bewaard');
   await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
   await p.fill('#gemist', 'Breuken'); await p.fill('#ingehaald', 'Cursus gelezen.'); await p.check('#vragen-1'); await p.check('#geslaagd-0');
@@ -119,6 +142,20 @@ const DB = {
   await p.click('#lb-afsluit button[type=submit]'); await p.waitForSelector('.lb-melding.groen');
   d = await fakedb(p);
   check(d[LB].status === 'afgerond' && d[LB].lessen.length === 2 && d[LB].afsluiting.ef[0] === 'Ik schat mijn tijd goed in.', 'project afgerond met reflectie');
+
+  console.log('4b. Coach beantwoordt de vraag');
+  await aanmelden(p, '#dashboard', ELS); await p.waitForSelector('[data-tab="vragen"]');
+  check((await p.textContent('[data-tab="vragen"]')).includes('(1)'), 'tabblad open vragen toont het aantal');
+  check(await p.locator('.db-rij[data-ll="peeters.lien@svsl.be"] .lb-pill.turkoois').count() === 1, 'overzicht toont de open vraag');
+  await p.click('[data-tab="vragen"]'); await p.waitForSelector('.lb-vraagkaart');
+  check((await p.textContent('.lb-vraagkaart')).includes('rode inkt'), 'coach ziet de vraag');
+  await p.fill('.lb-vraagkaart textarea', 'Ja, vergelijk ze met de blauwe.'); await p.click('[data-antw]'); await wacht(600);
+  check((await p.textContent('#db-inhoud')).includes('geen open vragen') && !(await p.textContent('[data-tab="vragen"]')).includes('('), 'vraag beantwoord en gesloten');
+  await aanmelden(p, '#logboek', LIEN); await p.waitForSelector('.lb-kaart');
+  check((await p.textContent('.lb-melding.groen')).includes('beantwoordde je vraag'), 'leerling ziet dat er een antwoord is');
+  await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('.lb-antwoord');
+  check((await p.textContent('.lb-antwoord')).includes('vergelijk ze met de blauwe'), 'antwoord in het projectvenster'); await wacht(500);
+  d = await fakedb(p); check(Object.entries(d).filter(([k]) => k.startsWith('vragen/'))[0][1].gelezen === true, 'antwoord als gelezen bewaard');
 
   console.log('5. Vakleerkracht, onbekende leerling en ander domein');
   await aanmelden(p, '#dashboard', AN);
@@ -192,7 +229,7 @@ const DB = {
   await p.click('[data-tab="leerlingen"]'); await p.waitForSelector('tr[data-ll="mo@svsl.be"]');
   await p.uncheck('tr[data-ll="mo@svsl.be"] [data-her]'); await wacht(600);
   d = await fakedb(p); check(d['leerlingen/mo@svsl.be'].herinnering === false, 'herinnering uitgevinkt voor Mo');
-  await p.click('[data-tab="overzicht"]'); await p.waitForSelector('.db-rij[data-ll="mo@svsl.be"]');
+  await p.click('[data-tab="overzicht"]'); await p.selectOption('#db-coach', 'alle'); await p.waitForSelector('.db-rij[data-ll="mo@svsl.be"]');
   check(await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-pill.rood').count() === 0 && await p.locator('.db-rij[data-ll="mo@svsl.be"] .lb-pill.oranje').count() === 1, 'zonder herinnering staat een ontbrekend logboek niet in het rood');
   await p.click('[data-tab="beheer"]'); await p.waitForSelector('#code-in');
   await p.fill('#code-in', 'verkeerde-code'); await p.click('#code-bewaar'); await wacht(2500);

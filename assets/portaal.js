@@ -72,6 +72,8 @@
       rol.gestopt = !!(ll && ll.actief === false);
       rol.vak = (r[3] || []).filter(function (x) { return x.actief !== false; });
       /* niet op de CSF-lijst? Bewaar de aanmeldpoging, zodat een coach het adres kan koppelen */
+      /* bijhouden op welke dagen de leerling online was (voor het uitroepteken bij de coach) */
+      if (rol.leerling) F.setDoc(ref("gezien/" + m), { tijd: nu(), dagen: F.arrayUnion(vandaag()) }, { merge: true }).catch(function () {});
       if (!rol.leerling && !rol.coach && !rol.vak.length) F.setDoc(ref("aanmeldingen/" + m), { naam: gebruiker.displayName || "", tijd: nu() }, { merge: true }).catch(function () {});
     });
   }
@@ -222,8 +224,8 @@
   }
   function hub(doel) {
     if (!rol.leerling) return nietOpLijst(doel);
-    Promise.all([lijst("logboeken", ["leerling", "==", mail()]), lijst("feedback", ["leerling", "==", mail()], ["gelezen", "==", false])]).then(function (r) {
-      var lbs = r[0], fbOpen = r[1].length;
+    Promise.all([lijst("logboeken", ["leerling", "==", mail()]), lijst("feedback", ["leerling", "==", mail()], ["gelezen", "==", false]), lijst("vragen", ["leerling", "==", mail()]).catch(function () { return []; })]).then(function (r) {
+      var lbs = r[0], fbOpen = r[1].length, antw = r[2].filter(function (v) { return !v.open && !v.gelezen; });
       var kaarten = lbs.map(function (lb) {
         var st = status(lb, rol.leerling);
         return '<a class="lb-kaart" href="#logboek-' + esc(lb.project) + '"><b>' + esc(lb.projectnaam) + '</b><span class="hint">' + (lb.lessen || []).length + " lesuren · gestart op " + datum(lb.gestart) + '</span><span class="lb-pill ' + st[0] + '">' + st[1] + "</span></a>";
@@ -232,6 +234,7 @@
         return '<option value="' + esc(p.id) + '">' + esc((p.soort === "vak" ? CSF.ui.label(p) : "oefenproject") + " · " + p.naam.split(":")[0]) + "</option>"; }).join("");
       var vergeten = lbs.some(function (lb) { return status(lb, rol.leerling)[0] === "rood"; });
       doel.innerHTML = (vergeten ? '<div class="lb-melding rood"><b>Vergeet niet tijdig je logboek aan te vullen.</b> Vul eerst het einde van je vorige lesuur in.</div>' : "") +
+        (antw.length ? '<div class="lb-melding groen">Je coach beantwoordde je vraag. Open ' + antw.map(function (v) { return '<a href="#logboek-' + esc(v.project) + '">' + esc(String(v.projectnaam || v.project).split(":")[0]) + "</a>"; }).join(", ") + " om het antwoord te lezen.</div>" : "") +
         (fbOpen ? '<div class="lb-melding oranje">Je hebt ' + fbOpen + " nieuwe feedback van je coach. Open je project om ze te lezen.</div>" : "") +
         "<p>Coach: <b>" + esc(rol.leerling.coachNaam || "nog niet toegewezen") + "</b> · Klas: <b>" + esc(rol.leerling.klas || "–") + "</b></p>" +
         "<h3>Mijn projecten</h3>" + (kaarten ? '<div class="lb-kaarten">' + kaarten + "</div>" : '<p class="hint">Je hebt nog geen project gestart.</p>') +
@@ -245,6 +248,11 @@
     var p = project(pid);
     if (!p) return melding(doel, "Dit project bestaat niet. Kies een project in <a href=\"#logboek\">Mijn logboek</a>.", "rood");
     if (!rol.leerling) return nietOpLijst(doel);
+    if (doel.id !== "lb-hoofd") {
+      doel.innerHTML = '<div id="lb-hoofd"></div><div id="lb-vragen" class="lb-vragen"></div>';
+      vragenBlok(doel.querySelector("#lb-vragen"), p);
+      doel = doel.querySelector("#lb-hoofd");
+    }
     var id = mail() + "__" + pid;
     Promise.all([haal("logboeken/" + id), lijst("feedback", ["leerling", "==", mail()], ["gelezen", "==", false]), lijst("feedback", ["leerling", "==", mail()])]).then(function (r) {
       var lb = r[0].exists() ? r[0].data() : null, open = r[1], alle = r[2].filter(function (f) { return f.project === pid; });
@@ -406,6 +414,31 @@
     }).catch(function () { el.innerHTML = '<div class="lb-melding rood">Het portaal kon niet laden.</div>'; });
   };
 
+  /* ---------- leerling: vraag aan de coach (onderaan het projectvenster) ---------- */
+  function vragenBlok(el, p) {
+    lijst("vragen", ["leerling", "==", mail()]).then(function (alle) {
+      var mijn = alle.filter(function (v) { return v.project === p.id; }).sort(function (a, b) { return String(b.datum).localeCompare(String(a.datum)); });
+      el.innerHTML = "<h3>Vraag aan je coach</h3>" + (mijn.length ? '<div class="lb-feedback">' + mijn.map(function (v) {
+        return '<div class="lb-fbitem"><p class="hint">Jouw vraag · ' + datum(v.datum) + " · " + (v.open ? '<span class="lb-pill oranje">wacht op antwoord</span>' : '<span class="lb-pill groen">beantwoord</span>') + "</p><p>" + esc(v.tekst).replace(/\n/g, "<br>") + "</p>" +
+          (v.open ? "" : '<p class="lb-antwoord"><b>' + esc(v.antwoordDoor || "Je coach") + "</b> · " + datum(v.antwoordOp) + "<br>" + esc(v.antwoord || "").replace(/\n/g, "<br>") + "</p>") + "</div>";
+      }).join("") + "</div>" : "") +
+        '<form id="lb-vraag" class="lb-form" novalidate><div class="lb-veld"><label for="lb-vraag-tekst">Stel een vraag over dit project. Je coach ziet ze in zijn dashboard.</label><textarea id="lb-vraag-tekst" rows="3" maxlength="1000"></textarea></div>' +
+        '<div class="lb-acties"><button type="submit" class="btn">Verstuur je vraag</button><span class="fb" aria-live="polite"></span></div></form>';
+      /* beantwoorde vragen zijn nu gelezen */
+      mijn.filter(function (v) { return !v.open && !v.gelezen; }).forEach(function (v) { F.updateDoc(ref("vragen/" + v._id), { gelezen: true }).catch(function () {}); });
+      el.querySelector("#lb-vraag").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var t = el.querySelector("#lb-vraag-tekst").value.trim(), fb = el.querySelector("#lb-vraag .fb");
+        if (!t) { fb.textContent = "Typ eerst je vraag."; return; }
+        fb.textContent = "Bezig met versturen …";
+        var ll = rol.leerling;
+        F.setDoc(ref("vragen/" + nieuwId()), { leerling: mail(), naam: ll.naam || (gebruiker.displayName || ""), klas: ll.klas || "", coach: ll.coach || "", coachNaam: ll.coachNaam || "",
+          project: p.id, projectnaam: p.naam, tekst: t, datum: nu(), open: true, antwoord: "", gelezen: false })
+          .then(function () { vragenBlok(el, p); }).catch(function (err) { fb.textContent = "Versturen lukte niet. (" + (err.code || err.message) + ")"; });
+      });
+    }).catch(function () { el.innerHTML = ""; });
+  }
+
   /* ---------- status van een logboek ---------- */
   function status(lb, ll) {
     if (!lb) return ["grijs", "Nog niet gestart"];
@@ -429,12 +462,14 @@
     var leeg = Promise.resolve([]), niets = Promise.resolve(null), opt = function (p) { return p.catch(function () { return null; }); };
     var taken = rol.coach
       ? [lijst("leerlingen"), lijst("logboeken"), lijst("feedback"), lijst("coaches"), rol.beheerder ? opt(haal("instellingen/coachfiches")) : niets,
-         lijst("klaslijst"), lijst("aanmeldingen"), opt(haal("instellingen/schooljaar")), rol.beheerder ? opt(haal("instellingen/herinnering")) : niets]
-      : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), leeg, leeg, niets, leeg, leeg, niets];
+         lijst("klaslijst"), lijst("aanmeldingen"), opt(haal("instellingen/schooljaar")), rol.beheerder ? opt(haal("instellingen/herinnering")) : niets, lijst("gezien"), lijst("vragen")]
+      : [Promise.resolve(rol.vak.map(function (x) { return x; })), lijst("logboeken", ["kijkers", "array-contains", mail()]), leeg, leeg, niets, leeg, leeg, niets, niets, leeg, leeg];
     Promise.all(taken).then(function (r) {
       D.data = { leerlingen: r[0], logboeken: r[1], feedback: r[2], coaches: r[3], codeIngesteld: !!(r[4] && r[4].exists && r[4].exists() && r[4].data().code),
         klaslijst: r[5], aanmeldingen: r[6], schooljaar: r[7] && r[7].exists && r[7].exists() ? r[7].data().jaar || "" : "",
-        herinnering: r[8] && r[8].exists && r[8].exists() ? r[8].data() : { aan: false, vrij: VRIJ_2026 } };
+        herinnering: r[8] && r[8].exists && r[8].exists() ? r[8].data() : { aan: false, vrij: VRIJ_2026 }, gezien: r[9], vragen: r[10] };
+      /* een coach ziet eerst zijn eigen leerlingen */
+      if (!D.filterGezet) { D.filterGezet = true; if (rol.coach && r[0].some(function (l) { return l.coach === mail() && l.actief !== false; })) D.coachFilter = mail(); }
       if (!rol.coach) D.tab = "overzicht";
       tekenDashboard(doel);
     }).catch(function (e) { melding(doel, "Het dashboard kon niet laden. (" + esc(e && (e.code || e.message)) + ")", "rood"); });
@@ -449,17 +484,36 @@
       var hoofd = lbs[0] || null, st = status(hoofd, l);
       var laatste = hoofd && (hoofd.lessen || []).length ? hoofd.lessen[hoofd.lessen.length - 1].datum : hoofd ? hoofd.gestart : "";
       var fbOpen = d.feedback.filter(function (f) { return f.leerling === l._id && !f.gelezen; }).length;
-      return { l: l, lbs: lbs, hoofd: hoofd, st: st, laatste: laatste, fbOpen: fbOpen };
+      var vragen = d.vragen.filter(function (v) { return v.leerling === l._id && v.open; }).length;
+      return { l: l, lbs: lbs, hoofd: hoofd, st: st, laatste: laatste, fbOpen: fbOpen, vragen: vragen, teken: teken(l, hoofd, st) };
     });
   }
+  /* ✓ = logboek in orde · ! = online geweest op de CSF-dag zonder logboek, of einde-logboek ontbreekt */
+  var DAGCODE = ["", "MA", "DI", "WOE", "DO", "VRIJ", ""];
+  function teken(l, lb, st) {
+    var g = (D.data.gezien.filter(function (x) { return x._id === l._id; })[0] || {}).dagen || [];
+    var ls = lb ? lb.lessen || [] : [], laatste = ls[ls.length - 1], csfDag = lb && lb.opstart ? lb.opstart.dag : "";
+    var sinds = lb ? String(lb.gestart || "").slice(0, 10) : "", datums = ls.map(function (x) { return x.datum; });
+    var bezoek = g.filter(function (d) { return d >= sinds && (!csfDag || DAGCODE[new Date(d + "T12:00:00").getDay()] === csfDag); }).sort().pop();
+    if (lb && lb.status === "afgerond") return ["ok", "Project afgerond"];
+    if (st[0] === "rood") return ["uit", st[1]];
+    if (bezoek && datums.indexOf(bezoek) < 0 && (!laatste || bezoek > laatste.datum))
+      return ["uit", "Online geweest op " + datum(bezoek) + " zonder logboek"];
+    if (laatste && laatste.einde) return ["ok", "Logboek ingevuld op " + datum(laatste.datum)];
+    return ["", ""];
+  }
+  function tekenHtml(t) { return t[0] === "ok" ? '<span class="lb-teken ok" title="' + esc(t[1]) + '" aria-label="' + esc(t[1]) + '">✓</span>' : t[0] === "uit" ? '<span class="lb-teken uit" title="' + esc(t[1]) + '" aria-label="' + esc(t[1]) + '">!</span>' : ""; }
+
   function tekenDashboard(doel) {
-    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
+    var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
+    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
     doel.innerHTML = '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
       '</div><div id="db-inhoud"></div>';
     doel.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { D.tab = b.dataset.tab; D.open = null; tekenDashboard(doel); }); });
     var z = doel.querySelector("#db-inhoud");
     if (D.tab === "leerlingen" && rol.coach) return tabLeerlingen(z, doel);
     if (D.tab === "klaslijst" && rol.coach) return tabKlaslijst(z, doel);
+    if (D.tab === "vragen" && rol.coach) return tabVragen(z, doel);
     if (D.tab === "beheer" && rol.beheerder) return tabBeheer(z, doel);
     tabOverzicht(z, doel);
   }
@@ -475,14 +529,16 @@
     var filters = rol.coach ? '<div class="crij lb-filters"><label for="db-coach" class="hint">Coach</label><select id="db-coach"><option value="alle">Alle coaches</option>' +
       d.coaches.map(function (c) { return '<option value="' + esc(c._id) + '"' + (D.coachFilter === c._id ? " selected" : "") + ">" + esc(c.naam || c._id) + "</option>"; }).join("") +
       '<option value="zonder"' + (D.coachFilter === "zonder" ? " selected" : "") + '>Zonder coach</option></select><input type="search" id="db-zoek" placeholder="Zoek een leerling" value="' + esc(D.zoek) + '" aria-label="Zoek een leerling"></div>' : "";
-    z.innerHTML = (rood ? '<div class="lb-melding rood">' + rood + (rood > 1 ? " leerlingen hebben" : " leerling heeft") + " een ontbrekend logboek.</div>" : "") + filters +
+    var uit = r.filter(function (x) { return x.teken[0] === "uit"; }).length;
+    z.innerHTML = '<p class="hint lb-legende"><span class="lb-item"><span class="lb-teken ok">✓</span> logboek in orde</span><span class="lb-item"><span class="lb-teken uit">!</span> online geweest op de CSF-dag zonder logboek, of einde-logboek ontbreekt</span>' + (uit ? "<b>" + uit + " met een uitroepteken</b>" : "") + "</p>" +
+      (rood ? '<div class="lb-melding rood">' + rood + (rood > 1 ? " leerlingen hebben" : " leerling heeft") + " een ontbrekend logboek.</div>" : "") + filters +
       (rol.coach ? '<div class="crij lb-export"><button type="button" class="btn licht lb-klein" id="db-kopieer">Kopieer overzicht voor Google Sheets</button><button type="button" class="btn licht lb-klein" id="db-csv">Download overzicht (CSV)</button><button type="button" class="btn licht lb-klein" id="db-csv-les">Download alle lesuren (CSV)</button><span class="fb" id="db-exportfb" aria-live="polite"></span></div>' : "") +
-      '<div class="lb-tabelwrap"><table class="lb-overzicht"><thead><tr><th>Leerling</th><th>Klas</th><th>Coach</th><th>Project</th><th>Lesuren</th><th>Laatste logboek</th><th>Status</th><th>Feedback</th></tr></thead><tbody>' +
+      '<div class="lb-tabelwrap"><table class="lb-overzicht"><thead><tr><th><span class="sr">Teken</span></th><th>Leerling</th><th>Klas</th><th>Coach</th><th>Project</th><th>Lesuren</th><th>Laatste logboek</th><th>Status</th><th>Feedback en vragen</th></tr></thead><tbody>' +
       (r.length ? r.map(function (x) {
-        return '<tr class="db-rij' + (D.open === x.l._id ? " open" : "") + '" data-ll="' + esc(x.l._id) + '" tabindex="0"><td><b>' + esc(x.l.naam || x.l._id) + '</b><br><span class="hint">' + esc(x.l._id) + "</span></td><td>" + esc(x.l.klas || "–") +
+        return '<tr class="db-rij' + (D.open === x.l._id ? " open" : "") + '" data-ll="' + esc(x.l._id) + '" tabindex="0"><td class="lb-tekencel">' + tekenHtml(x.teken) + '</td><td><b>' + esc(x.l.naam || x.l._id) + '</b><br><span class="hint">' + esc(x.l._id) + "</span></td><td>" + esc(x.l.klas || "–") +
           "</td><td>" + esc(x.l.coachNaam || "–") + "</td><td>" + (x.hoofd ? esc(x.hoofd.projectnaam.split(":")[0]) : "–") + "</td><td>" + (x.hoofd ? (x.hoofd.lessen || []).length : 0) +
-          "</td><td>" + datum(x.laatste) + '</td><td><span class="lb-pill ' + x.st[0] + '">' + esc(x.st[1]) + "</span></td><td>" + (x.fbOpen ? '<span class="lb-pill oranje">' + x.fbOpen + " ongelezen</span>" : "") + "</td></tr>";
-      }).join("") : '<tr><td colspan="8" class="hint">Geen leerlingen gevonden.' + (rol.coach ? " Voeg leerlingen toe in het tabblad Leerlingen." : "") + "</td></tr>") +
+          "</td><td>" + datum(x.laatste) + '</td><td><span class="lb-pill ' + x.st[0] + '">' + esc(x.st[1]) + "</span></td><td>" + (x.fbOpen ? '<span class="lb-pill oranje">' + x.fbOpen + " ongelezen</span>" : "") + (x.vragen ? ' <span class="lb-pill turkoois">' + x.vragen + (x.vragen > 1 ? " vragen" : " vraag") + "</span>" : "") + "</td></tr>";
+      }).join("") : '<tr><td colspan="9" class="hint">Geen leerlingen gevonden.' + (rol.coach ? " Voeg leerlingen toe in het tabblad Leerlingen." : "") + "</td></tr>") +
       '</tbody></table></div><div id="db-detail"></div>';
     var cs = z.querySelector("#db-coach"); if (cs) cs.addEventListener("change", function () { D.coachFilter = cs.value; tabOverzicht(z, doel); });
     var zk = z.querySelector("#db-zoek"); if (zk) zk.addEventListener("input", function () { D.zoek = zk.value; var pos = zk.selectionStart; tabOverzicht(z, doel); var n = z.querySelector("#db-zoek"); n.focus(); n.setSelectionRange(pos, pos); });
@@ -500,6 +556,32 @@
       z.querySelector("#db-csv-les").addEventListener("click", function () { download("csf-lesuren-" + vandaag() + ".csv", lesRijen()); });
     }
     if (D.open) detail(z.querySelector("#db-detail"), z, doel);
+  }
+  /* ---------- open vragen van leerlingen ---------- */
+  function tabVragen(z, doel) {
+    var d = D.data, eigen = D.vraagFilter !== "alle";
+    var open = d.vragen.filter(function (v) { return v.open && (!eigen || v.coach === mail()); }).sort(function (a, b) { return String(a.datum).localeCompare(String(b.datum)); });
+    var klaar = d.vragen.filter(function (v) { return !v.open && (!eigen || v.coach === mail()); }).sort(function (a, b) { return String(b.antwoordOp).localeCompare(String(a.antwoordOp)); }).slice(0, 20);
+    var kop = function (v) { return "<p><b>" + esc(v.naam || v.leerling) + '</b> <span class="hint">· ' + esc(v.klas || "") + " · " + esc(String(v.projectnaam || v.project).split(":")[0]) + " · " + datum(v.datum) + " · coach: " + esc(v.coachNaam || "–") + "</span></p>"; };
+    z.innerHTML = '<div class="crij lb-filters"><label class="lb-chip" for="vr-eigen"><input type="checkbox" id="vr-eigen"' + (eigen ? " checked" : "") + "><span>Enkel mijn leerlingen</span></label></div>" +
+      (open.length ? open.map(function (v) {
+        return '<div class="lb-vraagkaart" data-v="' + esc(v._id) + '">' + kop(v) + '<p class="lb-vraagtekst">' + esc(v.tekst).replace(/\n/g, "<br>") + "</p>" +
+          '<div class="lb-veld"><label for="vr-antw-' + esc(v._id) + '">Antwoord</label><textarea id="vr-antw-' + esc(v._id) + '" rows="3"></textarea></div>' +
+          '<div class="lb-acties"><button type="button" class="btn" data-antw="1">Verstuur antwoord</button><span class="fb" aria-live="polite"></span></div></div>';
+      }).join("") : '<div class="lb-melding groen">Er zijn geen open vragen.</div>') +
+      (klaar.length ? '<details class="lb-hist"><summary>Beantwoorde vragen (' + klaar.length + ")</summary>" + klaar.map(function (v) {
+        return '<div class="lb-vraagkaart">' + kop(v) + '<p class="lb-vraagtekst">' + esc(v.tekst).replace(/\n/g, "<br>") + '</p><p class="lb-antwoord"><b>' + esc(v.antwoordDoor || "") + "</b> · " + datum(v.antwoordOp) + (v.gelezen ? " · gelezen" : " · nog niet gelezen") + "<br>" + esc(v.antwoord || "").replace(/\n/g, "<br>") + "</p></div>";
+      }).join("") + "</details>" : "");
+    z.querySelector("#vr-eigen").addEventListener("change", function (e) { D.vraagFilter = e.target.checked ? "eigen" : "alle"; tabVragen(z, doel); });
+    z.querySelectorAll("[data-antw]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var kaart = b.closest(".lb-vraagkaart"), id = kaart.dataset.v, t = kaart.querySelector("textarea").value.trim(), fb = kaart.querySelector(".fb");
+        if (!t) { fb.textContent = "Typ eerst je antwoord."; return; }
+        var p = { open: false, antwoord: t, antwoordDoor: rol.coachNaam || (gebruiker.displayName || mail()), antwoordOp: nu(), gelezen: false };
+        F.updateDoc(ref("vragen/" + id), p).then(function () { lokaal("vragen", id, p); tekenDashboard(doel); })
+          .catch(function (err) { fb.textContent = "Versturen lukte niet. (" + (err.code || err.message) + ")"; });
+      });
+    });
   }
   function exportRijen(alle) {
     return [["Leerling", "E-mail", "Klas", "Coach", "Project", "Lesuren", "Laatste logboek", "Status", "Ongelezen feedback"]].concat(alle.map(function (x) {
