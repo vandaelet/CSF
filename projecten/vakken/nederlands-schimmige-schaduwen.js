@@ -42,7 +42,7 @@
     materiaal: ["Werkbundel", "Karton of stevig papier (dozen, ontbijtgranendozen)", "Bakpapier of een wit laken als scherm", "Een zaklamp of de lamp van een gsm", "Satéstokjes of rietjes, splitpennen, plakband, schaar", "Een Chromebook met internet"],
     oplossing: "Je voorstelling heeft geen vaste oplossing. Laat je stuk testen tijdens een repetitie. Je coach beoordeelt het met het rooster.",
     product: "Een schaduwtheater met figuren en decor, een toneeltekst en een voorstelling van 3 tot 5 minuten",
-    links: [["YouTube: ideeën via ‘DIY schaduwtheater maken’", "https://www.youtube.com/results?search_query=DIY+schaduwtheater+maken"], ["Pinterest: kant-en-klare schaduwfiguren", "https://www.pinterest.com/search/pins/?q=schaduwtheater%20figuren"]],
+    links: [["Kunstelaar: Angela Vissers", "https://www.kunstelaar.nl/angela-vissers/"], ["YouTube: ideeën via ‘DIY schaduwtheater maken’", "https://www.youtube.com/results?search_query=DIY+schaduwtheater+maken"], ["Pinterest: kant-en-klare schaduwfiguren", "https://www.pinterest.com/search/pins/?q=schaduwtheater%20figuren"]],
     leerkaarten: [
       ["Inspiratie: Kunstelaar", "Dit project is geïnspireerd op ‘Kunstelaar’ van de kunstenares Angela Vissers. Bekijk haar website voor ideeën. Je mag haar contacteren met je vragen. Schrijf een beleefd bericht: stel jezelf voor, leg uit dat het om een schoolproject gaat en stel je vraag kort en duidelijk."],
       ["Een sterk verhaal", "Een verhaal heeft een <b>begin</b>: wie, waar, wanneer. Daarna komt een <b>probleem</b>. In het <b>midden</b> proberen de personages het op te lossen. Het <b>slot</b> toont de oplossing. Hou het kort: een schaduwtheater duurt 3 tot 5 minuten."],
@@ -88,7 +88,7 @@
     werkbundel: [
       { les: 1, html: `
         ${h.kader("De opdracht", "Maak een eigen <b>schaduwtheater</b> voor een doelgroep naar keuze. Schrijf een kort toneelstuk. Maak schaduwfiguren en een decor. Bouw een theater met een scherm en een lamp. Speel je voorstelling voor publiek.")}
-        ${h.leerkaart("Leerkaart · Inspiratie: Kunstelaar", "<p>Dit project is geïnspireerd op <b>‘Kunstelaar’</b> van de kunstenares <b>Angela Vissers</b>. Bekijk haar website voor ideeën (je coach geeft je de link). Je mag haar contacteren met je vragen. Schrijf een beleefd bericht: stel jezelf voor, leg uit dat het om een schoolproject gaat en stel je vraag kort en duidelijk.</p>")}
+        ${h.leerkaart("Leerkaart · Inspiratie: Kunstelaar", "<p>Dit project is geïnspireerd op <b>‘Kunstelaar’</b> van de kunstenares <b>Angela Vissers</b>. Bekijk haar website voor ideeën (link bij het project). Je mag haar contacteren met je vragen. Schrijf een beleefd bericht: stel jezelf voor, leg uit dat het om een schoolproject gaat en stel je vraag kort en duidelijk.</p>")}
         ${opstelling()}
         <h3>Wat weet ik al over toneel of schaduwtheater?</h3>${h.lijnen(2)}
         <h2>Werkblad 1 · Inspiratie</h2>
