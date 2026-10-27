@@ -539,7 +539,7 @@
 
   function tekenDashboard(doel) {
     var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
-    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
+    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["projecten", "Projecten"]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
     doel.innerHTML = (D.geweigerd && D.geweigerd.length ? '<div class="lb-melding rood"><b>De toegangsregels in Firebase zijn niet up-to-date.</b> ' + (rol.beheerder ? "Plak de volledige inhoud van <code>firestore.rules</code> uit GitHub in Firebase → Firestore Database → Rules en klik op Publish." : "Vraag de beheerder om de regels opnieuw te publiceren.") + ' <span class="hint">(geen toegang tot: ' + esc(D.geweigerd.join(", ")) + ")</span></div>" : "") +
       '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
       '</div><div id="db-inhoud"></div>';
@@ -548,6 +548,7 @@
     if (D.tab === "leerlingen" && rol.coach) return tabLeerlingen(z, doel);
     if (D.tab === "klaslijst" && rol.coach) return tabKlaslijst(z, doel);
     if (D.tab === "vragen" && rol.coach) return tabVragen(z, doel);
+    if (D.tab === "projecten" && rol.coach) return tabProjecten(z, doel);
     if (D.tab === "beheer" && rol.beheerder) return tabBeheer(z, doel);
     tabOverzicht(z, doel);
   }
@@ -1007,8 +1008,65 @@
       }).catch(function (e) { out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
     });
   }
-  /* op elke pagina: is een leerling aangemeld, vraag dan naar het begin-logboek */
-  if (P.actief) laad().then(vraagBegin).catch(function () {});
+  /* ---------- aanpassingen van coaches aan sterren, tijd en inleiding (openbaar leesbaar) ---------- */
+  var VELDEN = [["kort", "Korte inhoud (onder de titel)"], ["voorWie", "Voor wie?"], ["omschrijving", "Omschrijving project"], ["doel", "Doel van het project"]];
+  P.over = {};
+  function platteTekst(html) { var d = document.createElement("div"); d.innerHTML = String(html || "").replace(/<br\s*\/?>/gi, "\n"); return d.textContent; }
+  function alsHtml(t) { return esc(t).replace(/\n/g, "<br>"); }
+  P.pasToe = function () {
+    (CSF.projecten || []).forEach(function (p) {
+      if (!p._orig) p._orig = { sterren: p.sterren, tijd: p.tijd, kort: p.kort, voorWie: p.voorWie, omschrijving: p.omschrijving, doel: p.doel };
+      var o = P.over[p.id] || {}, g = p._orig;
+      p.sterren = o.sterren ? Number(o.sterren) : g.sterren;
+      p.tijd = o.tijd || g.tijd;
+      VELDEN.forEach(function (v) { var k = v[0]; p[k] = o[k] != null && o[k] !== "" && o[k] !== platteTekst(g[k]) ? alsHtml(o[k]) : g[k]; });
+    });
+  };
+  function laadAanpassingen() {
+    return lijst("projectinfo").then(function (r) {
+      var o = {}; r.forEach(function (x) { o[x._id] = x; }); P.over = o;
+      if (CSF.gestart) { P.pasToe(); if (!/^#?(logboek|dashboard)/.test(location.hash)) herteken(); }
+    }).catch(function () {});
+  }
+
+  function tabProjecten(z, doel) {
+    var lijstP = (CSF.projecten || []).slice().sort(function (a, b) { return (a.soort === "vak") - (b.soort === "vak") || CSF.ui.label(a).localeCompare(CSF.ui.label(b), "nl") || a.naam.localeCompare(b.naam, "nl"); });
+    if (!D.projId || !lijstP.some(function (p) { return p.id === D.projId; })) D.projId = lijstP.length ? lijstP[0].id : "";
+    var p = lijstP.filter(function (x) { return x.id === D.projId; })[0], g = p ? p._orig || p : {}, o = (p && P.over[p.id]) || {};
+    var waarde = function (k) { return o[k] != null && o[k] !== "" ? o[k] : (k === "sterren" ? g.sterren : k === "tijd" ? g.tijd : platteTekst(g[k])); };
+    var sterOpties = [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + (Number(waarde("sterren")) === n ? " selected" : "") + ">" + "★".repeat(n) + "☆".repeat(5 - n) + " (" + n + ")</option>"; }).join("");
+    z.innerHTML = '<p class="hint">Pas de sterren, de voorziene tijd en de inleidende teksten van een project aan. De site toont meteen de nieuwe versie. De werkbundel en de lesplanning blijven ongewijzigd.</p>' +
+      '<div class="lb-veld"><label for="pr-kies">Project</label><select id="pr-kies">' + lijstP.map(function (x) {
+        return '<option value="' + esc(x.id) + '"' + (x.id === D.projId ? " selected" : "") + ">" + esc((x.soort === "vak" ? CSF.ui.label(x) : "oefenproject " + CSF.ui.label(x)) + " · " + x.naam.split(":")[0]) + (P.over[x.id] ? " ✎" : "") + "</option>"; }).join("") + "</select></div>" +
+      (p ? '<form id="pr-form" class="lb-form" novalidate>' + (o.door ? '<p class="hint">Laatst aangepast door ' + esc(o.door) + " op " + datum(o.op) + ".</p>" : "") +
+        '<div class="lb-twee"><div class="lb-veld"><label for="pr-sterren">Uitdagingsniveau</label><select id="pr-sterren">' + sterOpties + '</select></div>' +
+        '<div class="lb-veld"><label for="pr-tijd">Voorziene tijd</label><input type="text" id="pr-tijd" maxlength="40" value="' + esc(waarde("tijd") || "") + '"><span class="hint">bv. 3 lesuren</span></div></div>' +
+        VELDEN.map(function (v) { return '<div class="lb-veld"><label for="pr-' + v[0] + '">' + v[1] + '</label><textarea id="pr-' + v[0] + '" rows="' + (v[0] === "omschrijving" ? 5 : 2) + '" maxlength="1500">' + esc(waarde(v[0]) || "") + "</textarea></div>"; }).join("") +
+        '<div class="lb-acties"><button type="submit" class="btn">Bewaar</button>' + (P.over[p.id] ? '<button type="button" class="btn licht" id="pr-herstel">Zet terug naar het origineel</button>' : "") +
+        ' <a class="btn licht" href="#p-' + esc(p.id) + '" target="_blank" rel="noopener">Bekijk het project</a><span class="fb" id="pr-fb" aria-live="polite"></span></div></form>' : "");
+    z.querySelector("#pr-kies").addEventListener("change", function (e) { D.projId = e.target.value; tabProjecten(z, doel); });
+    if (!p) return;
+    var fb = z.querySelector("#pr-fb");
+    z.querySelector("#pr-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var tijd = z.querySelector("#pr-tijd").value.trim();
+      if (!tijd) { fb.textContent = "Vul de voorziene tijd in."; return; }
+      var data = { sterren: Number(z.querySelector("#pr-sterren").value), tijd: tijd, door: rol.coachNaam || (gebruiker.displayName || mail()), op: nu() };
+      VELDEN.forEach(function (v) { data[v[0]] = z.querySelector("#pr-" + v[0]).value.trim(); });
+      fb.textContent = "Bezig met bewaren …";
+      F.setDoc(ref("projectinfo/" + p.id), data).then(function () { P.over[p.id] = data; P.pasToe(); tabProjecten(z, doel); var x = z.querySelector("#pr-fb"); if (x) x.textContent = "Bewaard. De site toont de nieuwe versie."; })
+        .catch(function (err) { fb.textContent = "Bewaren lukte niet. (" + (err.code || err.message) + ")"; });
+    });
+    var hs = z.querySelector("#pr-herstel");
+    if (hs) hs.addEventListener("click", function () {
+      if (!window.confirm("Zet de sterren, de tijd en de teksten van dit project terug naar het origineel?")) return;
+      F.deleteDoc(ref("projectinfo/" + p.id)).then(function () { delete P.over[p.id]; P.pasToe(); tabProjecten(z, doel); var x = z.querySelector("#pr-fb"); if (x) x.textContent = "Teruggezet naar het origineel."; })
+        .catch(function (err) { fb.textContent = "Terugzetten lukte niet. (" + (err.code || err.message) + ")"; });
+    });
+  }
+
+  /* op elke pagina: aanpassingen van coaches laden; is een leerling aangemeld, vraag dan naar het begin-logboek */
+  if (P.actief) laad().then(function () { laadAanpassingen(); vraagBegin(); }).catch(function () {});
   /* app.js vult P.testCode in (ontsleutelen van coach/coachfiches.js) */
   P.testCode = function () { return Promise.resolve(true); };
 })();

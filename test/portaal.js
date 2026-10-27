@@ -260,6 +260,25 @@ const DB = {
     await aanmelden(p, '#coach', ELS); await p.waitForSelector('.coachband', { timeout: 15000 }).catch(() => {});
     check(await p.locator('.coachband').count() > 3, 'coach opent de coachfiches zonder code');
   } else console.log('  (coachfiches openen overgeslagen: geef CSF_COACHCODE mee)');
+  console.log('6b. Coach past sterren, tijd en inleiding van een project aan');
+  await aanmelden(p, '#dashboard', ELS); await p.click('[data-tab="projecten"]'); await p.waitForSelector('#pr-kies');
+  await p.selectOption('#pr-kies', 'talen'); await p.waitForSelector('#pr-form');
+  const origOms = await p.inputValue('#pr-omschrijving');
+  check(origOms.length > 20 && !origOms.includes('<'), 'origineel staat als gewone tekst klaar');
+  await p.selectOption('#pr-sterren', '4'); await p.fill('#pr-tijd', '4 lesuren');
+  await p.fill('#pr-omschrijving', 'Nieuwe uitleg <b>niet vet</b>.\nTweede regel.');
+  await p.click('#pr-form button[type=submit]'); await wacht(700);
+  d = await fakedb(p);
+  check(d['projectinfo/talen'] && d['projectinfo/talen'].sterren === 4 && d['projectinfo/talen'].tijd === '4 lesuren' && d['projectinfo/talen'].door === 'Van Huffel E.', 'aanpassing bewaard met naam van de coach');
+  await p.goto(B + '#p-talen'); await p.reload(); await p.waitForSelector('.tags'); await wacht(1200);
+  const tekst = await p.textContent('#app');
+  check(tekst.includes('4 lesuren') && tekst.includes('Nieuwe uitleg <b>niet vet</b>.') && await p.locator('.tags .sterren').first().evaluate(e => e.textContent.replace(/[^★]/g, '').length) >= 5, 'projectpagina toont de nieuwe tijd en tekst (HTML blijft tekst)');
+  check((await p.locator('.tags .sterren').first().innerHTML()).startsWith('★★★★<span'), 'projectpagina toont 4 sterren');
+  await p.goto(B + '#overzicht'); await p.goto(B + '#oefenproject'); await wacht(300);
+  check((await p.textContent('#app')).includes('4 lesuren'), 'overzicht toont de nieuwe tijd');
+  await p.goto(B + '#dashboard'); await p.waitForSelector('[data-tab="projecten"]'); await p.click('[data-tab="projecten"]'); await p.selectOption('#pr-kies', 'talen'); await p.waitForSelector('#pr-herstel');
+  await p.click('#pr-herstel'); await wacht(700);
+  d = await fakedb(p); check(!d['projectinfo/talen'], 'terugzetten naar het origineel');
   if (p.fouten.length) fout('fouten in de pagina: ' + p.fouten.join(' | '));
   await b.close();
 

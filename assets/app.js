@@ -423,6 +423,8 @@
     else { app.innerHTML = vStart(); document.title = CSF.titel + " " + CSF.school; }
   }
   function start() {
+    CSF.gestart = true;
+    if (CSF.portaal && CSF.portaal.pasToe) CSF.portaal.pasToe();   // aanpassingen van coaches (sterren, tijd, inleiding)
     teken();
     window.addEventListener("hashchange", function () { teken(); window.scrollTo(0, 0); });
   }
