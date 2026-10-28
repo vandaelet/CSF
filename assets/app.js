@@ -30,6 +30,18 @@
     }
   };
 
+  /* Bouwstenen voor uitgewerkte leerkaarten (derde element van een leerkaart: [titel, kern, uitwerking]) */
+  CSF.lk = {
+    fig: function (svg, bijschrift) { return '<figure class="lk-fig">' + svg + (bijschrift ? "<figcaption>" + bijschrift + "</figcaption>" : "") + "</figure>"; },
+    stappen: function (lijst) { return '<ol class="lk-stappen">' + lijst.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol>"; },
+    punten: function (lijst) { return '<ul class="lk-punten">' + lijst.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul>"; },
+    vb: function (html, titel) { return '<div class="lk-vb"><b>' + (titel || "Voorbeeld") + "</b>" + html + "</div>"; },
+    tip: function (html) { return '<p class="lk-tip"><b>Tip</b> ' + html + "</p>"; },
+    let: function (html) { return '<p class="lk-let"><b>Let op</b> ' + html + "</p>"; },
+    tabel: function (kop, rijen) { return '<table class="lk-tabel">' + (kop ? "<tr>" + kop.map(function (k) { return "<th>" + k + "</th>"; }).join("") + "</tr>" : "") + rijen.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>"; }).join("") + "</table>"; },
+    p: function (html) { return "<p>" + html + "</p>"; }
+  };
+
   /* logboekmoment (gele regel): de stap heet ‘… logboek …’, of de tekst vraagt het logboek in te vullen (behalve bij uitwerking) */
   CSF.logMoment = function (soort, tekst) { soort = String(soort || ""); return /logboek/i.test(soort) || (/logboek/i.test(String(tekst || "")) && !/^uitwerking/i.test(soort)); };
 
@@ -264,7 +276,7 @@
     var lk = p.leerkaarten || [], g = gelezen(p), nGel = lk.filter(function (_, i) { return g.indexOf(i) >= 0; }).length, open = magAfdrukken(p);
     var kaarten = lk.map(function (k, i) {
       var ok = g.indexOf(i) >= 0;
-      return '<details class="kaart lk' + (ok ? " gelezen" : "") + '" data-i="' + i + '"><summary><span class="lk-vink" aria-hidden="true">' + (ok ? "✓" : (i + 1)) + "</span>" + k[0] + "</summary><p>" + k[1] + '</p><p class="lk-knop">' +
+      return '<details class="kaart lk' + (ok ? " gelezen" : "") + '" data-i="' + i + '"><summary><span class="lk-vink" aria-hidden="true">' + (ok ? "✓" : (i + 1)) + "</span>" + k[0] + '</summary><div class="lk-inhoud"><p class="lk-kern">' + k[1] + "</p>" + (k[2] || "") + '</div><p class="lk-knop">' +
         (ok ? '<span class="hint">✓ Gelezen</span>' : '<button type="button" class="btn licht lb-klein" data-lees="' + i + '">Ik heb deze leerkaart gelezen</button>') + "</p></details>";
     }).join("");
     var modus = CSF.portaal && CSF.portaal.projectModus ? CSF.portaal.projectModus(p) : "vol";

@@ -432,3 +432,23 @@ footer { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justif
 .lb-linkrij a { word-break:break-all; }
 .lb-pl-form { margin-top:8px; } .lb-pl-form input { flex:1 1 260px; padding:.45rem .6rem; border:1px solid #cfd8dc; border-radius:8px; font:inherit; }
 .lb-ander { margin-top:8px; } .lb-ander summary { cursor:pointer; color:#1b8b8f; font-weight:600; }
+
+/* uitgewerkte leerkaarten */
+.lk-inhoud { padding:0 14px 6px; font-size:.95rem; line-height:1.5; }
+.lk-inhoud > p { margin:0 0 10px; padding:0; }
+.lk-inhoud .lk-kern { font-weight:600; background:#eef9f9; border-left:4px solid var(--turkoois, #3BC1C5); padding:8px 12px; }
+.lk-fig { margin:10px 0 14px; text-align:center; }
+.lk-fig svg { width:100%; max-width:520px; height:auto; display:block; margin:0 auto; }
+.lk-fig figcaption { font-size:.85rem; color:var(--grijs, #555); margin-top:4px; }
+.lk-stappen, .lk-punten { margin:0 0 10px; padding-left:1.4em; }
+.lk-stappen li, .lk-punten li { margin:3px 0; }
+.lk-vb { background:#fff8e6; border:1px solid #f6d58a; border-radius:8px; padding:8px 12px; margin:0 0 10px; }
+.lk-vb > b:first-child { display:block; color:#b37400; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; margin-bottom:2px; }
+.lk-vb p { margin:4px 0; padding:0; }
+.lk-tip, .lk-let { margin:0 0 10px; padding:6px 12px; border-radius:8px; }
+.lk-tip { background:#eef9f0; } .lk-tip b { color:#2e7d4a; }
+.lk-let { background:#fdeeee; } .lk-let b { color:#b23b3b; }
+.lk-tabel { border-collapse:collapse; margin:0 0 10px; font-size:.9rem; }
+.lk-tabel th, .lk-tabel td { border:1px solid var(--lijn, #ddd); padding:4px 8px; text-align:left; vertical-align:top; }
+.lk-tabel th { background:#eef9f9; }
+.kaart .lk-knop { padding:0 14px 12px; }
