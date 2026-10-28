@@ -130,6 +130,17 @@
     else { try { uit = JSON.parse(store.get("stap-" + p.id) || "[]"); } catch (e) { uit = []; } }
     return uit;
   }
+  function wbOpgelost(p) {
+    if (CSF.portaal && CSF.portaal.isCoach && CSF.portaal.isCoach()) return true;
+    var r = eigenRes(p); if (r) return !!r.wb_opgelost;
+    try { return JSON.parse(store.get("stap-" + p.id) || "[]").indexOf("opgelost") >= 0; } catch (e) { return false; }
+  }
+  function zetOpgelost(p) {
+    var r = eigenRes(p);
+    if (r && CSF.portaal.registreer) return CSF.portaal.registreer(p.id, "wb_opgelost", {});
+    var b = []; try { b = JSON.parse(store.get("stap-" + p.id) || "[]"); } catch (e) {}
+    if (b.indexOf("opgelost") < 0) b.push("opgelost"); store.set("stap-" + p.id, JSON.stringify(b)); return Promise.resolve(true);
+  }
   function markeer(p, s) {
     if (STAPPEN.indexOf(s) < 0 || bekeken(p).indexOf(s) >= 0) return Promise.resolve(false);
     var r = eigenRes(p);
@@ -259,7 +270,7 @@
     var modus = CSF.portaal && CSF.portaal.projectModus ? CSF.portaal.projectModus(p) : "vol";
     var stand = stapStand(p);
     var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["fiche", "1. Projectfiche"], ["start", "2. Leerkaarten en oefeningen"], ["leidraad", "3. Leidraad per lesuur"],
-      ["evaluatie", "4. Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "5. Werkbundel"]];
+      ["evaluatie", "4. Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "5. Werkbundel"]].concat(controle ? [["controle", (open ? "" : "🔒 ") + "6. Controleer je oplossing"]] : []);
     var actief = "fiche"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "fiche"; } catch (e) {}
     if (!tabs.some(function (t) { return t[0] === actief; })) actief = "fiche";
     /* onderaan elk tabblad: knoppen naar de vorige en de volgende stap */
@@ -277,13 +288,12 @@
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + '<span class="tag">uitwerking op papier</span></div>' +
       '<p class="lead">' + p.kort + "</p>" + (p.voorWie ? '<p class="hint" style="margin-top:6px"><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") +
       '<div id="logboek-blok"></div>' +
-      '<div class="ptabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="ptab' + (t[0] === "werkbundel" && !open ? " slot" : "") + '" role="tab" data-tab="' + t[0] + '" aria-selected="' + (actief === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
+      '<div class="ptabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="ptab' + ((t[0] === "werkbundel" || t[0] === "controle") && !open ? " slot" : "") + '" role="tab" data-tab="' + t[0] + '" aria-selected="' + (actief === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
       paneel("start", '<div class="blok"><h3 class="banner">Start hier: lees de leerkaarten</h3><p>De leerkaarten geven je de nieuwe leerstof die je nodig hebt voor dit project. Open elke leerkaart. Lees ze aandachtig. Klik daarna op <b>‘Ik heb deze leerkaart gelezen’</b>. De werkbundel gaat open als je alle leerkaarten gelezen hebt en de projectfiche, de leidraad en de evaluatie bekeken hebt.</p>' +
         '<div class="lk-stand' + (open ? " klaar" : "") + '" aria-live="polite"><div class="balk"><span style="width:' + (lk.length ? 100 * nGel / lk.length : 100) + '%"></span></div><span>' + (lk.length ? nGel + " van " + lk.length + " leerkaarten gelezen" : "Dit project heeft geen leerkaarten.") + (open ? ' · <a href="#wb-' + p.id + '">Naar de werkbundel →</a>' : "") + "</span></div>" + kaarten + "</div>" +
         (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><p class="hint">Begrijp je de leerkaarten? Test het hier.</p><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") +
-        /* de oefeningen ‘Controleer je oplossing’ en de quizzen staan meteen na de leerkaarten */
+        /* de quizzen staan meteen na de leerkaarten; ‘Controleer je oplossing’ komt pas na de werkbundel */
         (quizzen ? '<div class="blok"><h3 class="banner">' + esc(p.quizTitel || "Quiz per fragment") + '</h3><p class="hint">' + (p.quizUitleg || "Bekijk het fragment. Beantwoord daarna de vragen. Je ziet meteen of je antwoord juist is.") + "</p>" + quizzen + "</div>" : "") +
-        (controle ? '<div class="blok"><h3 class="banner">Controleer je oplossing</h3><p class="hint">Schrijf je antwoord eerst in je werkbundel. Tik het daarna hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle + "</div>" : "") +
         (links ? '<div class="blok"><h3 class="banner">Handige links</h3><div class="acties">' + links + "</div></div>" : "")) +
       paneel("fiche", '<div class="blok"><h3 class="banner">Projectfiche</h3><dl>' +
         "<dt>Omschrijving project</dt><dd>" + p.omschrijving + "</dd><dt>Doel van het project</dt><dd>" + p.doel + "</dd>" +
@@ -293,6 +303,10 @@
         '<div class="lessen">' + lessen + "</div></div>") +
 
       paneel("evaluatie", '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>") +
+      (controle ? paneel("controle", '<div class="blok"><h3 class="banner">Controleer je oplossing</h3>' + (!open
+        ? '<div class="lb-melding oranje">🔒 <b>Eerst de werkbundel.</b> Bekijk eerst de stappen 1 tot 4 en los de oefeningen in je werkbundel op. Daarna controleer je hier je antwoorden.</div>'
+        : !wbOpgelost(p) ? '<p>Los eerst de oefeningen in je werkbundel op. Schrijf je antwoorden op papier. Kom daarna terug om ze te controleren.</p><p><button type="button" class="btn" id="wb-opgelost">Ik heb de oefeningen in mijn werkbundel opgelost</button></p>'
+        : '<p class="hint">Tik het antwoord uit je werkbundel hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle) + "</div>") : "") +
       paneel("werkbundel", '<div class="blok"><h3 class="banner">Werkbundel</h3>' + (open
         ? '<p>Je bekeek alle stappen. Bekijk de werkbundel en druk hem af op A4.</p><p><a class="btn" href="#wb-' + p.id + '">🖨 Bekijk en druk de werkbundel af</a></p>'
         : '<div class="lb-melding oranje">🔒 <b>De werkbundel gaat pas open als je de stappen 1 tot 4 bekeken hebt.</b> Klik op een stap die nog niet klaar is.</div>') +
@@ -442,6 +456,8 @@
         tabKies(b.dataset.stap); var t = app.querySelector(".ptabs"); if (t) window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + window.scrollY - 12), behavior: "smooth" });
         var k = app.querySelector('.ptab[data-tab="' + b.dataset.stap + '"]'); if (k) k.focus({ preventScroll: true });
       }); });
+      var wo = app.querySelector("#wb-opgelost");
+      if (wo) wo.addEventListener("click", function () { wo.disabled = true; zetOpgelost(p).then(function () { var y = window.scrollY; teken(); window.scrollTo(0, y); }); });
       app.querySelectorAll("[data-naartab]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); tabKies(a.dataset.naartab); }); });
       var Pt = CSF.portaal, eigen = eigenRes(p);
       /* resultaten van de leerling nog niet geladen? Laad ze en teken opnieuw */

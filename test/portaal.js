@@ -433,6 +433,11 @@ const DB = {
   check(await q.locator('details.lk.gelezen').count() === nLk && await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 1, 'leerkaarten alleen zijn niet genoeg: de werkbundel blijft dicht');
   for (const s of ['leidraad', 'evaluatie']) { await q.click('.ptab[data-tab="' + s + '"]'); await wacht(300); }
   check(await q.locator('.ptab[data-tab="werkbundel"].slot').count() === 0, 'na de projectfiche, alle leerkaarten, de leidraad en de evaluatie is de werkbundel open');
+  check(await q.locator('#tp-start .check').count() === 0, '‘Controleer je oplossing’ staat niet meer bij de leerkaarten');
+  await q.click('.ptab[data-tab="controle"]'); await q.waitForSelector('#wb-opgelost');
+  check(await q.locator('#tp-controle .check').count() === 0, 'controle pas na ‘Ik heb de oefeningen in mijn werkbundel opgelost’');
+  await q.click('#wb-opgelost'); await q.waitForSelector('#tp-controle .check');
+  check(await q.locator('#tp-controle .check').count() > 0, 'na het oplossen van de werkbundel: antwoorden controleren');
   await q.goto(B + '#wb-engels-all-about-movies'); await q.waitForSelector('.blad');
   check(true, 'werkbundel kan nu afgedrukt worden');
   await q.goto(B + '#p-engels-all-about-movies'); await q.waitForSelector('.ptabs');
