@@ -103,6 +103,12 @@ Coaches noteren fouten en wensen in Dashboard → **Aanpassingen aan de site** (
 
 Bovenaan het logboek staat de link naar het project. De leerling voegt hem toe of wijzigt hem op elk moment. Zolang het project niet afgerond is, kan de leerling er ook een **ander project** kiezen: zijn opstart en ingevulde lesuren gaan mee, het oude logboek krijgt de status geannuleerd.
 
+## Uitgewerkte leerkaarten
+
+Elke leerkaart heeft een korte kern (bovenaan, in een kader) en een uitwerking: een eigen tekening (SVG), een uitgewerkt voorbeeld, een tip of een waarschuwing. De bouwstenen staan in `CSF.lk` (zie `projecten/_sjabloon.js`). De voorbeelden geven nooit een antwoord uit de werkbundel of uit ‘Controleer je oplossing’ weg.
+
+‘Controleer je oplossing’ is stap 6, na de werkbundel. De leerling bevestigt eerst dat hij de oefeningen in zijn werkbundel oploste.
+
 ## Testleerling voor coaches
 
 Elke coach heeft een eigen testleerling (`test--<e-mail van de coach>`). Open Dashboard → **Testleerling** → ‘Maak mijn testleerling en start’. Je ziet de site dan precies zoals een leerling: klas kiezen, project kiezen, leerkaarten, vragen, logboek, vragen aan de coach. Een oranje balk bovenaan wisselt naar ‘Bekijk als coach’ (detail van de testleerling in het overzicht) of stopt de testmodus. ‘Zet de testleerling terug op nul’ wist alle logboeken, antwoorden, feedback en vragen. De testleerling staat in het overzicht met het label *test*, komt niet in de export en krijgt geen herinneringsmails. Kies jezelf als vakleerkracht, dan ziet geen collega de testleerling.

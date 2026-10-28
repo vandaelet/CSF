@@ -44,8 +44,13 @@
     product: "Wat levert de leerling af?",
     links: [["Naam van een website", "https://..."]],          // mag leeg: []
 
+    /* Leerkaart = [titel, kern in 2 à 4 zinnen, uitwerking (mag weg)].
+       Bouwstenen voor de uitwerking: CSF.lk.fig(svg, bijschrift), CSF.lk.stappen([...]), CSF.lk.punten([...]),
+       CSF.lk.vb(html, titel), CSF.lk.tip(html), CSF.lk.let(html), CSF.lk.tabel(kop, rijen), CSF.lk.p(html).
+       Geef in een voorbeeld nooit een antwoord uit de werkbundel of uit ‘Controleer je oplossing’. */
     leerkaarten: [
-      ["Titel leerkaart 1", "Uitleg in 2 à 4 zinnen."],
+      ["Titel leerkaart 1", "Uitleg in 2 à 4 zinnen.",
+        CSF.lk.vb("<p>Een uitgewerkt voorbeeld.</p>") + CSF.lk.tip("Een handige tip.")],
       ["Titel leerkaart 2", "Uitleg in 2 à 4 zinnen."]
     ],
 
