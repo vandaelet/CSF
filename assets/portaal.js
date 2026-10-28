@@ -715,7 +715,8 @@
         veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." }) +
         keuze("geslaagd", "Mijn manier van werken lijkt me dus", ["GESLAAGD", "NIET GESLAAGD"], { verplicht: true }) +
         veld("geslaagdWaarom", "Mijn eigen feedback: waarom vind ik dat? Wat hou ik zo, wat doe ik volgende keer anders?", { lang: true, rijen: 3, verplicht: true });
-    doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill oranje">Lesuur ' + n + ' loopt</span><p>Werk met de leidraad hieronder en vink af wat je gedaan hebt. Vul het <b>einde</b> van je logboek in op het einde van het lesuur.</p></div>' +
+    doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill oranje">Lesuur ' + n + ' loopt</span><p>Je lesuur is gestart. Werk nu verder aan je project. Vink in de leidraad hieronder af wat je gedaan hebt. Vul het <b>einde</b> van je logboek in op het einde van het lesuur.</p>' +
+      '<p class="lb-naarproject"><a class="btn" href="#p-' + esc(p.id) + '">Ga naar mijn project en werk verder →</a> <span class="hint">Klaar? Klik op het project op ‘Logboek einde les invullen’ of kom hier terug.</span></p></div>' +
       '<div id="lb-ld"></div><h3 class="lb-eindekop">Einde van lesuur ' + n + "</h3>" + formulier("lb-einde", inhoud, "Bewaar het einde van lesuur " + n) + geschiedenis;
     /* de leidraad van vandaag: afvinken wordt meteen bewaard */
     var ld = l.leidraad ? JSON.parse(JSON.stringify(l.leidraad)) : leidraadVoor(p, ls.slice(0, -1)), box = doel.querySelector("#lb-ld");

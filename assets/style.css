@@ -452,3 +452,5 @@ footer { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justif
 .lk-tabel th, .lk-tabel td { border:1px solid var(--lijn, #ddd); padding:4px 8px; text-align:left; vertical-align:top; }
 .lk-tabel th { background:#eef9f9; }
 .kaart .lk-knop { padding:0 14px 12px; }
+
+.lb-naarproject { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin:10px 0 0; }

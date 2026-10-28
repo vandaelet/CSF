@@ -101,6 +101,7 @@ const DB = {
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
   check(await p.locator('.lb-stappen').count() === 1, 'stappenplan van lesuur 1 verschijnt na het begin-logboek');
   check(await p.locator('.lb-leidraad [data-ld]').count() > 2, 'leidraad van lesuur 1 staat als afvinklijst in het logboek');
+  check(await p.locator('.lb-naarproject a[href="#p-wetenschappen"]').count() === 1, 'na het begin-logboek: link naar het project om verder te werken');
   const afTekst = (await p.locator('.lb-vinklijst li:not(.lb) .w').first().textContent()).trim();
   await p.locator('.lb-vinklijst li:not(.lb) input').first().check(); await wacht(400);
   d = await fakedb(p); { const L1 = d['logboeken/peeters.lien@svsl.be__wetenschappen'].lessen[0].leidraad; check(L1.les === 1 && L1.items.filter(x => x.af).length === 1, 'afvinken wordt meteen bewaard'); }
