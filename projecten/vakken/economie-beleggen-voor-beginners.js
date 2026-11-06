@@ -21,7 +21,7 @@
     naam: "Beleggen voor beginners",
     kort: "Leer beleggen met oefengeld en daag je klasgenoten uit op jeugdbeurs.be.",
     voorWie: "Voor wie nieuwsgierig is naar geld, bedrijven en de beurs, en graag rekent met procenten.",
-    omschrijving: "Stel: je krijgt € 10.000. Wat doe je ermee? Zet je het op een spaarrekening? Of koop je aandelen van je favoriete gamebedrijf of chocolademaker? Op de beurs kan je geld groeien, maar je kan ook verliezen. In dit project ontdek je hoe beleggen echt werkt. Je leert wat een aandeel, een obligatie en een fonds is. Je speelt twaalf weken op onze oefenbeurs, met echt nieuws én valse geruchten. Daarna begint het echte werk: met oefengeld beheer je je eigen portefeuille op jeugdbeurs.be. Beleg jij straks slimmer dan je klasgenoten? Dan is dit project op jouw maat! 📈",
+    omschrijving: "Stel: je krijgt € 10.000. Wat doe je ermee? Zet je het op een spaarrekening? Of koop je aandelen van je favoriete gamebedrijf of chocolademaker? Op de beurs kan je geld groeien, maar je kan ook verliezen. In dit project ontdek je hoe beleggen echt werkt. Je leert wat een aandeel, een obligatie en een fonds is. Je speelt twaalf weken op onze oefenbeurs, met echt nieuws én valse geruchten. En elke keer kom je in een nieuwe wereld terecht. Daarna begint het echte werk: met oefengeld beheer je je eigen portefeuille op jeugdbeurs.be. Beleg jij straks slimmer dan je klasgenoten? Dan is dit project op jouw maat! 📈",
     doel: "Je legt uit hoe sparen en beleggen werken. Je vergelijkt het risico van beleggingen. Je rekent met winst, verlies en kosten. Je herkent geruchten en hypes. Je maakt een beleggingsplan en volgt het op jeugdbeurs.be.",
     bereikt: ["Sparen en beleggen vergelijken, ook met spaargids.be", "Aandelen, obligaties, fondsen, trackers en crypto herkennen", "Je geld spreiden volgens je risico", "Een koers en een beursindex zoals de BEL20 lezen", "Winst en verlies berekenen in euro en in procent, met kosten"],
     toepassen: ["Plannen: een beleggingsplan maken en volgen", "Geduld: niet elk nieuwsbericht vraagt een actie", "Kritisch denken: geruchten en hypes herkennen", "Eerlijk terugblikken op je eigen keuzes"],
@@ -199,15 +199,15 @@ CSF.lk.tip('Schrijf je plan op voor je begint: hoeveel beleg je, in hoeveel bedr
       { les: 5, html: `
         <h2>Werkblad 6 · Mijn plan voor de oefenbeurs</h2>
         ${h.leerkaart("Leerkaart · Beleggen is geen gokken", "<p>Maak een plan en hou je eraan. Controleer de bron. Verkoop niet in paniek en koop niet omdat iedereen het doet. Niet elk nieuwsbericht vraagt een actie.</p>")}
-        <p>Open de oefenbeurs (link bij het project). Lees de bedrijvengids. Vul de tabel in voor je iets koopt.</p>
+        <p>Open de oefenbeurs (link bij het project). Elke speler komt in een andere wereld. Noteer je wereldnummer: ________. Lees de bedrijvengids. Vul de tabel in voor je iets koopt.</p>
         <table><tr><th>Bedrijf</th><th>Sector</th><th>Risico</th><th style="width:30%">Wil ik het? Waarom (niet)?</th></tr>
-        ${["Zonnig", "PixelPlay", "Choco Belgica", "EuroRail", "Bruisbron", "MediZorg", "Bouwmeester", "BankPlus", "Wereldfonds", "KoeKoin"].map(function (n) { return '<tr><td style="height:28px">' + n + "</td><td></td><td></td><td></td></tr>"; }).join("")}</table>
+        ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function () { return '<tr><td style="height:28px"></td><td></td><td></td><td></td></tr>'; }).join("")}</table>
         <h3>Mijn plan</h3>
-        ${fiche([["Hoeveel van de € 10.000 beleg ik in week 1?", 28, "€"], ["In hoeveel bedrijven of fondsen?", 28], ["Hoeveel cash hou ik achter de hand? Waarom?", 40], ["Hoeveel beleg ik hoogstens in KoeKoin?", 28, "€"], ["Wanneer verkoop ik? Wanneer wacht ik af?", 50]])}
+        ${fiche([["Hoeveel van de € 10.000 beleg ik in week 1?", 28, "€"], ["In hoeveel bedrijven of fondsen?", 28], ["Hoeveel cash hou ik achter de hand? Waarom?", 40], ["Hoeveel beleg ik hoogstens in de cryptomunt?", 28, "€"], ["Wanneer verkoop ik? Wanneer wacht ik af?", 50]])}
         <p class="klein">Elke week kies je in het spel: ‘ik kom in actie’ of ‘ik wacht af’, met een reden. Na week 6 volgt een rustpunt met drie vragen.</p>` },
       { les: 6, html: `
         <h2>Werkblad 7 · Wat leerde ik van de oefenbeurs?</h2>
-        ${fiche([["Mijn resultaat na 12 weken", 28, "€ ……………… &nbsp; ( ……… %)"], ["‘Gespreid en geduldig’ haalde", 28, "€ ……………… &nbsp; ( ……… %)"], ["‘Alles in het Wereldfonds’ haalde", 28, "€ ……………… &nbsp; ( ……… %)"]])}
+        ${fiche([["Mijn resultaat na 12 weken", 28, "€ ……………… &nbsp; ( ……… %)"], ["‘Gespreid en geduldig’ haalde", 28, "€ ……………… &nbsp; ( ……… %)"], ["‘Alles in het fonds’ haalde", 28, "€ ……………… &nbsp; ( ……… %)"]])}
         <h3>Feedback van het spel</h3>
         <p>Vink aan wat het spel bij jou in het groen zette.</p>
         ${vink(["Spreiding", "Crypto beperkt", "Rustig gebleven (geen paniek)", "Geen hype gevolgd", "Weinig kosten", "Geduld"])}
