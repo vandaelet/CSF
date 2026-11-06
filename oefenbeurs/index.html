@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oefenbeurs CSF</title>
+<link rel="icon" href="../assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Varela+Round&display=swap">
+<style>
+
+/* Layout: één kolom op gsm, op breed scherm markt links en nieuws/portefeuille rechts. Huisstijl Campus Lievegem. */
+:root {
+  --bg: #ffffff; --vlak: #f3fafa; --lijn: #d5e8e9; --tekst: #1d2a2b; --zacht: #5b6d6e;
+  --turkoois: #3BC1C5; --turkoois-donker: #17808a; --oranje: #FCAF17; --oranje-donker: #a86b00;
+  --groen: #2e8b4e; --rood: #c0392b; --groen-vlak: #e7f5ec; --rood-vlak: #fbeceb; --oranje-vlak: #fff5df;
+  --display: "Play", "Trebuchet MS", sans-serif; --body: "Varela Round", "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121a1b; --vlak: #1a2627; --lijn: #2c3d3e; --tekst: #e6f1f1; --zacht: #9fb4b5;
+  --turkoois: #3BC1C5; --turkoois-donker: #6fd6d9; --oranje: #FCAF17; --oranje-donker: #ffc85a;
+  --groen: #5fcf85; --rood: #ff7f72; --groen-vlak: #173325; --rood-vlak: #3a1d1b; --oranje-vlak: #3a2e12; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121a1b; --vlak: #1a2627; --lijn: #2c3d3e; --tekst: #e6f1f1; --zacht: #9fb4b5;
+  --turkoois: #3BC1C5; --turkoois-donker: #6fd6d9; --oranje: #FCAF17; --oranje-donker: #ffc85a;
+  --groen: #5fcf85; --rood: #ff7f72; --groen-vlak: #173325; --rood-vlak: #3a1d1b; --oranje-vlak: #3a2e12; color-scheme: dark }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--tekst); font: 15px/1.5 var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 40px; }
+.wrap { max-width: 1100px; margin: 0 auto; }
+header.kop { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 14px; border-bottom: 3px solid var(--turkoois); }
+header.kop img { height: 44px; width: auto; background: #fff; border-radius: 6px; padding: 2px 4px; }
+header.kop h1 { font: 700 1.6rem/1.1 var(--display); margin: 0; color: var(--turkoois-donker); }
+header.kop .sub { color: var(--zacht); font-size: .9rem; }
+.kop-cijfers { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; }
+.cijfer { display: flex; flex-direction: column; }
+.cijfer span { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--zacht); }
+.cijfer b { font: 700 1.25rem var(--display); font-variant-numeric: tabular-nums; }
+.weekbalk { display: flex; gap: 4px; margin: 14px 0 6px; }
+.weekbalk i { flex: 1; height: 8px; border-radius: 4px; background: var(--lijn); }
+.weekbalk i.af { background: var(--turkoois); }
+.weekbalk i.nu { background: var(--oranje); }
+.grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; margin-top: 10px; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+h2 { font: 700 1.15rem var(--display); margin: 0 0 8px; text-wrap: balance; }
+.paneel { min-width: 0; }
+.nieuws { display: grid; gap: 10px; margin-bottom: 18px; }
+.bericht { border: 1px solid var(--lijn); border-left: 5px solid var(--turkoois); border-radius: 8px; padding: 10px 14px; background: var(--vlak); }
+.bericht.gerucht { border-left-color: var(--oranje); }
+.bericht .bron { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--zacht); }
+.bericht .bron b { color: var(--oranje-donker); }
+.bericht h3 { margin: 2px 0 4px; font: 700 1.02rem var(--display); }
+.bericht p { margin: 0; }
+.uitleg { border-radius: 8px; padding: 10px 14px; background: var(--oranje-vlak); margin-bottom: 18px; }
+.uitleg b:first-child { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--oranje-donker); }
+table.markt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.markt th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--zacht); border-bottom: 2px solid var(--lijn); padding: 6px 6px; }
+table.markt td { border-bottom: 1px solid var(--lijn); padding: 8px 6px; vertical-align: middle; }
+table.markt td.r, table.markt th.r { text-align: right; white-space: nowrap; }
+.naam b { font-family: var(--display); }
+.naam small { display: block; color: var(--zacht); font-size: .78rem; }
+.pil { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: .8rem; font-weight: 700; }
+.pil.op { background: var(--groen-vlak); color: var(--groen); }
+.pil.neer { background: var(--rood-vlak); color: var(--rood); }
+.pil.nul { background: var(--vlak); color: var(--zacht); }
+svg.spark { width: 70px; height: 24px; display: block; }
+svg.spark path { fill: none; stroke: var(--turkoois-donker); stroke-width: 1.6; }
+svg.spark circle { fill: var(--oranje); }
+.acties { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid transparent; padding: 6px 12px; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--oranje); outline-offset: 2px; }
+.btn-koop { background: var(--turkoois); color: #0b2a2c; font-weight: 700; }
+.btn-verkoop { background: transparent; border-color: var(--turkoois-donker); color: var(--turkoois-donker); }
+.btn-verkoop:disabled { opacity: .35; cursor: not-allowed; }
+.btn-groot { background: var(--oranje); color: #2b1d00; font: 700 1.05rem var(--display); padding: 10px 18px; }
+.btn-licht { background: var(--vlak); border-color: var(--lijn); color: var(--tekst); }
+.order { border: 2px solid var(--turkoois); border-radius: 10px; padding: 12px 14px; margin: 12px 0; background: var(--vlak); }
+.order[hidden] { display: none !important; }
+.order h3 { margin: 0 0 8px; font: 700 1rem var(--display); }
+.order .rij { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.order label { display: flex; flex-direction: column; font-size: .82rem; color: var(--zacht); gap: 3px; }
+.order input, .order select { font: inherit; padding: 6px 8px; border: 1px solid var(--lijn); border-radius: 6px; background: var(--bg); color: var(--tekst); }
+.order input { width: 90px; }
+.order .totaal { font-variant-numeric: tabular-nums; }
+.melding { margin-top: 8px; font-size: .9rem; min-height: 1.3em; }
+.melding.fout { color: var(--rood); }
+.port { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .92rem; }
+.port td { padding: 4px 0; border-bottom: 1px dashed var(--lijn); }
+.port td.r { text-align: right; }
+.verdeling { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--lijn); margin: 8px 0 4px; }
+.verdeling span { display: block; height: 100%; }
+.legende { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .78rem; color: var(--zacht); }
+.legende i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+details.tips { border: 1px solid var(--lijn); border-radius: 10px; padding: 10px 14px; margin-top: 18px; }
+details.tips summary { cursor: pointer; font: 700 1rem var(--display); color: var(--turkoois-donker); }
+.tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+@media (max-width: 520px) { .tips-grid { grid-template-columns: 1fr; } }
+.tips-grid div { border-radius: 8px; padding: 8px 12px; }
+.tips-grid .doe { background: var(--groen-vlak); }
+.tips-grid .wacht { background: var(--oranje-vlak); }
+.tips-grid h4 { margin: 0 0 4px; font: 700 .95rem var(--display); }
+.tips-grid ul { margin: 0; padding-left: 1.1em; }
+.volgende { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--lijn); }
+.volgende p { margin: 0; color: var(--zacht); font-size: .9rem; flex: 1 1 220px; }
+.intro { max-width: 70ch; padding-block: 10px 4px; }
+.intro p { margin: 6px 0; }
+.einde { display: grid; gap: 16px; }
+.vergelijk { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 640px) { .vergelijk { grid-template-columns: minmax(0, 1fr); } }
+.vergelijk div { border: 1px solid var(--lijn); border-radius: 10px; padding: 10px 12px; }
+.vergelijk div.jij { border: 2px solid var(--oranje); }
+.vergelijk span:first-child { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .07em; color: var(--zacht); }
+.vergelijk small { display: block; margin-top: 2px; }
+.vergelijk b { display: block; font: 700 1.4rem var(--display); font-variant-numeric: tabular-nums; }
+.gedrag { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.gedrag li { border-radius: 8px; padding: 8px 12px; }
+.gedrag li.goed { background: var(--groen-vlak); }
+.gedrag li.let { background: var(--oranje-vlak); }
+.dagboek { width: 100%; min-height: 160px; font: .85rem/1.45 ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--lijn); border-radius: 8px; padding: 8px; background: var(--vlak); color: var(--tekst); }
+.klein { font-size: .82rem; color: var(--zacht); }
+@media (max-width: 600px) {
+  table.markt thead { display: none; }
+  table.markt tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 0; border-bottom: 1px solid var(--lijn); }
+  table.markt td { border: 0; padding: 2px 0; }
+  table.markt td.spark-cel { display: none; }
+  table.markt td.acties-cel { grid-column: 1 / -1; }
+  .kop-cijfers { margin-left: 0; }
+}
+@media (prefers-reduced-motion: no-preference) { .bericht, .uitleg { animation: in .35s ease-out; } @keyframes in { from { transform: translateY(4px); opacity: .6; } } }
+
+.naamknop { all: unset; cursor: pointer; font-family: var(--display); font-weight: 700; color: var(--tekst); border-bottom: 1px dashed var(--turkoois-donker); }
+.naamknop:focus-visible { outline: 3px solid var(--oranje); outline-offset: 2px; }
+.profiel { border: 1px solid var(--lijn); border-radius: 10px; padding: 10px 14px; margin: 10px 0; background: var(--vlak); }
+.profiel h3 { margin: 0 0 6px; font: 700 1rem var(--display); }
+.profiel dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; margin: 0; }
+.profiel dt { color: var(--zacht); font-size: .85rem; }
+.profiel dd { margin: 0; }
+.risico { font-weight: 700; }
+.risico.laag { color: var(--groen); } .risico.midden { color: var(--oranje-donker); } .risico.hoog { color: var(--rood); }
+details.gids { border: 1px solid var(--lijn); border-radius: 10px; padding: 10px 14px; margin: 12px 0 0; }
+details.gids summary { cursor: pointer; font: 700 1rem var(--display); color: var(--turkoois-donker); }
+.gids-tabel { width: 100%; border-collapse: collapse; font-size: .88rem; margin-top: 8px; }
+.gids-tabel th, .gids-tabel td { text-align: left; border-bottom: 1px solid var(--lijn); padding: 5px 6px; vertical-align: top; }
+.gids-tabel th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--zacht); }
+.weekkeuze { border: 2px solid var(--oranje); border-radius: 10px; padding: 12px 14px; margin-top: 16px; background: var(--oranje-vlak); }
+.weekkeuze h3 { margin: 0 0 6px; font: 700 1rem var(--display); }
+.weekkeuze .keuzes { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 4px 0 8px; }
+.weekkeuze label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.weekkeuze select { font: inherit; padding: 6px 8px; border: 1px solid var(--lijn); border-radius: 6px; background: var(--bg); color: var(--tekst); max-width: 100%; }
+.btn-groot:disabled { opacity: .45; cursor: not-allowed; }
+.rustpunt { max-width: 70ch; display: grid; gap: 12px; padding-block: 16px; }
+.rustpunt label { display: grid; gap: 4px; font-weight: 700; }
+.rustpunt textarea { font: inherit; min-height: 70px; padding: 8px; border: 1px solid var(--lijn); border-radius: 8px; background: var(--bg); color: var(--tekst); }
+.pil.crypto { background: var(--oranje-vlak); color: var(--oranje-donker); }
+
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="kop">
+    <img src="../assets/logo.png" alt="Campus Lievegem">
+    <div><h1>Oefenbeurs</h1><div class="sub">Beleggen voor beginners · CSF economie</div></div>
+    <div class="kop-cijfers" aria-live="polite">
+      <div class="cijfer"><span>Week</span><b id="k-week">1 / 12</b></div>
+      <div class="cijfer"><span>Totale waarde</span><b id="k-totaal">€ 10.000</b></div>
+      <div class="cijfer"><span>Cash</span><b id="k-cash">€ 10.000</b></div>
+      <div class="cijfer"><span>Winst of verlies</span><b id="k-winst">0,0%</b></div>
+    </div>
+  </header>
+  <div class="weekbalk" id="weekbalk" aria-hidden="true"></div>
+
+  <main id="spel">
+    <div class="intro" id="intro">
+      <p><b>Zo werkt het.</b> Je krijgt € 10.000 oefengeld, net als op jeugdbeurs.be. Het spel duurt 12 weken. Elke week lees je het nieuws en beslis je: kopen, verkopen of afwachten. Elke aan- of verkoop kost € 5.</p>
+      <p>Lees eerst de bedrijvengids. Klik op de naam van een bedrijf voor meer uitleg. Vul daarna in je werkbundel je plan in. De bedrijven zijn verzonnen, maar wat er gebeurt, gebeurt ook op de echte beurs.</p>
+    </div>
+    <div class="grid">
+      <section class="paneel" aria-labelledby="h-markt">
+        <h2 id="h-markt">De markt deze week</h2>
+        <div style="overflow-x:auto"><table class="markt" id="markt"></table></div>
+        <div class="profiel" id="profiel" hidden></div>
+        <div class="order" id="order" hidden>
+          <h3 id="o-titel">Koop</h3>
+          <div class="rij">
+            <label for="o-aantal">Aantal stuks<input type="number" id="o-aantal" min="1" step="1" value="10" inputmode="numeric"></label>
+            <label for="o-reden">Waarom doe je dit?
+              <select id="o-reden">
+                <option value="">– kies je reden –</option>
+                <option>Ik spreid mijn geld over meer bedrijven</option>
+                <option>Ik volg mijn plan</option>
+                <option>Goed nieuws uit een betrouwbare bron</option>
+                <option>Slecht nieuws uit een betrouwbare bron</option>
+                <option>Ik denk dat het lang goed zal gaan met dit bedrijf</option>
+                <option>Ik heb te veel van één aandeel</option>
+                <option>Iedereen koopt het nu</option>
+                <option>Ik ben bang dat het nog verder zakt</option>
+              </select>
+            </label>
+            <div class="totaal" id="o-totaal"></div>
+          </div>
+          <div class="rij" style="margin-top:10px">
+            <button type="button" class="btn-koop" id="o-ok">Bevestig</button>
+            <button type="button" class="btn-licht" id="o-annuleer">Annuleer</button>
+          </div>
+          <div class="melding" id="o-melding" aria-live="polite"></div>
+        </div>
+        <details class="gids" id="gids">
+          <summary>Bedrijvengids: wie is wie?</summary>
+          <div style="overflow-x:auto"><table class="gids-tabel" id="gids-tabel"></table></div>
+        </details>
+        <div class="weekkeuze" id="weekkeuze">
+          <h3>Mijn keuze deze week</h3>
+          <div class="keuzes" role="radiogroup" aria-label="Wat doe je met het nieuws van deze week?">
+            <label for="wk-actie"><input type="radio" name="wk" id="wk-actie" value="actie"> Ik kom in actie</label>
+            <label for="wk-wacht"><input type="radio" name="wk" id="wk-wacht" value="wacht"> Ik wacht af</label>
+          </div>
+          <label for="wk-reden" class="klein">Waarom?</label>
+          <select id="wk-reden"><option value="">– kies eerst actie of afwachten –</option></select>
+          <div class="melding" id="wk-melding" aria-live="polite"></div>
+        </div>
+        <div class="volgende">
+          <p id="v-tekst">Kies eerst wat je deze week doet en waarom. Afwachten mag ook: soms is dat de beste keuze.</p>
+          <button type="button" class="btn-groot" id="volgende">Naar week 2 →</button>
+        </div>
+        <details class="tips" id="tips">
+          <summary>Wanneer kom je in actie, en wanneer wacht je af?</summary>
+          <div class="tips-grid">
+            <div class="doe"><h4>Tijd voor actie</h4><ul>
+              <li>Een betrouwbare bron meldt echt slecht nieuws over een bedrijf, en je gelooft niet meer in dat bedrijf.</li>
+              <li>Meer dan de helft van je geld zit in één aandeel. Spreid het.</li>
+              <li>Je volgt je plan: je wou bijvoorbeeld elke week een vast bedrag beleggen.</li>
+            </ul></div>
+            <div class="wacht"><h4>Beter afwachten</h4><ul>
+              <li>Het nieuws is een gerucht zonder bron.</li>
+              <li>De hele beurs zakt een beetje. Dat gebeurt geregeld en herstelt vaak.</li>
+              <li>Iedereen op sociale media roept dat je nú moet kopen.</li>
+              <li>Het nieuws staat al in de krant: de koers heeft al gereageerd.</li>
+            </ul></div>
+          </div>
+        </details>
+      </section>
+      <aside class="paneel" aria-labelledby="h-nieuws">
+        <h2 id="h-nieuws">Nieuws van week <span id="n-week">1</span></h2>
+        <div id="terugblik"></div>
+        <div class="nieuws" id="nieuws"></div>
+        <h2>Mijn portefeuille</h2>
+        <table class="port" id="port"></table>
+        <div class="verdeling" id="verdeling"></div>
+        <div class="legende" id="legende"></div>
+        <p class="klein" id="spreid"></p>
+        <p style="margin-top:14px"><button type="button" class="btn-licht" id="opnieuw">Begin opnieuw</button> <span class="klein" id="opnieuw-vraag" hidden>Zeker? <button type="button" class="btn-licht" id="opnieuw-ja">Ja, wis alles</button></span></p>
+      </aside>
+    </div>
+  </main>
+
+  <section id="rustpunt" class="rustpunt" hidden aria-labelledby="h-rust">
+    <h2 id="h-rust" style="font-size:1.4rem">Rustpunt: de helft is voorbij</h2>
+    <p>Stop even. Kijk naar je portefeuille en je dagboek. Beantwoord de drie vragen. Je antwoorden komen in je dagboek.</p>
+    <p id="rust-stand" class="klein"></p>
+    <label for="r1">1. Hoe staat je portefeuille ervoor? Wat ging goed, wat niet?<textarea id="r1"></textarea></label>
+    <label for="r2">2. Welke beslissing was achteraf slim? Welke niet? Waarom?<textarea id="r2"></textarea></label>
+    <label for="r3">3. Wat doe je in de volgende zes weken anders?<textarea id="r3"></textarea></label>
+    <div class="melding" id="r-melding" aria-live="polite"></div>
+    <p><button type="button" class="btn-groot" id="rust-verder">Ga verder naar week 7 →</button></p>
+  </section>
+
+  <section id="einde" class="einde" hidden></section>
+</div>
+<script>
+(function () {
+  var KOST = 5, START = 10000, WEKEN = 12, SLEUTEL = "oefenbeurs-csf-v2";
+  var AANDELEN = [
+    { id: "ZON", naam: "Zonnig", sector: "zonnepanelen", start: 40, kleur: "#FCAF17", wat: "Maakt en plaatst zonnepanelen op daken van huizen en bedrijven.", winst: "Klein, maar elk jaar groter", div: "Geen", risico: "midden" },
+    { id: "PIX", naam: "PixelPlay", sector: "games", start: 25, kleur: "#8e6bd6", wat: "Maakt computergames. Eén grote hit zorgt voor bijna alle winst.", winst: "Wisselend: hangt af van de nieuwe game", div: "Geen", risico: "hoog" },
+    { id: "CHO", naam: "Choco Belgica", sector: "chocolade", start: 60, kleur: "#8b5a3c", wat: "Maakt al 100 jaar Belgische chocolade en pralines.", winst: "Stabiel", div: "€ 2 per aandeel per jaar", risico: "laag" },
+    { id: "RAIL", naam: "EuroRail", sector: "treinen", start: 30, kleur: "#3BC1C5", wat: "Bouwt treinen en onderhoudt ze voor spoorbedrijven in Europa.", winst: "Stabiel, met lange contracten", div: "Geen", risico: "midden" },
+    { id: "BRU", naam: "Bruisbron", sector: "frisdrank", start: 35, kleur: "#5aa9e6", wat: "Maakt frisdrank en flessenwater.", winst: "Stabiel, hoger bij warm weer", div: "€ 1 per aandeel per jaar", risico: "laag" },
+    { id: "MED", naam: "MediZorg", sector: "medicijnen", start: 80, kleur: "#d9363e", wat: "Ontwikkelt medicijnen. Onderzoek duurt jaren en kost veel geld.", winst: "Groot, als een nieuw medicijn goedgekeurd wordt", div: "Geen", risico: "midden" },
+    { id: "BOUW", naam: "Bouwmeester", sector: "bouw", start: 20, kleur: "#7a7f86", wat: "Bouwt huizen, scholen en ziekenhuizen.", winst: "Lager als lenen duurder wordt (hogere rente)", div: "Geen", risico: "midden" },
+    { id: "BANK", naam: "BankPlus", sector: "bank", start: 50, kleur: "#1f4e79", wat: "Een bank: bewaart spaargeld en leent geld uit.", winst: "Stabiel, hoger als de rente stijgt", div: "€ 1,50 per aandeel per jaar", risico: "midden" },
+    { id: "FONDS", naam: "Wereldfonds", sector: "fonds: 1 000 bedrijven", start: 100, kleur: "#2e8b4e", wat: "Een fonds dat belegt in 1 000 grote bedrijven over de hele wereld.", winst: "Volgt de wereldeconomie", div: "Zit in de koers", risico: "laag" },
+    { id: "KOE", naam: "KoeKoin", sector: "cryptomunt", start: 10, kleur: "#e67e22", wat: "Een digitale munt. Geen bedrijf: er is geen winst en geen dividend. De koers hangt alleen af van wat mensen ervoor willen betalen.", winst: "Geen (het is geen bedrijf)", div: "Geen", risico: "heel hoog" }
+  ];
+  /* koersverandering in % bij het begin van week w, in de volgorde van AANDELEN */
+  var VERANDERING = {
+    2: [1, 12, 0, 1, 0, 1, 0, 0, 1, 8],
+    3: [-15, 2, 1, -1, 1, 0, 1, 0, 0, -20],
+    4: [18, -2, 1, 2, 0, 15, 0, 1, 1, 10],
+    5: [2, 1, -3, 0, -2, 1, 1, 1, 1, 5],
+    6: [1, -3, -6, 1, 6, 0, -1, 0, 0, -8],
+    7: [-7, -9, -4, -6, -3, -4, -10, 4, -5, -15],
+    8: [2, 3, 2, 10, 1, 2, -2, 1, 2, 12],
+    9: [1, 20, 1, 1, 0, 1, 0, 0, 1, 30],
+    10: [2, -30, 1, 0, 1, -6, 1, 0, 1, -35],
+    11: [4, 3, 3, 4, 2, 3, 8, 1, 4, -5],
+    12: [6, -2, 3, 1, 2, 4, 2, -2, 1, 6]
+  };
+  var DIVIDEND = { 5: { CHO: 2, BRU: 1 }, 12: { BANK: 1.5 } };
+  var K = "Krant · De Financiële Tijd";
+  var NIEUWS = {
+    1: [{ bron: "Uitleg", t: "Welkom op de oefenbeurs", p: "Lees de bedrijvengids. Maak een plan: hoeveel beleg je, in hoeveel bedrijven, en hoeveel cash hou je achter de hand?" }],
+    2: [{ bron: "Persbericht van PixelPlay", t: "PixelPlay kondigt een nieuwe game aan", p: "De game komt over twee maanden uit. Gamers zijn enthousiast. Het aandeel stijgt meteen met 12%." },
+        { bron: "Sociale media · <b>onbevestigd</b>", g: true, t: "“Bekende rapper betaalt zijn auto met KoeKoin!”", p: "Een filmpje gaat rond. Niemand weet of het echt is. KoeKoin stijgt 8%." }],
+    3: [{ bron: "Sociale media · <b>onbevestigd</b>", g: true, t: "“Zonnig gaat failliet!!!”", p: "Een anoniem account beweert dat Zonnig bijna failliet is. Er is geen bewijs. Veel mensen verkopen in paniek: −15%." },
+        { bron: K, t: "Hackers stelen KoeKoins bij een handelsplatform", p: "Een online platform waar mensen KoeKoins bewaren, werd gehackt. KoeKoin zakt 20%." }],
+    4: [{ bron: K, t: "Zonnig: ‘Het gerucht klopt niet. We verkochten nooit zoveel panelen.’", p: "Zonnig toont zijn cijfers: de verkoop steeg met 20%. Het aandeel herstelt: +18%." },
+        { bron: "Persbericht van MediZorg", t: "Nieuw medicijn tegen migraine goedgekeurd", p: "Na acht jaar onderzoek mag MediZorg zijn medicijn verkopen. Het aandeel stijgt 15%." }],
+    5: [{ bron: "Persberichten van Choco Belgica en Bruisbron", t: "Dividend: € 2 per aandeel Choco Belgica, € 1 per aandeel Bruisbron", p: "Wie die aandelen heeft, krijgt het dividend op zijn rekening. Na de uitbetaling zakt de koers met ongeveer dat bedrag." }],
+    6: [{ bron: K, t: "Cacao is 40% duurder dan vorig jaar", p: "Slechte oogsten in West-Afrika maken cacao duur. Choco Belgica zakt 6%." },
+        { bron: K, t: "Hittegolf: Bruisbron verkoopt recordaantal flessen", p: "Door het warme weer drinkt iedereen meer. Bruisbron stijgt 6%." }],
+    7: [{ bron: K, t: "De rente stijgt: bijna alle beurzen zakken", p: "Lenen wordt duurder. Beleggers worden voorzichtig. Bouwmeester zakt 10%: minder mensen bouwen. BankPlus stijgt 4%: banken verdienen meer aan een hogere rente." }],
+    8: [{ bron: "Persbericht van EuroRail", t: "EuroRail bouwt de nieuwe nachttrein Brussel–Rome", p: "Het contract loopt tien jaar. EuroRail stijgt 10%." }],
+    9: [{ bron: "Sociale media · <b>influencer</b>", g: true, t: "“PixelPlay gaat naar de maan 🚀 Koop NU!”", p: "Een influencer met 2 miljoen volgers roept iedereen op om PixelPlay te kopen. Het aandeel springt 20% omhoog." },
+        { bron: "Sociale media · <b>onbevestigd</b>", g: true, t: "“KoeKoin wordt de munt van de toekomst!”", p: "Een filmpje gaat viraal. KoeKoin stijgt 30% in één week." }],
+    10: [{ bron: "Persbericht van PixelPlay", t: "Nieuwe game uitgesteld tot volgend jaar", p: "Er zitten nog te veel fouten in. Beleggers zijn teleurgesteld: −30%." },
+         { bron: K, t: "KoeKoin crasht", p: "Wie vorige week kocht, verkoopt in paniek. KoeKoin zakt 35%." },
+         { bron: K, t: "Onderzoekers melden een mogelijke bijwerking van het migrainemedicijn", p: "Het is nog niet zeker. Er volgt meer onderzoek. MediZorg zakt 6%." }],
+    11: [{ bron: K, t: "De rust keert terug op de beurs", p: "De rente steeg minder dan gevreesd. De meeste aandelen herstellen." },
+         { bron: "Persbericht van Bouwmeester", t: "Bouwmeester bouwt een nieuw ziekenhuis", p: "Een opdracht van vijf jaar. Bouwmeester stijgt 8%." }],
+    12: [{ bron: K, t: "Goede cijfers voor Zonnig, Choco Belgica en MediZorg", p: "De bijwerking blijkt heel zeldzaam. Zonnig en Choco Belgica verdienen meer. Dit is de laatste week van het spel." },
+         { bron: "Persbericht van BankPlus", t: "BankPlus betaalt € 1,50 dividend per aandeel", p: "Na de uitbetaling zakt de koers met ongeveer dat bedrag." }]
+  };
+  var LES = {
+    3: "Je zag het nieuws pas toen de koers al gereageerd had. Op de beurs gebeurt dat meteen. Wie dan nog koopt, koopt duur.",
+    4: "Het gerucht over Zonnig klopte niet. Wie in paniek verkocht, mist nu het herstel. Controleer altijd eerst de bron.",
+    5: "Het medicijn van MediZorg is echt nieuws: het bedrijf gaat meer verkopen. KoeKoin steeg ook, zonder enig nieuws. Crypto schommelt soms zomaar.",
+    6: "Een dividend is een deel van de winst. Je verdient zo geld zonder te verkopen.",
+    7: "Choco Belgica verloor, Bruisbron won. Wie gespreid belegt, voelt één slecht bericht minder.",
+    8: "Bijna alles daalde, maar BankPlus steeg. Niet elke sector reageert hetzelfde op de rente. Zulke dalingen herstellen vaak na een tijd.",
+    9: "Een contract van tien jaar is echt nieuws: het bedrijf verdient er lang aan.",
+    10: "Wat zegt een influencer niet? Of hij zelf aandelen heeft die hij duur wil verkopen.",
+    11: "Na de hype kwam de val. Bij MediZorg was het nieuws onzeker: dan wacht je beter op meer informatie.",
+    12: "Wie in week 7 niet in paniek verkocht, ziet zijn geld terugkomen. Geduld loont meestal."
+  };
+  var REDENEN = {
+    actie: ["Ik spreid mijn geld over meer bedrijven", "Ik volg mijn plan", "Betrouwbaar nieuws over een bedrijf", "Ik heb te veel van één aandeel", "Iedereen koopt het nu", "Ik ben bang dat het verder zakt"],
+    wacht: ["Het nieuws is een gerucht zonder bron", "De hele beurs zakt, dat herstelt vaak", "Het nieuws zit al in de koers", "Ik volg mijn plan", "Het nieuws is nog onzeker", "Ik twijfel nog"]
+  };
+
+  var S;
+  function nieuw() {
+    var b = {}; AANDELEN.forEach(function (a) { b[a.id] = 0; });
+    return { week: 1, cash: START, bezit: b, orders: [], keuzes: [], rust: null, koers: koersen(), maxAandeel: 0, maxCrypto: 0 };
+  }
+  function koersen() {
+    var k = {}; AANDELEN.forEach(function (a, i) { var p = [a.start]; for (var w = 2; w <= WEKEN; w++) p.push(Math.round(p[p.length - 1] * (1 + VERANDERING[w][i] / 100) * 100) / 100); k[a.id] = p; }); return k;
+  }
+  function laad() { try { var x = JSON.parse(localStorage.getItem(SLEUTEL) || "null"); if (x && x.week && x.bezit && x.keuzes) { x.koers = koersen(); return x; } } catch (e) {} return nieuw(); }
+  function bewaar() { try { localStorage.setItem(SLEUTEL, JSON.stringify(S)); } catch (e) {} }
+  function eur(x, d) { d = d === undefined ? 2 : d; return "€ " + Number(x).toLocaleString("nl-BE", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  function pct(x) { return (x > 0 ? "+" : "") + x.toLocaleString("nl-BE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%"; }
+  function aandeel(id) { return AANDELEN.filter(function (a) { return a.id === id; })[0]; }
+  function prijs(id, w) { return S.koers[id][(w || S.week) - 1]; }
+  function waarde(w) { var t = S.cash; AANDELEN.forEach(function (a) { t += S.bezit[a.id] * prijs(a.id, w); }); return t; }
+  function aandelen() {
+    var inv = 0, max = 0, kr = 0; AANDELEN.forEach(function (a) { var v = S.bezit[a.id] * prijs(a.id); inv += v; if (a.id === "KOE") kr = v; if (a.id !== "FONDS") max = Math.max(max, v); });
+    return { grootste: inv > 0 ? max / inv : 0, crypto: inv > 0 ? kr / waarde() : 0 };
+  }
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  function spark(id) {
+    var p = S.koers[id].slice(0, S.week), mn = Math.min.apply(null, p), mx = Math.max.apply(null, p), r = mx - mn || 1;
+    var pts = p.map(function (v, i) { return [p.length === 1 ? 35 : 2 + i * 66 / (WEKEN - 1), 21 - (v - mn) / r * 18]; });
+    var d = pts.map(function (q, i) { return (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1); }).join(" "), e = pts[pts.length - 1];
+    return '<svg class="spark" viewBox="0 0 70 24" aria-hidden="true"><path d="' + d + '"/><circle cx="' + e[0].toFixed(1) + '" cy="' + e[1].toFixed(1) + '" r="2.5"/></svg>';
+  }
+  function tekenMarkt() {
+    var h = '<thead><tr><th>Aandeel</th><th class="r">Koers</th><th class="r">Deze week</th><th class="spark-cel">Verloop</th><th class="r">In bezit</th><th class="r">Kopen of verkopen</th></tr></thead><tbody>';
+    AANDELEN.forEach(function (a, i) {
+      var v = S.week > 1 ? VERANDERING[S.week][i] : 0, c = v > 0 ? "op" : v < 0 ? "neer" : "nul";
+      h += '<tr><td class="naam"><button type="button" class="naamknop" data-info="' + a.id + '">' + a.naam + "</button><small>" + a.sector + '</small></td><td class="r"><b>' + eur(prijs(a.id)) + '</b></td><td class="r"><span class="pil ' + c + '">' + (S.week > 1 ? pct(v) : "start") + '</span></td><td class="spark-cel">' + spark(a.id) +
+        '</td><td class="r">' + S.bezit[a.id] + ' st.</td><td class="acties-cel"><div class="acties"><button type="button" class="btn-koop" data-koop="' + a.id + '">Koop</button><button type="button" class="btn-verkoop" data-verkoop="' + a.id + '"' + (S.bezit[a.id] ? "" : " disabled") + ">Verkoop</button></div></td></tr>";
+    });
+    $("markt").innerHTML = h + "</tbody>";
+  }
+  function risico(r) { return '<span class="risico ' + (r === "laag" ? "laag" : r === "midden" ? "midden" : "hoog") + '">' + r + "</span>"; }
+  function tekenGids() {
+    $("gids-tabel").innerHTML = "<tr><th>Naam</th><th>Wat doet het?</th><th>Winst</th><th>Dividend</th><th>Risico</th></tr>" +
+      AANDELEN.map(function (a) { return "<tr><td><b>" + a.naam + "</b><br><span class=\"klein\">" + a.sector + "</span></td><td>" + a.wat + "</td><td>" + a.winst + "</td><td>" + a.div + "</td><td>" + risico(a.risico) + "</td></tr>"; }).join("");
+    if (S.week === 1) $("gids").open = true;
+  }
+  function toonProfiel(id) {
+    var a = aandeel(id), el = $("profiel");
+    if (!el.hidden && el.dataset.id === id) { el.hidden = true; return; }
+    el.dataset.id = id; el.hidden = false;
+    el.innerHTML = "<h3>" + a.naam + " · " + a.sector + "</h3><dl><dt>Wat doet het?</dt><dd>" + a.wat + "</dd><dt>Winst</dt><dd>" + a.winst + "</dd><dt>Dividend</dt><dd>" + a.div + "</dd><dt>Risico</dt><dd>" + risico(a.risico) + "</dd><dt>Startkoers</dt><dd>" + eur(a.start) + "</dd></dl>";
+  }
+  function tekenNieuws() {
+    $("n-week").textContent = S.week;
+    $("nieuws").innerHTML = (NIEUWS[S.week] || []).map(function (n) { return '<article class="bericht' + (n.g ? " gerucht" : "") + '"><div class="bron">' + n.bron + "</div><h3>" + n.t + "</h3><p>" + n.p + "</p></article>"; }).join("");
+    $("terugblik").innerHTML = LES[S.week] ? '<div class="uitleg"><b>Wat leer je van vorige week?</b>' + LES[S.week] + "</div>" : "";
+  }
+  function tekenPort() {
+    var t = waarde(), rijen = "", bal = "", leg = "";
+    AANDELEN.forEach(function (a) {
+      var v = S.bezit[a.id] * prijs(a.id); if (!v) return;
+      rijen += "<tr><td>" + a.naam + " · " + S.bezit[a.id] + ' st.</td><td class="r">' + eur(v) + "</td></tr>";
+      bal += '<span style="width:' + (v / t * 100) + "%;background:" + a.kleur + '" title="' + a.naam + '"></span>';
+      leg += '<span><i style="background:' + a.kleur + '"></i>' + a.naam + " " + Math.round(v / t * 100) + "%</span>";
+    });
+    rijen += '<tr><td>Cash</td><td class="r">' + eur(S.cash) + '</td></tr><tr><td><b>Totaal</b></td><td class="r"><b>' + eur(t) + "</b></td></tr>";
+    bal += '<span style="width:' + (S.cash / t * 100) + '%;background:var(--lijn)"></span>'; leg += '<span><i style="background:var(--lijn)"></i>cash ' + Math.round(S.cash / t * 100) + "%</span>";
+    $("port").innerHTML = rijen; $("verdeling").innerHTML = bal; $("legende").innerHTML = leg;
+    var g = aandelen();
+    $("spreid").textContent = g.crypto > 0.25 ? "Let op: meer dan een kwart van je geld zit in een cryptomunt. Dat is heel riskant." : g.grootste >= 0.5 ? "Let op: de helft of meer van je belegd geld zit in één bedrijf. Alle eieren in één mand?" : g.grootste > 0 ? "Je geld is gespreid. Goed zo." : "Je hebt nog niets belegd.";
+  }
+  function tekenKeuze() {
+    var k = S.keuzes.filter(function (x) { return x.week === S.week; })[0];
+    $("wk-actie").checked = !!k && k.soort === "actie"; $("wk-wacht").checked = !!k && k.soort === "wacht";
+    vulRedenen(k ? k.soort : "", k ? k.reden : "");
+    $("wk-melding").textContent = ""; $("wk-melding").className = "melding";
+  }
+  function vulRedenen(soort, gekozen) {
+    var sel = $("wk-reden");
+    sel.innerHTML = soort ? '<option value="">– kies je reden –</option>' + REDENEN[soort].map(function (r) { return "<option" + (r === gekozen ? " selected" : "") + ">" + r + "</option>"; }).join("") : '<option value="">– kies eerst actie of afwachten –</option>';
+    sel.disabled = !soort;
+  }
+  function tekenKop() {
+    var t = waarde();
+    $("k-week").textContent = S.week + " / " + WEKEN; $("k-totaal").textContent = eur(t, 0); $("k-cash").textContent = eur(S.cash, 0);
+    var w = (t / START - 1) * 100; $("k-winst").textContent = pct(w); $("k-winst").style.color = w > 0 ? "var(--groen)" : w < 0 ? "var(--rood)" : "";
+    var b = ""; for (var i = 1; i <= WEKEN; i++) b += '<i class="' + (i < S.week ? "af" : i === S.week ? "nu" : "") + '"></i>'; $("weekbalk").innerHTML = b;
+    $("volgende").textContent = S.week < WEKEN ? "Naar week " + (S.week + 1) + " →" : "Bekijk mijn resultaat →";
+    $("intro").hidden = S.week > 1;
+  }
+  function teken() { tekenKop(); tekenMarkt(); tekenNieuws(); tekenPort(); tekenKeuze(); bewaar(); }
+
+  /* ---------- kopen en verkopen ---------- */
+  var O = null;
+  function openOrder(soort, id) {
+    O = { soort: soort, id: id }; var a = aandeel(id);
+    $("o-titel").textContent = (soort === "koop" ? "Koop " : "Verkoop ") + a.naam + " aan " + eur(prijs(id));
+    $("o-ok").className = soort === "koop" ? "btn-koop" : "btn-verkoop";
+    $("o-aantal").value = soort === "koop" ? Math.max(1, Math.floor(Math.min(1000, S.cash - KOST) / prijs(id))) : S.bezit[id];
+    $("o-reden").value = ""; $("o-melding").textContent = ""; $("o-melding").className = "melding";
+    $("order").hidden = false; totaal(); $("o-aantal").focus();
+  }
+  function totaal() {
+    if (!O) return; var n = Math.floor(Number($("o-aantal").value) || 0), b = n * prijs(O.id);
+    $("o-totaal").textContent = O.soort === "koop" ? "Je betaalt " + eur(b) + " + " + eur(KOST) + " kosten = " + eur(b + KOST) : "Je krijgt " + eur(b) + " − " + eur(KOST) + " kosten = " + eur(b - KOST);
+  }
+  function bevestig() {
+    var n = Math.floor(Number($("o-aantal").value) || 0), p = prijs(O.id), m = $("o-melding"), reden = $("o-reden").value;
+    m.className = "melding fout";
+    if (n < 1) { m.textContent = "Vul een aantal in van minstens 1."; return; }
+    if (!reden) { m.textContent = "Kies eerst waarom je dit doet. Zo leer je van je eigen keuzes."; return; }
+    if (O.soort === "koop" && n * p + KOST > S.cash + 1e-9) { m.textContent = "Te weinig cash. Je kan hoogstens " + Math.max(0, Math.floor((S.cash - KOST) / p)) + " stuks kopen."; return; }
+    if (O.soort === "verkoop" && n > S.bezit[O.id]) { m.textContent = "Je hebt maar " + S.bezit[O.id] + " stuks."; return; }
+    if (O.soort === "koop") { S.cash -= n * p + KOST; S.bezit[O.id] += n; } else { S.cash += n * p - KOST; S.bezit[O.id] -= n; }
+    S.cash = Math.round(S.cash * 100) / 100;
+    S.orders.push({ week: S.week, soort: O.soort, id: O.id, n: n, p: p, reden: reden });
+    $("order").hidden = true; O = null; teken();
+  }
+
+  /* ---------- volgende week, met weekkeuze en rustpunt ---------- */
+  function volgende() {
+    var soort = $("wk-actie").checked ? "actie" : $("wk-wacht").checked ? "wacht" : "", reden = $("wk-reden").value, m = $("wk-melding");
+    m.className = "melding fout";
+    if (!soort) { m.textContent = "Kies eerst: kom je in actie of wacht je af?"; $("weekkeuze").scrollIntoView({ block: "center" }); return; }
+    if (!reden) { m.textContent = "Kies ook waarom."; return; }
+    var deze = S.orders.filter(function (o) { return o.week === S.week && o.soort !== "dividend"; }).length;
+    if (soort === "actie" && !deze) { m.textContent = "Je koos ‘in actie’, maar je kocht of verkocht niets. Doe een aan- of verkoop, of kies ‘ik wacht af’."; return; }
+    S.keuzes = S.keuzes.filter(function (x) { return x.week !== S.week; }).concat([{ week: S.week, soort: soort, reden: reden, orders: deze }]);
+    var g = aandelen(); S.maxAandeel = Math.max(S.maxAandeel, g.grootste); S.maxCrypto = Math.max(S.maxCrypto, g.crypto);
+    if (S.week === 6 && !S.rust) { bewaar(); return toonRust(); }
+    if (S.week >= WEKEN) { S.klaar = true; bewaar(); return toonEinde(); }
+    gaNaarWeek(S.week + 1);
+  }
+  function gaNaarWeek(w) {
+    S.week = w;
+    var d = DIVIDEND[w]; if (d) Object.keys(d).forEach(function (id) { if (S.bezit[id]) { S.cash = Math.round((S.cash + S.bezit[id] * d[id]) * 100) / 100; S.orders.push({ week: w, soort: "dividend", id: id, n: S.bezit[id], p: d[id], reden: "dividend ontvangen" }); } });
+    $("order").hidden = true; $("profiel").hidden = true; O = null; teken();
+    $("h-nieuws").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+  function toonRust() {
+    $("spel").hidden = true; $("rustpunt").hidden = false;
+    $("rust-stand").textContent = "Na 6 weken: " + eur(waarde(), 0) + " (" + pct((waarde() / START - 1) * 100) + "). Je deed " + S.orders.filter(function (o) { return o.soort !== "dividend"; }).length + " aan- of verkopen.";
+    $("r1").focus(); window.scrollTo(0, 0);
+  }
+  function rustVerder() {
+    var a = [$("r1").value.trim(), $("r2").value.trim(), $("r3").value.trim()], m = $("r-melding");
+    if (a.some(function (x) { return x.length < 20; })) { m.className = "melding fout"; m.textContent = "Schrijf bij elke vraag minstens één volledige zin."; return; }
+    S.rust = a; $("rustpunt").hidden = true; $("spel").hidden = false; gaNaarWeek(7);
+  }
+
+  /* ---------- einde: resultaat en gedrag ---------- */
+  function benchmark(verdeling) {
+    var cash = START, bezit = {}; Object.keys(verdeling).forEach(function (id) { var n = Math.floor((verdeling[id] - KOST) / S.koers[id][0]); bezit[id] = n; cash -= n * S.koers[id][0] + KOST; });
+    Object.keys(DIVIDEND).forEach(function (w) { Object.keys(DIVIDEND[w]).forEach(function (id) { if (bezit[id]) cash += bezit[id] * DIVIDEND[w][id]; }); });
+    var t = cash; Object.keys(bezit).forEach(function (id) { t += bezit[id] * S.koers[id][WEKEN - 1]; }); return t;
+  }
+  function dagboekTekst(t) {
+    var r = "Oefenbeurs – mijn beleggingsdagboek\n";
+    for (var w = 1; w <= WEKEN; w++) {
+      var os = S.orders.filter(function (o) { return o.week === w; }), k = S.keuzes.filter(function (x) { return x.week === w; })[0];
+      r += "\nWeek " + w + (k ? " – " + (k.soort === "actie" ? "in actie" : "afgewacht") + ": " + k.reden : "");
+      os.forEach(function (o) { var a = aandeel(o.id).naam; r += "\n   " + (o.soort === "dividend" ? "dividend " + a + ": " + o.n + " × " + eur(o.p) : (o.soort === "koop" ? "koop " : "verkoop ") + o.n + " × " + a + " aan " + eur(o.p) + " (" + o.reden + ")"); });
+      if (w === 6 && S.rust) r += "\n\nRustpunt\n1. " + S.rust[0] + "\n2. " + S.rust[1] + "\n3. " + S.rust[2] + "\n";
+    }
+    return r + "\n\nEindwaarde: " + eur(t) + " (" + pct((t / START - 1) * 100) + ")";
+  }
+  function toonEinde() {
+    var t = waarde(WEKEN), echte = S.orders.filter(function (o) { return o.soort !== "dividend"; });
+    var negen = {}; AANDELEN.forEach(function (a) { if (a.id !== "KOE") negen[a.id] = 1100; });
+    var gespreid = benchmark(negen), fonds = benchmark({ FONDS: 9900 });
+    var paniek = echte.filter(function (o) { return o.soort === "verkoop" && ((o.id === "ZON" && o.week === 3) || (o.week === 7 && o.id !== "BANK") || (o.id === "KOE" && o.week === 3)); });
+    var hype = echte.filter(function (o) { return o.soort === "koop" && o.week === 9 && (o.id === "PIX" || o.id === "KOE"); });
+    var gevoel = echte.filter(function (o) { return /Iedereen|bang/.test(o.reden); }).length + S.keuzes.filter(function (k) { return /Iedereen|bang/.test(k.reden); }).length;
+    var wacht = S.keuzes.filter(function (k) { return k.soort === "wacht"; }).length;
+    var g = [];
+    g.push(S.maxAandeel >= 0.5 ? ["let", "<b>Spreiding.</b> Op een bepaald moment zat de helft of meer van je belegd geld in één bedrijf. Eén slecht bericht kan dan veel kosten."] : echte.length ? ["goed", "<b>Spreiding.</b> Je verdeelde je geld over meerdere bedrijven of een fonds. Zo leg je niet alle eieren in één mand."] : ["let", "<b>Spreiding.</b> Je belegde niets. Dat is veilig, maar je geld groeide ook niet."]);
+    g.push(S.maxCrypto > 0.25 ? ["let", "<b>Crypto.</b> Meer dan een kwart van je geld zat in KoeKoin. Een cryptomunt kan op één week een derde van zijn waarde verliezen."] : ["goed", "<b>Crypto.</b> Je hield het aandeel crypto klein of liet het links liggen. Verstandig."]);
+    g.push(paniek.length ? ["let", "<b>Paniek.</b> Je verkocht na een daling (week " + paniek.map(function (o) { return o.week; }).filter(function (w, i, a) { return a.indexOf(w) === i; }).join(", ") + "). Daarna herstelde de koers vaak. Wie in paniek verkoopt, maakt een verlies echt."] : ["goed", "<b>Rustig gebleven.</b> Je verkocht niet in paniek na het gerucht of de daling van de beurs."]);
+    g.push(hype.length ? ["let", "<b>Hype.</b> Je kocht in week 9, toen sociale media riepen dat iedereen moest kopen. Een week later zakten PixelPlay en KoeKoin fors."] : ["goed", "<b>Geen hype gevolgd.</b> Je liet je niet meeslepen door een influencer of een viraal filmpje."]);
+    g.push(echte.length > 20 ? ["let", "<b>Kosten.</b> Je deed " + echte.length + " transacties. Dat kostte " + eur(echte.length * KOST) + ". Veel handelen kost geld."] : ["goed", "<b>Kosten.</b> " + echte.length + " transacties, samen " + eur(echte.length * KOST) + " kosten. Je handelde niet zomaar."]);
+    g.push(wacht >= 4 ? ["goed", "<b>Geduld.</b> " + wacht + " van de 12 weken wachtte je bewust af. Niets doen is vaak een goede keuze."] : ["let", "<b>Geduld.</b> Je wachtte maar " + wacht + " keer af. Niet elk nieuwsbericht vraagt een actie."]);
+    if (gevoel) g.push(["let", "<b>Je redenen.</b> " + gevoel + " keer koos je omdat iedereen het deed of omdat je bang was. Dat zijn gevoelens, geen plan."]);
+    $("spel").hidden = true; $("rustpunt").hidden = true;
+    var e = $("einde"); e.hidden = false;
+    e.innerHTML = '<h2 style="font-size:1.5rem;margin-top:18px">Je resultaat na 12 weken</h2>' +
+      '<div class="vergelijk"><div class="jij"><span>Jij</span><b>' + eur(t, 0) + "</b>" + pct((t / START - 1) * 100) + '</div><div><span>Gespreid en geduldig</span><b>' + eur(gespreid, 0) + "</b>" + pct((gespreid / START - 1) * 100) + '<small class="klein">in week 1 over de 9 bedrijven en het fonds verdeeld, zonder crypto, nooit verkocht</small></div><div><span>Alles in het Wereldfonds</span><b>' + eur(fonds, 0) + "</b>" + pct((fonds / START - 1) * 100) + '<small class="klein">één aankoop in week 1</small></div></div>' +
+      '<div><h2>Belegde je verstandig?</h2><ul class="gedrag">' + g.map(function (x) { return '<li class="' + x[0] + '">' + x[1] + "</li>"; }).join("") + "</ul></div>" +
+      '<div><h2>Mijn beleggingsdagboek</h2><p class="klein">Kopieer je dagboek en plak het in je logboek. Je coach ziet dan waarom je wat deed.</p><textarea class="dagboek" id="dagboek" readonly aria-label="Mijn beleggingsdagboek">' + esc(dagboekTekst(t)) + '</textarea><p><button type="button" class="btn-koop" id="kopieer">Kopieer mijn dagboek</button> <span class="klein" id="kopieer-fb" aria-live="polite"></span></p></div>' +
+      '<div class="uitleg"><b>Klaar voor het echte spel?</b>Op jeugdbeurs.be koop je echte aandelen uit de BEL20 en de AEX met oefengeld. Neem mee: maak een plan, spreid, controleer je bronnen en laat je niet opjagen.</div>' +
+      '<p><button type="button" class="btn-groot" id="speel-opnieuw">Speel opnieuw</button></p>';
+    $("kopieer").addEventListener("click", function () {
+      var ta = $("dagboek"), fb = $("kopieer-fb"), terug = function () { ta.focus(); ta.select(); fb.textContent = "Selecteer de tekst en kopieer met Ctrl+C."; };
+      try { navigator.clipboard.writeText(ta.value).then(function () { fb.textContent = "Gekopieerd."; }, terug); } catch (err) { terug(); }
+    });
+    $("speel-opnieuw").addEventListener("click", function () { S = nieuw(); e.hidden = true; $("spel").hidden = false; tekenGids(); teken(); window.scrollTo(0, 0); });
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener("click", function (ev) {
+    var k = ev.target.closest("[data-koop]"), v = ev.target.closest("[data-verkoop]"), i = ev.target.closest("[data-info]");
+    if (k) openOrder("koop", k.dataset.koop); else if (v) openOrder("verkoop", v.dataset.verkoop); else if (i) toonProfiel(i.dataset.info);
+  });
+  ["wk-actie", "wk-wacht"].forEach(function (id) { $(id).addEventListener("change", function () { vulRedenen($(id).value, ""); $("wk-melding").textContent = ""; $("wk-reden").focus(); }); });
+  $("o-aantal").addEventListener("input", totaal);
+  $("o-ok").addEventListener("click", bevestig);
+  $("o-annuleer").addEventListener("click", function () { $("order").hidden = true; O = null; });
+  $("volgende").addEventListener("click", volgende);
+  $("rust-verder").addEventListener("click", rustVerder);
+  $("opnieuw").addEventListener("click", function () { $("opnieuw-vraag").hidden = false; });
+  $("opnieuw-ja").addEventListener("click", function () { S = nieuw(); $("opnieuw-vraag").hidden = true; $("einde").hidden = true; $("rustpunt").hidden = true; $("spel").hidden = false; tekenGids(); teken(); });
+
+  S = laad();
+  tekenGids();
+  if (S.klaar) toonEinde(); else if (S.week === 6 && S.keuzes.some(function (k) { return k.week === 6; }) && !S.rust) { teken(); toonRust(); } else teken();
+})();
+
+</script>
+</body>
+</html>

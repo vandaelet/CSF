@@ -502,7 +502,7 @@
         v.dataset.goed = ok ? "1" : "0";
         v.querySelector(".fb").textContent = (ok ? "Juist! " : "Niet helemaal. ") + (v.dataset.uitleg || "");
         var t = v.closest(".test"), all = t.querySelectorAll(".tvraag").length, done = t.querySelectorAll(".tvraag[data-klaar]").length, goed = t.querySelectorAll('.tvraag[data-goed="1"]').length, rest = all - done;
-        t.querySelector(".score").textContent = rest > 0 ? "Nog " + rest + (rest > 1 ? " vragen" : " vraag") + " te gaan." : "Score: " + goed + " van " + all + " juist." + (t.dataset.soort === "quiz" ? " Noteer je score op je luisterblad." : goed < all ? " Lees de leerkaart nog eens na." : " Je bent klaar om te starten.");
+        t.querySelector(".score").textContent = rest > 0 ? "Nog " + rest + (rest > 1 ? " vragen" : " vraag") + " te gaan." : "Score: " + goed + " van " + all + " juist." + (t.dataset.soort === "quiz" ? " Noteer je score in je werkbundel." : goed < all ? " Lees de leerkaart nog eens na." : " Je bent klaar om te starten.");
       }); });
       app.querySelectorAll(".check").forEach(function (c) {
         var inp = c.querySelector("input"), fb = c.querySelector(".fb"), pogingen = 0, ci = c.dataset.i;
