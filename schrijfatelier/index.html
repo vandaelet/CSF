@@ -157,9 +157,33 @@ table.lijst select,table.lijst input{padding:3px 6px}
 .kalender i{width:14px;height:14px;border-radius:3px;background:#eef3f3}
 .kalender i.l1{background:#c6ecee}.kalender i.l2{background:#82d6da}.kalender i.l3{background:var(--turk)}.kalender i.l4{background:var(--turk-d)}
 .statusbalk{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:8px 0}
+/* volgende stap */
+.stap{border-bottom:1px solid var(--lijn);background:#fff;padding:8px 12px;font-size:14px}
+.stap .rij{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stap .fasen-stap{display:flex;gap:4px}
+.stap .fasen-stap span{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--vlak);color:var(--zacht)}
+.stap .fasen-stap span.nu{background:var(--oranje);color:var(--tekst);font-weight:700}
+.stap .fasen-stap span.af{background:#d6efe0;color:var(--groen)}
+.stap .nu-doen{flex:1;min-width:200px}
+.stap .meer{border:0;background:none;color:var(--turk-d);font-weight:700}
+.stap ul{list-style:none;padding:0;margin:8px 0 2px;display:grid;gap:4px}
+.stap li{display:flex;gap:8px;align-items:baseline}
+.stap li .v{width:18px;flex:none;text-align:center}
+.stap li.klaar{color:var(--zacht)}
+.stap li.klaar .v{color:var(--groen)}
+.stap .tip{background:var(--vlak);border-radius:8px;padding:6px 10px;margin-top:6px;font-size:13px}
+/* verhaalcheck */
+.check{max-width:860px}
+.check h3{display:flex;gap:8px;align-items:center;margin-top:22px}
+.check .score{font-family:var(--display);font-size:12px;border-radius:10px;padding:1px 8px;background:#d6efe0;color:var(--groen)}
+.check .score.let{background:#fff1d1;color:var(--oranje-d)}
+.check ul{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.check li{border-left:4px solid var(--groen);background:var(--vlak);border-radius:0 8px 8px 0;padding:7px 10px;font-size:14px}
+.check li.let{border-color:var(--oranje)}
+.check li a{color:var(--turk-d);font-weight:700}
 /* sprint en focus */
 .sprintchip{position:fixed;right:16px;bottom:16px;background:var(--tekst);color:#fff;border-radius:22px;padding:8px 16px;font-family:var(--display);z-index:30;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-body.focus .kop,body.focus .tabs,body.focus .binder,body.focus .insp,body.focus .werkbalk .verberg{display:none!important}
+body.focus .stap,body.focus .kop,body.focus .tabs,body.focus .binder,body.focus .insp,body.focus .werkbalk .verberg{display:none!important}
 body.focus #app{grid-template-rows:0 0 1fr}
 body.focus .view.schrijven{grid-template-columns:1fr!important}
 body.focus .schrijfvlak{background:#2b2f30}
@@ -278,6 +302,7 @@ dialog .dv{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 16px}
     <button role="tab" data-view="plan">⛰️ Verhaalplan</button>
     <button role="tab" data-view="doelen">🎯 Doelen</button>
     <button role="tab" data-view="boek">📖 Boek maken</button>
+    <button role="tab" data-view="check">✅ Verhaalcheck</button>
     <button role="tab" data-view="hulp" class="rechts">❓ Hulp</button>
   </nav>
   <div class="inhoud">
@@ -288,6 +313,7 @@ dialog .dv{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 16px}
         <div class="prullen" id="prullen"></div>
       </aside>
       <div class="schrijfvlak">
+        <div class="stap" id="stap" aria-live="polite"></div>
         <div class="werkbalk" id="werkbalk">
           <button type="button" data-cmd="bold" title="Vet (Ctrl+B)"><b>B</b></button>
           <button type="button" data-cmd="italic" title="Schuin (Ctrl+I)"><i>I</i></button>
@@ -322,6 +348,7 @@ dialog .dv{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 16px}
     <section class="view" id="v-plan" hidden></section>
     <section class="view" id="v-doelen" hidden></section>
     <section class="view" id="v-boek" hidden></section>
+    <section class="view" id="v-check" hidden></section>
     <section class="view" id="v-hulp" hidden></section>
   </div>
 </div>
@@ -537,8 +564,10 @@ function toonApp() {
   status(ALLEENLEZEN ? "Alleen lezen (coach)" : LOKAAL ? "Lokaal: enkel op dit toestel" : "Bewaard ✓");
   if (!huidig) { const eerste = scenes()[0]; huidig = eerste ? eerste.id : null; }
   kop(); kiesView(view);
+  laadAlleTeksten().then(tekenStap);
 }
 function kop() {
+  clearTimeout(kop.t); kop.t = setTimeout(tekenStap, 1200);
   const w = totaal(), p = Math.min(100, Math.round(w / B.woorddoel * 100));
   $("k-titel").innerHTML = esc(B.titel || "Mijn boek") + "<small>" + esc(ALLEENLEZEN ? B.naam : B.genre || "") + "</small>";
   $("k-woorden").textContent = getal(w) + " van " + getal(B.woorddoel) + " woorden"; $("k-pct").textContent = p + "%"; $("k-balk").style.width = p + "%";
@@ -549,7 +578,7 @@ function kop() {
 function kiesView(v) {
   view = v; document.querySelectorAll(".tabs [data-view]").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
   document.querySelectorAll(".view").forEach(s => s.hidden = s.id !== "v-" + v);
-  ({ schrijven: tekenSchrijven, prikbord: tekenPrikbord, overzicht: tekenOverzicht, personages: tekenPersonages, wereld: tekenWereld, plan: tekenPlan, doelen: tekenDoelen, boek: tekenBoek, hulp: tekenHulp })[v]();
+  ({ schrijven: tekenSchrijven, prikbord: tekenPrikbord, overzicht: tekenOverzicht, personages: tekenPersonages, wereld: tekenWereld, plan: tekenPlan, doelen: tekenDoelen, boek: tekenBoek, check: tekenCheck, hulp: tekenHulp })[v]();
 }
 document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) kiesView(b.dataset.view); });
 
@@ -936,11 +965,12 @@ function tekenBoek() {
     '<label for="bk-aut">Auteur</label><input type="text" id="bk-aut" maxlength="60" value="' + esc(B.auteur || "") + '"' + ro + '><label>Kleur van de cover</label><div class="kleuren">' + KLEUREN.map(k => '<button type="button" data-kleur="' + k + '" style="background:' + k + '" aria-pressed="' + (I.kleur === k) + '" aria-label="kleur ' + k + '"' + ro + "></button>").join("") + "</div>" +
     '<label for="bk-op">Opdracht <span class="hint">(bv. ‘Voor mijn oma’)</span></label><input type="text" id="bk-op" maxlength="120" value="' + esc(I.opdracht) + '"' + ro + '><label for="bk-flap">Flaptekst <span class="hint">(achterkant: maak de lezer nieuwsgierig, verklap het einde niet)</span></label><textarea id="bk-flap" maxlength="900"' + ro + ">" + esc(I.flaptekst) + "</textarea>" +
     '<label><input type="checkbox" id="bk-inh"' + (I.inhoud ? " checked" : "") + ro + '> Inhoudstafel</label><label><input type="checkbox" id="bk-nr"' + (I.nummers ? " checked" : "") + ro + '> Hoofdstukken nummeren</label><label><input type="checkbox" id="bk-klaar"' + (I.alleKlaar ? " checked" : "") + ro + "> Enkel scènes met status ‘klaar’</label>" +
-    '</div><div><div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap"><div class="mini-cover" id="bk-cover"></div><div style="flex:1;min-width:220px"><h2>Je boek afdrukken</h2><p>Het atelier zet je hoofdstukken op A5-bladzijden: cover, titelblad, opdracht, inhoudstafel, de hoofdstukken en de flaptekst.</p>' +
+    '</div><div><div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap"><div class="mini-cover" id="bk-cover"></div><div style="flex:1;min-width:220px"><h2>Je boek afdrukken</h2>' + (verhaalcheck().afwerking.some(x => x[0] === "let") ? '<p class="tip" style="background:#fff1d1;border-radius:8px;padding:8px 10px">⚠️ Je boek is nog niet helemaal af. <a href="#" id="bk-check">Bekijk de verhaalcheck</a>.</p>' : "") + '<p>Het atelier zet je hoofdstukken op A5-bladzijden: cover, titelblad, opdracht, inhoudstafel, de hoofdstukken en de flaptekst.</p>' +
     '<p><button type="button" class="btn" id="bk-druk">🖨️ Afdrukken of bewaren als PDF</button></p><p class="hint">Kies in het afdrukvenster ‘Opslaan als PDF’ om een PDF te maken.</p>' +
     '<h3 style="margin-top:22px">Downloaden</h3><p style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn licht" id="bk-html">Boek als webpagina (.html)</button><button type="button" class="btn licht" id="bk-txt">Tekst (.txt)</button></p>' +
     '<h3 style="margin-top:22px">Reservekopie</h3><p class="hint">Je boek staat veilig online. Wil je toch een kopie op je eigen toestel? Download dan een reservekopie. Die kan je later terugzetten.</p><p style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn licht" id="bk-json">⬇ Download reservekopie</button>' + (ALLEENLEZEN ? "" : '<label class="btn licht" style="margin:0;font-weight:700;font-size:15px">⬆ Zet reservekopie terug<input type="file" id="bk-imp" accept=".json,application/json" hidden></label>') + "</p></div></div></div></div>";
   cover();
+  if ($("bk-check")) $("bk-check").addEventListener("click", e => { e.preventDefault(); kiesView("check"); });
   if (ALLEENLEZEN) { ["bk-druk", "bk-html", "bk-txt", "bk-json"].forEach(id => $(id).disabled = false); }
   const zet = (id, f) => $(id).addEventListener("input", e => { f(e.target); bewaarBoek(); cover(); kop(); });
   if (!ALLEENLEZEN) {
@@ -989,6 +1019,128 @@ function importeer(e) {
   r.readAsText(f);
 }
 
+/* =====================================================================
+   VERHAALCHECK: regels over het hele boek (geen AI)
+   ===================================================================== */
+const VERLEDEN = "was waren had hadden zei zeiden ging gingen liep liepen keek keken kwam kwamen stond stonden zat zaten wist wisten dacht dachten wilde wilden kon konden moest moesten zag zagen vroeg vroegen deed deden werd werden lag lagen nam namen gaf gaven bleef bleven hoorde voelde zocht vond leek pakte draaide rende".split(" ");
+const HEDEN = "is heeft hebben zegt zeggen gaat gaan loopt lopen kijkt kijken komt komen staat staan zit zitten weet weten denkt denken wil willen kan kunnen moet moeten ziet zien vraagt vragen doet doen wordt worden ligt liggen neemt nemen geeft geven blijft hoort voelt zoekt vindt lijkt pakt draait rent ben bent heb hebt zeg ga loop kijk kom sta zit weet denk zie vraag doe word lig neem geef blijf hoor voel zoek vind pak draai ren".split(" ");
+function zonderDialoog(t) { return t.replace(/[“"][^”"]*[”"]/g, " ").replace(/‘[^’]*’/g, " "); }
+function sceneStijl(html) {
+  const t = zonderDialoog(platteTekst(html)).toLowerCase(), w = woordenIn(t), n = w.length;
+  let v = 0, h = 0, ik = 0; w.forEach(x => { if (VERLEDEN.includes(x)) v++; else if (HEDEN.includes(x)) h++; if (x === "ik" || x === "mijn" || x === "mij") ik++; });
+  const tijd = v + h < 4 ? "" : v >= 2 * h ? "verleden" : h >= 2 * v ? "heden" : "gemengd";
+  const verteller = n < 30 ? "" : ik / n >= .015 ? "ik" : "hij/zij";
+  return { tijd, verteller, n };
+}
+function bevat(html, naam) { const n = String(naam || "").trim().split(/\s+/)[0]; if (n.length < 2) return false; return new RegExp("(^|[^\\p{L}])" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^\\p{L}]|$)", "u").test(platteTekst(html)); }
+function link(s) { return '<a href="#" data-naar="' + s.id + '">' + esc(s.titel) + "</a>"; }
+function verhaalcheck() {
+  const sc = scenes(), geschreven = sc.filter(s => T[s.id] && telWoorden(T[s.id].html) > 0), R = { berg: [], pers: [], tijd: [], afwerking: [] };
+  /* verhaalberg */
+  const metFase = sc.filter(s => s.fase !== "" && s.fase != null), per = FASEN.map((f, i) => sc.filter(s => s.fase === String(i)));
+  if (metFase.length < Math.min(3, sc.length)) R.berg.push(["let", "Duid bij je scènes aan waar ze op de verhaalberg staan (zijpaneel of overzicht). Dan kan de check je opbouw nakijken."]);
+  else {
+    const mist = FASEN.filter((f, i) => !per[i].length);
+    R.berg.push(mist.length ? ["let", "Er ontbreekt een fase: <b>" + mist.join(", ") + "</b>. Elk verhaal heeft een begin, een probleem, spanning, een oplossing en een slot."] : ["ok", "Alle vijf de fasen van de verhaalberg zijn er."]);
+    const tot = Math.max(1, totaal()), begin = per[0].reduce((a, s) => a + (s.woorden || 0), 0);
+    if (tot > 300 && begin / tot > .25) R.berg.push(["let", "Je <b>begin</b> is " + Math.round(begin / tot * 100) + "% van je boek. Lezers willen snel weten wat het probleem is. Probeer het begin korter te maken (minder dan een kwart)."]);
+    else if (tot > 300) R.berg.push(["ok", "Je begin is niet te lang (" + Math.round(begin / tot * 100) + "% van je boek)."]);
+    const span = per[2].reduce((a, s) => a + (s.woorden || 0), 0);
+    if (tot > 300 && span < tot * .25) R.berg.push(["let", "De <b>spanning</b> is maar " + Math.round(span / tot * 100) + "% van je boek. Daar gebeurt het meest: geef ze meer scènes."]);
+    const idx = s => sc.indexOf(s), laatsteSpanning = per[2].length ? Math.max(...per[2].map(idx)) : -1;
+    if (laatsteSpanning >= 0 && sc.length >= 4 && laatsteSpanning < sc.length / 2) R.berg.push(["let", "Je <b>hoogtepunt</b> valt in de eerste helft van je boek. Daarna zakt de spanning lang weg. Kan je het later leggen?"]);
+    else if (laatsteSpanning >= 0 && sc.length >= 4) R.berg.push(["ok", "Je hoogtepunt valt in de tweede helft van je boek."]);
+    const terug = []; for (let i = 1; i < metFase.length; i++) if (+metFase[i].fase < +metFase[i - 1].fase - 1) terug.push(metFase[i]);
+    if (terug.length) R.berg.push(["let", "Deze scènes staan vroeger op de verhaalberg dan de scène ervoor: " + terug.slice(0, 4).map(link).join(", ") + ". Staan ze op de goede plaats?"]);
+    const zonder = sc.filter(s => s.fase === "" || s.fase == null); if (zonder.length) R.berg.push(["let", zonder.length + " scène(s) hebben nog geen plaats op de verhaalberg: " + zonder.slice(0, 4).map(link).join(", ") + (zonder.length > 4 ? " …" : "") + "."]);
+  }
+  /* personages */
+  const pers = B.personages.filter(p => (p.naam || "").trim());
+  if (!pers.length) R.pers.push(["let", "Je hebt nog geen personagefiches. Maak er minstens één voor je hoofdpersonage."]);
+  else if (geschreven.length < 2) R.pers.push(["", "Schrijf eerst een paar scènes. Dan kijkt de check na hoe vaak je personages voorkomen."]);
+  else {
+    const hoofd = pers.find(p => /hoofd/i.test(p.rol || "")) || pers[0];
+    pers.forEach(p => { const n = geschreven.filter(s => bevat(T[s.id].html, p.naam)).length;
+      if (!n) R.pers.push(["let", "<b>" + esc(p.naam) + "</b> heeft een fiche, maar komt nog in geen enkele scène voor. Heb je het personage nog nodig, of heet het in je tekst anders?"]); });
+    let gat = 0, max = 0, van = null, maxVan = null; geschreven.forEach(s => { if (bevat(T[s.id].html, hoofd.naam)) gat = 0; else { if (!gat) van = s; gat++; if (gat > max) { max = gat; maxVan = van; } } });
+    R.pers.push(max >= 3 ? ["let", "Je hoofdpersonage <b>" + esc(hoofd.naam) + "</b> komt " + max + " scènes na elkaar niet voor (vanaf " + link(maxVan) + "). Weet de lezer nog over wie het gaat? Vertel je bewust over iemand anders, dan is dat in orde."] : ["ok", "Je hoofdpersonage <b>" + esc(hoofd.naam) + "</b> blijft in beeld."]);
+    if (!R.pers.some(x => x[0] === "let")) R.pers.push(["ok", "Alle personages uit je fiches komen in je verhaal voor."]);
+  }
+  /* tijd en verteller */
+  const st = geschreven.map(s => [s, sceneStijl(T[s.id].html)]), mT = {}, mV = {};
+  st.forEach(([s, x]) => { if (x.tijd && x.tijd !== "gemengd") mT[x.tijd] = (mT[x.tijd] || 0) + 1; if (x.verteller) mV[x.verteller] = (mV[x.verteller] || 0) + 1; });
+  const tijd = Object.keys(mT).sort((a, b) => mT[b] - mT[a])[0], vert = Object.keys(mV).sort((a, b) => mV[b] - mV[a])[0];
+  if (!st.some(([s, x]) => x.tijd)) R.tijd.push(["", "Schrijf eerst wat meer. Dan kijkt de check na in welke tijd en vanuit wie je vertelt."]);
+  else {
+    const gemengd = st.filter(([s, x]) => x.tijd === "gemengd").map(x => x[0]), anders = st.filter(([s, x]) => x.tijd && x.tijd !== "gemengd" && x.tijd !== tijd).map(x => x[0]);
+    R.tijd.push(["ok", "Je boek staat vooral in de <b>" + (tijd === "verleden" ? "verleden tijd" : "tegenwoordige tijd") + "</b>" + (vert ? ", met een <b>" + vert + "-verteller</b>" : "") + "."]);
+    if (gemengd.length) R.tijd.push(["let", "In deze scènes wisselen verleden en tegenwoordige tijd elkaar af: " + gemengd.slice(0, 4).map(link).join(", ") + ". Lees ze na: blijf in dezelfde tijd (dialogen tellen niet mee)."]);
+    if (anders.length) R.tijd.push(["let", "Deze scènes staan in een andere tijd dan de rest van je boek: " + anders.slice(0, 4).map(link).join(", ") + ". Bewust (bv. een herinnering)? Dan is het goed."]);
+    const andersV = st.filter(([s, x]) => x.verteller && vert && x.verteller !== vert).map(x => x[0]);
+    if (andersV.length) R.tijd.push(["let", "In deze scènes vertel je met een andere verteller (" + (vert === "ik" ? "hij/zij" : "ik") + "): " + andersV.slice(0, 4).map(link).join(", ") + ". Wissel je bewust van verteller? Duid dan in het zijpaneel bij elke scène aan vanuit wie je vertelt."]);
+    if (!gemengd.length && !anders.length && !andersV.length) R.tijd.push(["ok", "Je blijft in dezelfde tijd en bij dezelfde verteller."]);
+  }
+  /* afwerking */
+  const leeg = sc.filter(s => !(s.woorden > 0)), geenSyn = sc.filter(s => !(s.synopsis || "").trim()), nietKlaar = sc.filter(s => s.status !== "klaar"), legeHfd = B.binder.filter(h => h.soort === "map" && !scenes(h.kinderen || []).length);
+  R.afwerking.push(leeg.length ? ["let", leeg.length + " lege scène(s): " + leeg.slice(0, 4).map(link).join(", ") + (leeg.length > 4 ? " …" : "") + ". Schrijf ze, of zet ze in de prullenbak."] : ["ok", "Geen lege scènes."]);
+  if (legeHfd.length) R.afwerking.push(["let", "Hoofdstukken zonder scènes: " + legeHfd.map(h => "<b>" + esc(h.titel) + "</b>").join(", ") + "."]);
+  R.afwerking.push(geenSyn.length ? ["let", geenSyn.length + " scène(s) zonder samenvatting. Een samenvatting helpt jou en je coach het overzicht te houden."] : ["ok", "Elke scène heeft een samenvatting."]);
+  R.afwerking.push(nietKlaar.length ? ["let", nietKlaar.length + " van de " + sc.length + " scènes staan nog niet op ‘klaar’."] : ["ok", "Alle scènes staan op ‘klaar’."]);
+  if (!(B.instellingen.flaptekst || "").trim()) R.afwerking.push(["let", "Je hebt nog geen flaptekst (bij ‘Boek maken’)."]);
+  const ongelezen = Object.values(B.feedback || {}).flat().filter(f => !f.gelezen).length; if (ongelezen) R.afwerking.push(["let", ongelezen + " feedback van je coach nog niet gelezen."]);
+  return R;
+}
+async function tekenCheck() {
+  $("v-check").innerHTML = '<p class="hint">De check leest je hele boek …</p>'; await laadAlleTeksten(); if (view !== "check") return;
+  const R = verhaalcheck(), blok = (t, l, uitleg) => { const n = l.filter(x => x[0] === "let").length;
+    return "<h3>" + t + ' <span class="score' + (n ? " let" : "") + '">' + (n ? n + " om na te kijken" : "in orde") + '</span></h3><p class="hint">' + uitleg + "</p><ul>" + l.map(x => '<li class="' + x[0] + '">' + x[1] + "</li>").join("") + "</ul>"; };
+  $("v-check").innerHTML = '<div class="check"><h2>Verhaalcheck</h2><p>De verhaalcheck kijkt je hele boek na met vaste regels. Hij telt en zoekt patronen, maar hij begrijpt je verhaal niet. Is iets bewust zo? Dan mag je het laten. Voor feedback op de inhoud: vraag het je coach of je proeflezers. <button type="button" class="btn klein licht" id="ch-opnieuw">Opnieuw nakijken</button></p>' +
+    blok("⛰️ Verhaalberg", R.berg, "Klopt de opbouw van je verhaal?") + blok("👤 Personages", R.pers, "Komen je personages voor, en blijft je hoofdpersonage in beeld?") +
+    blok("🕰️ Tijd en verteller", R.tijd, "Blijf je in dezelfde tijd en bij dezelfde verteller? Dialogen tellen niet mee.") + blok("📖 Afwerking", R.afwerking, "Is je boek klaar om af te drukken?") + "</div>";
+  $("ch-opnieuw").addEventListener("click", tekenCheck);
+  $("v-check").querySelectorAll("[data-naar]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); kiesKnoop(a.dataset.naar); }));
+}
+
+/* =====================================================================
+   JOUW VOLGENDE STAP: plannen → schrijven → herschrijven → afwerken
+   ===================================================================== */
+const STAPFASEN = ["Plannen", "Schrijven", "Herschrijven", "Afwerken"];
+let stapOpen = (() => { try { return localStorage.getItem("schrijfatelier-stap") !== "dicht"; } catch (e) { return true; } })();
+function volgendeStap() {
+  const sc = scenes(), w = totaal(), vd = B.dagen[vandaag()] || 0, metSyn = sc.filter(s => (s.synopsis || "").trim()).length;
+  const pers = B.personages.filter(p => (p.naam || "").trim());
+  const plan = [[!!B.premisse.trim(), "Schrijf je ‘wat als’-vraag", "plan"], [!!B.zin.trim(), "Schrijf je boek in één zin", "plan"], [pers.length >= 1, "Maak een fiche voor je hoofdpersonage", "personages"],
+    [pers.length >= 2, "Maak een fiche voor een tegenstander of helper", "personages"], [metSyn >= 5, "Leg minstens 5 scènekaartjes met een samenvatting op het prikbord (" + metSyn + "/5)", "prikbord"]];
+  const leeg = sc.find(s => !(s.woorden > 0)), bezig = sc.find(s => s.status === "klad" || s.status === "idee");
+  if (!B.verhaalAf && plan.some(x => !x[0]) && w < 300) return { fase: 0, titel: "Plan je verhaal", lijst: plan, tip: "Een goed plan maakt het schrijven veel makkelijker. Je mag al beginnen schrijven, maar werk je plan dan ook af.", knop: null };
+  if (!B.verhaalAf && w < B.woorddoel * .9) {
+    let dl = ""; if (B.deadline) { const d = Math.ceil((new Date(B.deadline + "T23:59:59") - new Date()) / 864e5); if (d > 0) dl = " (" + getal(Math.ceil((B.woorddoel - w) / d)) + " per dag tot je einddatum)"; }
+    return { fase: 1, titel: leeg ? "Schrijf de scène ‘" + leeg.titel + "’" : "Schrijf verder aan je verhaal", doel: leeg, lijst: [[vd >= B.sessiedoel, "Haal je dagdoel: " + getal(vd) + " / " + getal(B.sessiedoel) + " woorden"], [w >= B.woorddoel * .5, "Haal de helft van je woorddoel: " + getal(w) + " / " + getal(Math.round(B.woorddoel / 2)) + dl], [!plan.some(x => !x[0]), "Je plan is volledig (verhaalplan, personages, prikbord)"]],
+      tip: "Schrijf eerst je hele verhaal. Verbeteren doe je pas daarna. Vast? Klik op 💡 of doe een sprint.", knop: "Ik ben klaar met mijn verhaal" };
+  }
+  const R = verhaalcheck(), nOk = ["berg", "pers", "tijd"].every(k => !R[k].some(x => x[0] === "let")), klad = sc.filter(s => s.status === "idee" || s.status === "klad").length, ongelezen = Object.values(B.feedback || {}).flat().filter(f => !f.gelezen).length;
+  if (klad > 0 || !nOk) return { fase: 2, titel: "Herschrijf je boek", lijst: [[nOk, "Werk de verhaalcheck af (verhaalberg, personages, tijd en verteller)", "check"], [klad === 0, "Herschrijf elke scène met de schrijfcoach en zet ze op ‘herschreven’ (" + (sc.length - klad) + "/" + sc.length + ")"], [ongelezen === 0, "Lees en verwerk de feedback van je coach"], [false, "Laat twee proeflezers een stuk lezen (werkblad 7)"]],
+    tip: "Herschrijf in drie rondes: eerst het verhaal, dan de scènes, dan de zinnen. Bewaar een versie voor je grote dingen verandert.", knop: B.verhaalAf ? "Ik wil toch verder schrijven" : null };
+  const I = B.instellingen, alles = sc.every(s => s.status === "klaar");
+  return { fase: 3, titel: alles && I.flaptekst ? "Druk je boek af en stel het voor 🎉" : "Werk je boek af", lijst: [[alles, "Zet alle scènes op ‘klaar’"], [!!(B.titel || "").trim() && B.titel !== "Mijn boek", "Kies een titel die nieuwsgierig maakt", "boek"], [!!(I.flaptekst || "").trim(), "Schrijf je flaptekst", "boek"], [!R.afwerking.some(x => x[0] === "let"), "Geen waarschuwingen bij ‘Afwerking’ in de verhaalcheck", "check"]],
+    tip: "Druk eerst een proefexemplaar af en lees het op papier. Je ziet dan fouten die je op het scherm mist.", knop: null };
+}
+function tekenStap() {
+  const el = $("stap"); if (!el || !B || ALLEENLEZEN) { if (el) el.hidden = true; return; } el.hidden = false;
+  const s = volgendeStap(), af = s.lijst.filter(x => x[0]).length;
+  el.innerHTML = '<div class="rij"><b>🧭 Jouw volgende stap</b><span class="fasen-stap">' + STAPFASEN.map((f, i) => '<span class="' + (i < s.fase ? "af" : i === s.fase ? "nu" : "") + '">' + (i < s.fase ? "✓ " : "") + f + "</span>").join("") + '</span><span class="nu-doen">' +
+    (s.doel ? '<a href="#" id="stap-doel" style="color:var(--turk-d);font-weight:700">' + esc(s.titel) + "</a>" : esc(s.titel)) + ' <span class="hint">· ' + af + "/" + s.lijst.length + '</span></span><button type="button" class="meer" id="stap-meer" aria-expanded="' + stapOpen + '">' + (stapOpen ? "minder ▴" : "meer ▾") + "</button></div>" +
+    (stapOpen ? "<ul>" + s.lijst.map(x => '<li class="' + (x[0] ? "klaar" : "") + '"><span class="v">' + (x[0] ? "✓" : "○") + "</span><span>" + (x[2] ? '<a href="#" data-stapview="' + x[2] + '" style="color:inherit">' + x[1] + "</a>" : x[1]) + "</span></li>").join("") + '</ul><div class="tip">💡 ' + s.tip + "</div>" +
+      (s.knop ? '<p style="margin:8px 0 0"><button type="button" class="btn klein licht" id="stap-knop">' + s.knop + "</button></p>" : "") : "");
+  $("stap-meer").addEventListener("click", () => { stapOpen = !stapOpen; try { localStorage.setItem("schrijfatelier-stap", stapOpen ? "open" : "dicht"); } catch (e) {} tekenStap(); });
+  if ($("stap-doel")) $("stap-doel").addEventListener("click", e => { e.preventDefault(); kiesKnoop(s.doel.id); });
+  el.querySelectorAll("[data-stapview]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); kiesView(a.dataset.stapview); }));
+  if ($("stap-knop")) $("stap-knop").addEventListener("click", () => {
+    if (B.verhaalAf) { B.verhaalAf = false; bewaarBoek(); return tekenStap(); }
+    vraag("Is je verhaal af?", "<p>Je hebt " + getal(totaal()) + " van je " + getal(B.woorddoel) + " woorden geschreven. Is je verhaal af, met een slot? Dan begin je aan het herschrijven. Bespreek het kort met je coach.</p>", [["Nog niet", null], ["Ja, mijn verhaal is af", () => { B.verhaalAf = true; bewaarBoek(); tekenStap(); }]]);
+  });
+}
+
 /* ---------- hulp ---------- */
 function tekenHulp() {
   $("v-hulp").innerHTML = '<div style="max-width:760px"><h2>Zo werkt het schrijfatelier</h2>' +
@@ -998,6 +1150,8 @@ function tekenHulp() {
     '<p><b>Prikbord en overzicht.</b> Bekijk je verhaal als kaartjes of als tabel. Zo zie je meteen waar een gat zit.</p>' +
     '<p><b>Personages, plaatsen en notities.</b> Hou bij wie wie is en hoe een plek eruitziet. Zo blijft je verhaal kloppen: de ogen van je hoofdpersonage blijven blauw.</p>' +
     '<p><b>Verhaalplan.</b> Schrijf je ‘wat als’-vraag en je boek in één zin. Op de verhaalberg zie je hoeveel scènes elke fase heeft.</p>' +
+    '<p><b>Jouw volgende stap.</b> Bovenaan het schrijfblad zie je in welke fase je zit (plannen, schrijven, herschrijven, afwerken) en wat je nu best doet.</p>' +
+    '<p><b>Verhaalcheck.</b> Kijkt je hele boek na: de verhaalberg, je personages, de tijd en de verteller, en of je boek klaar is om af te drukken. De check werkt met regels en begrijpt je verhaal niet: is iets bewust zo, dan mag je het laten.</p>' +
     '<p><b>Doelen.</b> Je kiest zelf hoeveel woorden je boek telt. Je ziet je dagdoel, je schrijfreeks en hoeveel je nog moet schrijven tot je einddatum.</p>' +
     '<p><b>Vastgelopen?</b> Klik op 💡 voor een schrijfvraag. Met ⏱️ <b>Sprint</b> schrijf je een paar minuten tegen de klok. Met 🔲 <b>Focus</b> zie je alleen je tekst (Esc om terug te gaan).</p>' +
     '<p><b>Boek maken.</b> Kies een cover, schrijf een flaptekst en druk je boek af op A5, of bewaar het als PDF.</p>' +

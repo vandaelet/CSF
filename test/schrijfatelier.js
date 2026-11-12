@@ -77,6 +77,15 @@ async function login(p, u) {
   const rk = JSON.parse(fs.readFileSync(await dj.path(), 'utf8')); ok(rk.schrijfatelier === 1 && rk.boek.personages[0].naam === 'Noor', 'reservekopie met personage');
   await p.waitForTimeout(1600);
 
+  /* ---- verhaalcheck en volgende stap ---- */
+  await p.click('[data-view=check]'); await p.waitForSelector('#v-check .check');
+  const ch = await p.textContent('#v-check');
+  ok(/Verhaalberg/.test(ch) && /Personages/.test(ch) && /Tijd en verteller/.test(ch) && /Afwerking/.test(ch), 'verhaalcheck toont vier onderdelen');
+  ok(/verleden tijd/.test(ch), 'verhaalcheck herkent de verleden tijd');
+  ok(/lege scène/.test(ch), 'verhaalcheck vindt lege scènes');
+  ok(/Schrijf eerst een paar scènes/.test(ch), 'personagecheck wacht tot er meer scènes zijn');
+  await p.click('[data-view=schrijven]'); await p.waitForTimeout(1500);
+  ok((await p.textContent('#stap')).includes('Jouw volgende stap') && await p.locator('#stap .fasen-stap span.nu').count() === 1, 'kaart ‘Jouw volgende stap’ met de huidige fase');
   /* ---- herladen: alles is er nog ---- */
   await p.reload(); await p.waitForSelector('#app:not([hidden])'); await p.waitForTimeout(400);
   ok((await p.textContent('#tekst')).includes('Noor liep naar de vuurtoren'), 'na herladen staat de tekst er nog');
