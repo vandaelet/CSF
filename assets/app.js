@@ -271,7 +271,9 @@
       return '<div class="les" data-les="' + (i + 1) + '"><h4><span class="lesnr">Lesuur ' + (i + 1) + "</span>" + l.titel + '</h4><ol class="stappen">' + l.stappen.map(function (s) {
         return '<li class="' + (CSF.logMoment(s[1], s[2]) ? "lb" : "") + '"><span class="t">' + s[0] + '</span><span class="s">' + s[1] + '</span><span class="w">' + s[2] + "</span></li>";
       }).join("") + "</ol></div>";
-    }).join("");
+    }).join("") + (p.extraLes ? '<div class="les"><h4><span class="lesnr">Lesuur ' + ((p.lessen || []).length + 1) + ' en verder</span>' + p.extraLes.titel + '</h4><ol class="stappen">' + p.extraLes.stappen.map(function (s) {
+        return '<li class="' + (CSF.logMoment(s[1], s[2]) ? "lb" : "") + '"><span class="t">' + s[0] + '</span><span class="s">' + s[1] + '</span><span class="w">' + s[2] + "</span></li>";
+      }).join("") + "</ol></div>" : "");
     var links = (p.links || []).map(function (l) { return '<a class="btn licht" href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + " ↗</a>"; }).join("");
     var lk = p.leerkaarten || [], g = gelezen(p), nGel = lk.filter(function (_, i) { return g.indexOf(i) >= 0; }).length, open = magAfdrukken(p);
     var kaarten = lk.map(function (k, i) {

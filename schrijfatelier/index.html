@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schrijfatelier · CSF</title>
+<link rel="icon" href="../assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Varela+Round&family=Literata:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root{--turk:#3BC1C5;--turk-d:#17808a;--oranje:#FCAF17;--oranje-d:#b37400;--tekst:#1d1d1b;--zacht:#5b6466;--lijn:#d5e8e9;--vlak:#f3fafa;--bg:#fff;--papier:#fffdf8;--rood:#c0392b;--groen:#2e8b4e;
+  --st-idee:#b9c2c4;--st-klad:#FCAF17;--st-herschreven:#3BC1C5;--st-klaar:#2e8b4e;--display:"Play",system-ui,sans-serif;--body:"Varela Round",system-ui,sans-serif;--boek:"Literata",Georgia,serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--body);color:var(--tekst);background:var(--bg);font-size:15px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--display);margin:0 0 .5em}
+.btn{background:var(--turk);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700}
+.btn:hover{background:var(--turk-d)}
+.btn.oranje{background:var(--oranje);color:var(--tekst)}
+.btn.licht{background:#fff;color:var(--turk-d);border:1.5px solid var(--turk)}
+.btn.klein{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.hint{color:var(--zacht);font-size:13px}
+input[type=text],input[type=number],input[type=date],select,textarea{border:1.5px solid var(--lijn);border-radius:8px;padding:7px 9px;background:#fff;width:100%}
+input:focus,select:focus,textarea:focus,[contenteditable]:focus{outline:2px solid var(--turk);outline-offset:1px}
+label{display:block;font-weight:700;font-size:13px;margin:10px 0 4px}
+/* ---------- schermen ---------- */
+.scherm{max-width:760px;margin:40px auto;padding:0 16px}
+.kaart{border:1.5px solid var(--lijn);border-radius:14px;padding:22px;background:#fff}
+.kaart img{height:46px}
+.kies{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:6px}
+.kies label{margin:0;border:1.5px solid var(--lijn);border-radius:10px;padding:10px;font-weight:400;cursor:pointer}
+.kies label:has(input:checked){border-color:var(--turk);background:var(--vlak)}
+.kies b{display:block;font-family:var(--display)}
+.kies input{margin-right:6px}
+/* ---------- app ---------- */
+#app{display:grid;grid-template-rows:auto auto 1fr;height:100vh}
+.kop{display:flex;align-items:center;gap:14px;padding:8px 14px;border-bottom:3px solid var(--turk)}
+.kop img{height:34px}
+.kop .titel{font-family:var(--display);font-size:19px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kop .titel small{font-family:var(--body);font-weight:400;color:var(--zacht);font-size:13px;margin-left:8px}
+.voortgang{width:200px}
+.voortgang .balk{height:8px;border-radius:4px;background:var(--lijn);overflow:hidden}
+.voortgang .balk i{display:block;height:100%;background:var(--turk)}
+.voortgang .t{font-size:12px;color:var(--zacht);margin-bottom:3px;display:flex;justify-content:space-between}
+.bewaard{font-size:12px;color:var(--zacht);min-width:110px;text-align:right}
+.bewaard.fout{color:var(--rood);font-weight:700}
+.tabs{display:flex;gap:2px;padding:0 10px;background:var(--vlak);border-bottom:1px solid var(--lijn);overflow-x:auto}
+.tabs button{border:0;background:none;padding:9px 12px;font-family:var(--display);font-size:14px;color:var(--zacht);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--turk-d);border-bottom-color:var(--oranje);font-weight:700}
+.tabs .rechts{margin-left:auto}
+.inhoud{overflow:hidden;min-height:0}
+.view{height:100%;overflow:auto;padding:18px}
+.view.schrijven{display:grid;grid-template-columns:250px 1fr 300px;padding:0;overflow:hidden}
+.view.schrijven.zonder-insp{grid-template-columns:250px 1fr}
+/* binder */
+.binder{border-right:1px solid var(--lijn);overflow:auto;padding:10px 8px;background:var(--vlak)}
+.binder .acties{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.boom,.boom ul{list-style:none;margin:0;padding:0}
+.boom ul{padding-left:14px}
+.knoop{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:7px;cursor:pointer;user-select:none;font-size:14px}
+.knoop:hover{background:#e3f4f5}
+.knoop.actief{background:var(--turk);color:#fff}
+.knoop .pijl{width:14px;text-align:center;color:var(--zacht);font-size:11px}
+.knoop.actief .pijl{color:#fff}
+.knoop .naam{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.knoop .w{font-size:11px;color:var(--zacht)}
+.knoop.actief .w{color:#e9fbfb}
+.knoop.map .naam{font-weight:700}
+.stip{width:9px;height:9px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.1)}
+.st-idee{background:var(--st-idee)}.st-klad{background:var(--st-klad)}.st-herschreven{background:var(--st-herschreven)}.st-klaar{background:var(--st-klaar)}
+.knoop.sleep-boven{box-shadow:inset 0 3px 0 var(--oranje)}.knoop.sleep-onder{box-shadow:inset 0 -3px 0 var(--oranje)}.knoop.sleep-in{outline:2px dashed var(--oranje)}
+.prullen{margin-top:14px;font-size:13px}
+/* editor */
+.schrijfvlak{display:flex;flex-direction:column;min-width:0;background:#f6f4ef}
+.werkbalk{display:flex;gap:4px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--lijn);background:#fff;flex-wrap:wrap}
+.werkbalk button{border:1px solid var(--lijn);background:#fff;border-radius:6px;padding:4px 9px;min-width:32px}
+.werkbalk button:hover{background:var(--vlak)}
+.werkbalk .scheid{width:1px;height:22px;background:var(--lijn);margin:0 4px}
+.werkbalk .info{margin-left:auto;font-size:12px;color:var(--zacht)}
+.blad-scroll{flex:1;overflow:auto;padding:26px 16px 120px}
+.blad{max-width:720px;margin:0 auto;background:var(--papier);box-shadow:0 1px 4px rgba(0,0,0,.08);border-radius:4px;padding:44px 56px;min-height:70vh}
+.blad h2{font-family:var(--boek);font-weight:600;font-size:22px;border:0;margin:0 0 18px}
+.blad h2[contenteditable]{outline:none}
+.tekst{font-family:var(--boek);font-size:18px;line-height:1.75;min-height:50vh;outline:none}
+.tekst p{margin:0 0 .2em;text-indent:1.4em}
+.tekst p:first-child{text-indent:0}
+.tekst hr{border:0;text-align:center;margin:1em 0}
+.tekst hr::after{content:"* * *";color:var(--zacht)}
+.tekst:focus,.blad h2:focus{outline:none}
+.tekst > p:only-child:has(> br:only-child)::before{content:"Begin hier te schrijven …";color:#aaa;font-style:italic}
+.tekst:empty::before{content:attr(data-leeg);color:#aaa;font-style:italic}
+.tekst mark{background:none;border-bottom:3px solid}
+.tekst mark.lang{background:#fff1d1;border-color:var(--oranje)}
+.tekst mark.stop{border-color:#8e6bd6}
+.tekst mark.herh{border-color:var(--rood)}
+.tekst mark.vertel{border-color:var(--turk)}
+.leesband{background:#fff4e0;border:1px solid var(--oranje);border-radius:8px;padding:8px 12px;margin:0 auto 12px;max-width:720px;display:flex;gap:10px;align-items:center;font-size:13px}
+.leesband .btn{margin-left:auto}
+.map-blad .kaartjes{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+/* inspector */
+.insp{border-left:1px solid var(--lijn);overflow:auto;background:#fff;display:flex;flex-direction:column}
+.insp-tabs{display:flex;border-bottom:1px solid var(--lijn)}
+.insp-tabs button{flex:1;border:0;background:var(--vlak);padding:8px 2px;font-size:12px;font-family:var(--display);color:var(--zacht)}
+.insp-tabs button[aria-selected=true]{background:#fff;color:var(--turk-d);font-weight:700;box-shadow:inset 0 -3px 0 var(--oranje)}
+.insp-in{padding:12px;overflow:auto}
+.insp-in textarea{min-height:80px}
+.badge{display:inline-block;background:var(--rood);color:#fff;border-radius:9px;font-size:11px;padding:0 6px;margin-left:3px}
+.analyse{list-style:none;padding:0;margin:8px 0}
+.analyse li{border-left:4px solid var(--lijn);padding:6px 8px;margin-bottom:6px;font-size:13px;background:var(--vlak);border-radius:0 6px 6px 0}
+.analyse li.ok{border-color:var(--groen)}.analyse li.let{border-color:var(--oranje)}
+.cijfers{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cijfers div{background:var(--vlak);border-radius:8px;padding:6px 8px;font-size:12px;color:var(--zacht)}
+.cijfers b{display:block;font-family:var(--display);font-size:18px;color:var(--tekst)}
+.versie{border:1px solid var(--lijn);border-radius:8px;padding:8px;margin-bottom:6px;font-size:13px}
+.versie .rij{display:flex;gap:6px;margin-top:6px}
+.fb{border-left:4px solid var(--oranje);background:#fff8ea;border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:8px;font-size:14px}
+.fb.nieuw{border-color:var(--rood)}
+.fb .wie{font-size:12px;color:var(--zacht)}
+/* prikbord */
+.hfd{margin-bottom:22px}
+.hfd h3{display:flex;gap:8px;align-items:center}
+.kaartjes{display:flex;flex-wrap:wrap;gap:12px;min-height:60px;padding:6px;border-radius:10px}
+.kaartjes.sleep-in{background:#fff4e0}
+.idx{width:200px;min-height:140px;background:#fffef6;border:1px solid #e8e2c8;border-top:6px solid var(--st-idee);border-radius:6px;padding:8px 10px;box-shadow:0 2px 4px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:4px;cursor:grab}
+.idx.st-klad{border-top-color:var(--st-klad);background:#fffef6}.idx.st-herschreven{border-top-color:var(--st-herschreven);background:#fffef6}.idx.st-klaar{border-top-color:var(--st-klaar);background:#fffef6}
+.idx b{font-family:var(--display);font-size:14px}
+.idx a{color:var(--turk-d)}
+.idx textarea{border:0;background:transparent;resize:none;flex:1;padding:0;font-size:13px;min-height:70px}
+.idx .w{font-size:11px;color:var(--zacht);display:flex;justify-content:space-between}
+.idx.nieuw{border:2px dashed var(--lijn);background:#fff;align-items:center;justify-content:center;color:var(--zacht);cursor:pointer}
+/* tabellen */
+table.lijst{border-collapse:collapse;width:100%;font-size:14px}
+table.lijst th{text-align:left;font-family:var(--display);color:var(--turk-d);border-bottom:2px solid var(--turk);padding:6px}
+table.lijst td{border-bottom:1px solid var(--lijn);padding:5px 6px;vertical-align:top}
+table.lijst td.hfdrij{background:var(--vlak);font-weight:700;font-family:var(--display)}
+table.lijst select,table.lijst input{padding:3px 6px}
+/* fiches */
+.fiches{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.fiche{border:1.5px solid var(--lijn);border-radius:12px;padding:12px;background:#fff}
+.fiche .kop2{display:flex;gap:8px;align-items:center}
+.fiche .kop2 input{font-family:var(--display);font-weight:700;font-size:17px}
+.fiche textarea{min-height:52px}
+.twee{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+/* plan */
+.fasen{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.fase{border:1.5px solid var(--lijn);border-radius:10px;padding:8px;background:#fff;min-height:120px}
+.fase h4{margin:0 0 4px;font-family:var(--display);color:var(--turk-d)}
+.fase .lijst-sc{font-size:13px;margin:0;padding-left:16px}
+/* doelen */
+.doelen{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.groot{font-family:var(--display);font-size:34px;font-weight:700;color:var(--turk-d)}
+.kalender{display:grid;grid-template-columns:repeat(14,14px);gap:3px;margin-top:8px}
+.kalender i{width:14px;height:14px;border-radius:3px;background:#eef3f3}
+.kalender i.l1{background:#c6ecee}.kalender i.l2{background:#82d6da}.kalender i.l3{background:var(--turk)}.kalender i.l4{background:var(--turk-d)}
+.statusbalk{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:8px 0}
+/* sprint en focus */
+.sprintchip{position:fixed;right:16px;bottom:16px;background:var(--tekst);color:#fff;border-radius:22px;padding:8px 16px;font-family:var(--display);z-index:30;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+body.focus .kop,body.focus .tabs,body.focus .binder,body.focus .insp,body.focus .werkbalk .verberg{display:none!important}
+body.focus #app{grid-template-rows:0 0 1fr}
+body.focus .view.schrijven{grid-template-columns:1fr!important}
+body.focus .schrijfvlak{background:#2b2f30}
+body.focus .blad{box-shadow:none}
+/* dialoog */
+dialog{border:0;border-radius:14px;padding:0;max-width:min(560px,calc(100vw - 32px));box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(10,30,32,.55)}
+dialog .dk{background:var(--turk);color:#fff;padding:12px 18px;font-family:var(--display);font-size:18px;font-weight:700}
+dialog .db{padding:16px 18px}
+dialog .dv{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 16px}
+.prompt{font-family:var(--boek);font-size:18px;line-height:1.5;background:var(--vlak);border-radius:10px;padding:14px}
+/* boek maken */
+.boekinst{display:grid;grid-template-columns:340px 1fr;gap:20px}
+.kleuren{display:flex;gap:6px;flex-wrap:wrap}
+.kleuren button{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px var(--lijn)}
+.kleuren button[aria-pressed=true]{box-shadow:0 0 0 3px var(--tekst)}
+.mini-cover{width:180px;aspect-ratio:148/210;border-radius:4px 8px 8px 4px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:18px 14px;box-shadow:4px 4px 12px rgba(0,0,0,.2);text-align:center;font-family:var(--boek)}
+.mini-cover b{font-size:20px;line-height:1.2}
+#drukwerk{display:none}
+/* coach */
+.coachlijst td a{color:var(--turk-d);font-weight:700}
+.alleen-lezen .tekst{cursor:default}
+@media (max-width:1100px){.view.schrijven{grid-template-columns:210px 1fr}.view.schrijven .insp{display:none}.view.schrijven.toon-insp{grid-template-columns:210px 1fr 280px}.view.schrijven.toon-insp .insp{display:flex}.boekinst{grid-template-columns:1fr}.fasen{grid-template-columns:1fr 1fr}}
+@media (max-width:700px){.view.schrijven{grid-template-columns:1fr}.binder{display:none}.blad{padding:24px 18px}.voortgang{display:none}.twee{grid-template-columns:1fr}}
+/* ---------- afdrukken: een boekje op A5 ---------- */
+@media print{
+  @page{size:A5;margin:16mm 14mm 18mm}
+  body>*:not(#drukwerk){display:none!important}
+  #drukwerk{display:block;font-family:var(--boek);font-size:10.5pt;line-height:1.55;color:#000}
+  .pg{page-break-after:always;break-after:page}
+  .cover{height:170mm;display:flex;flex-direction:column;justify-content:space-between;text-align:center;color:#fff;padding:18mm 8mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:2mm}
+  .cover h1{font-family:var(--boek);font-size:26pt;margin:0}
+  .titelblad{text-align:center;padding-top:40mm}
+  .titelblad h1{font-family:var(--boek);font-size:20pt}
+  .opdracht{text-align:center;font-style:italic;padding-top:50mm}
+  .toc h2{font-family:var(--boek)}
+  .toc ol{padding-left:1.2em}
+  .hoofdstuk h2{font-family:var(--boek);font-size:15pt;margin:14mm 0 8mm;text-align:center}
+  .hoofdstuk p{margin:0;text-indent:1.3em;text-align:justify;hyphens:auto}
+  .hoofdstuk p.eerste{text-indent:0}
+  .hoofdstuk hr{border:0;text-align:center;margin:.8em 0}
+  .hoofdstuk hr::after{content:"* * *"}
+  .flap{padding-top:30mm}
+}
+</style>
+</head>
+<body>
+<script>window.CSF = window.CSF || {};</script>
+<script src="../portaal-config.js"></script>
+
+<div id="laden" class="scherm"><p class="hint">Het schrijfatelier wordt geladen …</p></div>
+
+<div id="login" class="scherm" hidden>
+  <div class="kaart">
+    <img src="../assets/logo.png" alt="Campus Lievegem">
+    <h1>Schrijfatelier</h1>
+    <p>Schrijf hier je eigen boek: hoofdstukken, scènes, personages, je verhaalplan en je doelen. Alles wordt automatisch bewaard bij je schoolaccount.</p>
+    <p id="login-melding" class="hint"></p>
+    <button type="button" class="btn" id="loginBtn">Meld je aan met je schoolaccount</button>
+    <p class="hint" style="margin-top:14px"><a href="../#start">Terug naar de CSF-site</a></p>
+  </div>
+</div>
+
+<div id="wizard" class="scherm" hidden>
+  <div class="kaart">
+    <img src="../assets/logo.png" alt="Campus Lievegem">
+    <h1>Een nieuw boek</h1>
+    <p>Vul in wat je nu al weet. Alles kan je later nog veranderen.</p>
+    <label for="w-titel">Werktitel</label><input type="text" id="w-titel" maxlength="80" placeholder="bv. Het geheim van de vuurtoren">
+    <label for="w-genre">Genre</label>
+    <select id="w-genre"><option>avontuur</option><option>fantasy</option><option>spanning en thriller</option><option>griezel</option><option>sciencefiction</option><option>realistisch verhaal</option><option>humor</option><option>detective</option><option>historisch verhaal</option><option>verhalenbundel</option><option>ander genre</option></select>
+    <label for="w-doelgroep">Voor wie schrijf je?</label>
+    <select id="w-doelgroep"><option>leeftijdsgenoten (12 tot 14 jaar)</option><option>kinderen van de lagere school</option><option>jongvolwassenen</option><option>volwassenen</option></select>
+    <label>Hoeveel woorden wil je schrijven? <span class="hint">(Je kiest zelf. Bespreek het met je coach.)</span></label>
+    <div class="kies" id="w-doel">
+      <label><input type="radio" name="wdoel" value="3000"><b>3 000</b>kort verhaal · ± 12 blz.</label>
+      <label><input type="radio" name="wdoel" value="6000" checked><b>6 000</b>novelle · ± 25 blz.</label>
+      <label><input type="radio" name="wdoel" value="10000"><b>10 000</b>kort boek · ± 40 blz.</label>
+      <label><input type="radio" name="wdoel" value="20000"><b>20 000</b>echte roman · ± 80 blz.</label>
+      <label><input type="radio" name="wdoel" value="eigen"><b>eigen doel</b><input type="number" id="w-eigen" min="500" step="500" value="8000" style="margin-top:4px"></label>
+    </div>
+    <label>Hoe wil je beginnen?</label>
+    <div class="kies" id="w-sjabloon">
+      <label><input type="radio" name="wsj" value="berg" checked><b>Verhaalberg</b>5 hoofdstukken: begin, probleem, spanning, oplossing, slot</label>
+      <label><input type="radio" name="wsj" value="reis"><b>Reis van de held</b>8 hoofdstukken, van de gewone wereld tot de terugkeer</label>
+      <label><input type="radio" name="wsj" value="bundel"><b>Verhalenbundel</b>3 losse verhalen, elk met een eigen hoofdstuk</label>
+      <label><input type="radio" name="wsj" value="leeg"><b>Leeg</b>ik bouw het zelf op</label>
+    </div>
+    <label for="w-deadline">Wanneer moet je boek klaar zijn? <span class="hint">(mag leeg blijven)</span></label><input type="date" id="w-deadline">
+    <p style="margin-top:18px"><button type="button" class="btn" id="w-start">Begin met schrijven →</button></p>
+  </div>
+</div>
+
+<div id="coach" class="scherm" hidden style="max-width:1100px">
+  <div class="kaart">
+    <div style="display:flex;gap:12px;align-items:center"><img src="../assets/logo.png" alt="Campus Lievegem"><h1 style="flex:1;margin:0">Schrijfatelier · coach</h1><a class="btn licht" href="../#dashboard">Dashboard</a></div>
+    <p>Hier zie je de boeken van alle leerlingen. Open een boek om het te lezen en feedback te geven bij een scène. Je kan niets aan de tekst van een leerling veranderen. Wil je zelf het atelier uitproberen? Zet op de CSF-site de testleerling aan en open daarna het atelier opnieuw.</p>
+    <div id="coach-lijst"><p class="hint">Laden …</p></div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header class="kop">
+    <a href="../#start" title="Naar de CSF-site"><img src="../assets/logo.png" alt="Campus Lievegem"></a>
+    <div class="titel" id="k-titel">Mijn boek</div>
+    <div class="voortgang" title="Woorden in je boek tegenover je doel"><div class="t"><span id="k-woorden">0 woorden</span><span id="k-pct">0%</span></div><div class="balk"><i id="k-balk" style="width:0"></i></div></div>
+    <div class="bewaard" id="k-bewaard" aria-live="polite"></div>
+    <button type="button" class="btn licht klein" id="k-terug" hidden>← Alle boeken</button>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Onderdelen van het atelier">
+    <button role="tab" data-view="schrijven" aria-selected="true">✍️ Schrijven</button>
+    <button role="tab" data-view="prikbord">📌 Prikbord</button>
+    <button role="tab" data-view="overzicht">📋 Overzicht</button>
+    <button role="tab" data-view="personages">👤 Personages</button>
+    <button role="tab" data-view="wereld">🗺️ Plaatsen en notities</button>
+    <button role="tab" data-view="plan">⛰️ Verhaalplan</button>
+    <button role="tab" data-view="doelen">🎯 Doelen</button>
+    <button role="tab" data-view="boek">📖 Boek maken</button>
+    <button role="tab" data-view="hulp" class="rechts">❓ Hulp</button>
+  </nav>
+  <div class="inhoud">
+    <section class="view schrijven" id="v-schrijven">
+      <aside class="binder" aria-label="Hoofdstukken en scènes">
+        <div class="acties"><button type="button" class="btn klein" id="b-hfd">+ hoofdstuk</button><button type="button" class="btn klein licht" id="b-scene">+ scène</button></div>
+        <ul class="boom" id="boom"></ul>
+        <div class="prullen" id="prullen"></div>
+      </aside>
+      <div class="schrijfvlak">
+        <div class="werkbalk" id="werkbalk">
+          <button type="button" data-cmd="bold" title="Vet (Ctrl+B)"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Schuin (Ctrl+I)"><i>I</i></button>
+          <button type="button" data-cmd="dialoog" title="Zet aanhalingstekens voor een dialoog">“ ”</button>
+          <button type="button" data-cmd="breuk" title="Scènewissel: * * *">* * *</button>
+          <span class="scheid"></span>
+          <button type="button" data-cmd="undo" title="Ongedaan maken (Ctrl+Z)">↶</button>
+          <button type="button" data-cmd="redo" title="Opnieuw (Ctrl+Y)">↷</button>
+          <span class="scheid verberg"></span>
+          <button type="button" id="b-vast" class="verberg" title="Een schrijfvraag als je vastzit">💡 Vastgelopen?</button>
+          <button type="button" id="b-sprint" class="verberg" title="Schrijf zonder stoppen tegen de klok">⏱️ Sprint</button>
+          <button type="button" id="b-focus" title="Alleen je tekst op het scherm (Esc om terug te gaan)">🔲 Focus</button>
+          <button type="button" id="b-insp" class="verberg" title="Toon of verberg het zijpaneel">◧</button>
+          <span class="info" id="sc-info"></span>
+        </div>
+        <div class="blad-scroll" id="blad-scroll"></div>
+      </div>
+      <aside class="insp" aria-label="Zijpaneel">
+        <div class="insp-tabs" role="tablist">
+          <button role="tab" data-insp="scene" aria-selected="true">Scène</button>
+          <button role="tab" data-insp="coach">Schrijfcoach</button>
+          <button role="tab" data-insp="versies">Versies</button>
+          <button role="tab" data-insp="feedback">Feedback<span id="fb-badge"></span></button>
+        </div>
+        <div class="insp-in" id="insp"></div>
+      </aside>
+    </section>
+    <section class="view" id="v-prikbord" hidden></section>
+    <section class="view" id="v-overzicht" hidden></section>
+    <section class="view" id="v-personages" hidden></section>
+    <section class="view" id="v-wereld" hidden></section>
+    <section class="view" id="v-plan" hidden></section>
+    <section class="view" id="v-doelen" hidden></section>
+    <section class="view" id="v-boek" hidden></section>
+    <section class="view" id="v-hulp" hidden></section>
+  </div>
+</div>
+
+<dialog id="dlg"><div class="dk" id="dlg-kop"></div><div class="db" id="dlg-in"></div><div class="dv" id="dlg-voet"></div></dialog>
+<div class="sprintchip" id="sprintchip" hidden></div>
+<div id="drukwerk"></div>
+
+<script type="module">
+/* =====================================================================
+   SCHRIJFATELIER (CSF, project ‘Mijn eigen boek’)
+   Opslag (Firestore): boeken/<e-mail>  = het boek: binder, personages, plaatsen, doelen, feedback van de coach
+                       teksten/<e-mail>__<scène-id> = de tekst van één scène met maximaal 10 versies
+   Zonder Firebase-koppeling (portaal-config.js op null) werkt het atelier lokaal in de browser.
+   Altijd ook een reservekopie in localStorage, voor als het internet even wegvalt.
+   ===================================================================== */
+const DOMEIN = CSF.domein || "svsl.be", V = "10.12.2", TESTSLEUTEL = "csf-testleerling";
+const STATUS = { idee: "idee", klad: "eerste versie", herschreven: "herschreven", klaar: "klaar" };
+const FASEN = ["Begin", "Probleem", "Spanning", "Oplossing", "Slot"];
+const STOP = ["heel", "echt", "eigenlijk", "gewoon", "best", "beetje", "nogal", "zeer", "super", "plots", "plotseling", "opeens", "ineens", "toen", "dan", "wel", "even", "erg", "ontzettend", "vreselijk", "zomaar"];
+const VERTEL = /\b(was|werd|voelde zich|voelde)\s+(heel\s+|erg\s+|zo\s+)?(boos|bang|blij|verdrietig|zenuwachtig|nerveus|kwaad|gelukkig|bezorgd|jaloers|eenzaam|moe|verliefd|teleurgesteld|opgelucht|verbaasd|geschrokken)\b/gi;
+const GEWOON = new Set("de het een en of maar want dus dat die dit deze is was zijn waren ben bent heb hebt heeft had hadden niet geen wel ook nog al toen dan als om te in op aan van voor met naar bij uit over door tot zo er hier daar wat wie waar hoe ik jij je u hij zij ze we wij jullie mij me hem haar ons hun zich mijn jouw zijn haar onze hun men iets niets alles iemand niemand nu weer veel meer zei vroeg kon kan zou zal wil wilde moest moet mocht mag werd wordt".split(" "));
+const VRAGEN = ["Wat wil je hoofdpersonage op dit moment het liefst? Wat staat er in de weg?", "Laat iets onverwachts gebeuren: een geluid, een bericht, een bezoeker.", "Schrijf deze scène vanuit wat je personage ruikt, hoort en voelt.", "Wat is het ergste dat er nu kan gebeuren? Laat het gebeuren.", "Laat twee personages ruzie maken over iets kleins. Waar gaat het eigenlijk over?", "Je personage vindt een voorwerp. Wat is het, en waarom is het belangrijk?", "Spring een uur vooruit in de tijd. Wat is er intussen veranderd?", "Laat je personage een leugen vertellen. Wie gelooft het?", "Beschrijf de plek alsof je personage er voor het eerst komt. Wat valt op?", "Wat weet de lezer dat je personage nog niet weet?", "Schrijf vijf minuten zonder te stoppen. Verbeteren mag later.", "Laat het weer veranderen. Hoe verandert de sfeer mee?", "Welk geheim heeft je personage? Laat het bijna uitlekken.", "Begin de scène midden in een gesprek.", "Laat je personage iets verliezen.", "Wat zou een tegenstander nu doen?", "Schrijf de scène in tien zinnen. Maak ze daarna langer.", "Laat een bijpersonage iets zeggen dat alles verandert.", "Wat zou je personage nooit doen? Laat het toch gebeuren, en vertel waarom.", "Schrijf een droom of een herinnering van je personage."];
+const SJABLONEN = {
+  berg: [["Begin", "Wie is je hoofdpersonage? Waar en wanneer speelt het?"], ["Het probleem", "Wat gaat er mis? Wat wil je personage?"], ["De spanning stijgt", "Het wordt moeilijker en moeilijker."], ["De oplossing", "Het hoogtepunt en hoe het opgelost wordt."], ["Het slot", "Hoe is je personage veranderd?"]],
+  reis: [["De gewone wereld", "Het dagelijkse leven van je held."], ["De oproep", "Er gebeurt iets dat alles verandert."], ["De drempel", "De held vertrekt naar een onbekende wereld."], ["Vrienden en vijanden", "Nieuwe helpers en tegenstanders."], ["De grote beproeving", "Het moeilijkste moment."], ["De beloning", "Wat wint de held?"], ["De terugweg", "Nog één gevaar."], ["De terugkeer", "Thuis, maar veranderd."]],
+  bundel: [["Verhaal 1", "Een eerste, kort verhaal."], ["Verhaal 2", "Een tweede verhaal."], ["Verhaal 3", "Een derde verhaal."]],
+  leeg: [["Hoofdstuk 1", ""]]
+};
+const KLEUREN = ["#17808a", "#3BC1C5", "#1f4e79", "#2e8b4e", "#8e6bd6", "#c0392b", "#b37400", "#1d1d1b"];
+
+/* ---------- toestand ---------- */
+let A, F, auth, db, gebruiker = null, ID = "", COACH = false, LOKAAL = !CSF.firebaseConfig, ALLEENLEZEN = false;
+let B = null;            /* het boek */
+const T = {};            /* geladen teksten per scène-id */
+let huidig = null, view = "schrijven", inspTab = "scene", toonMarkering = false;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const nieuwId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const vandaag = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const nu = () => new Date().toISOString();
+const datum = s => { if (!s) return "–"; const d = new Date(s); return isNaN(d) ? s : d.toLocaleString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
+const getal = n => Number(n || 0).toLocaleString("nl-BE");
+const toon = (id, ja) => { $(id).hidden = !ja; };
+
+/* ---------- tekst: woorden tellen en HTML opkuisen ---------- */
+function platteTekst(html) { const d = document.createElement("div"); d.innerHTML = html || ""; d.querySelectorAll("p,div,br,hr").forEach(x => x.after(document.createTextNode("\n"))); return d.textContent.replace(/ /g, " "); }
+function telWoorden(html) { const m = platteTekst(html).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu); return m ? m.length : 0; }
+function kuis(html) {
+  const bron = document.createElement("div"); bron.innerHTML = html || ""; const uit = document.createElement("div");
+  const inline = (n, doel) => n.childNodes.forEach(c => {
+    if (c.nodeType === 3) { doel.appendChild(document.createTextNode(c.textContent)); return; }
+    if (c.nodeType !== 1) return; const t = c.tagName;
+    if (t === "BR") { doel.appendChild(document.createElement("br")); return; }
+    if (t === "B" || t === "STRONG" || t === "I" || t === "EM") { const e = document.createElement(t === "STRONG" ? "B" : t === "EM" ? "I" : t); inline(c, e); doel.appendChild(e); return; }
+    inline(c, doel);
+  });
+  let p = null;
+  const blok = n => n.childNodes.forEach(c => {
+    if (c.nodeType === 1 && c.tagName === "HR") { p = null; uit.appendChild(document.createElement("hr")); return; }
+    if (c.nodeType === 1 && /^(P|DIV|H\d|LI|BLOCKQUOTE)$/.test(c.tagName)) { p = null; const np = document.createElement("p"); inline(c, np); uit.appendChild(np); return; }
+    if (c.nodeType === 1 && /^(UL|OL|SECTION|ARTICLE)$/.test(c.tagName)) { blok(c); return; }
+    if (!p) { p = document.createElement("p"); uit.appendChild(p); } inline({ childNodes: [c] }, p);
+  });
+  blok(bron);
+  uit.querySelectorAll("p").forEach(x => { if (!x.textContent.trim() && !x.querySelector("br")) x.remove(); });
+  return uit.innerHTML;
+}
+
+/* ---------- binder: hulpjes ---------- */
+function alleKnopen(lijst = B.binder, uit = [], ouder = null) { lijst.forEach(k => { uit.push([k, ouder]); if (k.kinderen) alleKnopen(k.kinderen, uit, k); }); return uit; }
+function zoek(id) { const r = alleKnopen().find(x => x[0].id === id); return r ? r[0] : null; }
+function ouderVan(id) { const r = alleKnopen().find(x => x[0].id === id); return r ? r[1] : null; }
+function lijstVan(id) { const o = ouderVan(id); return o ? o.kinderen : B.binder; }
+function scenes(lijst = B.binder) { return alleKnopen(lijst).map(x => x[0]).filter(k => k.soort === "scene"); }
+function woordenVan(k) { return k.soort === "scene" ? (k.woorden || 0) : (k.kinderen || []).reduce((s, c) => s + woordenVan(c), 0); }
+function totaal() { return B.binder.reduce((s, k) => s + woordenVan(k), 0); }
+function nieuweScene(titel, synopsis) { return { id: nieuwId(), soort: "scene", titel: titel || "Nieuwe scène", synopsis: synopsis || "", status: "idee", pov: "", fase: "", notitie: "", woorden: 0 }; }
+function nieuwHfd(titel, synopsis) { return { id: nieuwId(), soort: "map", titel: titel || "Nieuw hoofdstuk", synopsis: synopsis || "", open: true, kinderen: [nieuweScene("Scène 1")] }; }
+
+/* =====================================================================
+   OPSLAG
+   ===================================================================== */
+const RESERVE = () => "schrijfatelier-" + ID;
+function reserve() { try { localStorage.setItem(RESERVE(), JSON.stringify({ boek: B, teksten: T, op: nu() })); } catch (e) {} }
+function uitReserve() { try { return JSON.parse(localStorage.getItem(RESERVE()) || "null"); } catch (e) { return null; } }
+function ref(...p) { return F.doc(db, ...p); }
+let wachtBoek = null, wachtTekst = {}, bezig = 0, fout = false;
+function status(t, isFout) { const el = $("k-bewaard"); el.textContent = t; el.className = "bewaard" + (isFout ? " fout" : ""); }
+function bewaarBoek(direct) {
+  if (ALLEENLEZEN) return; B.bijgewerkt = nu(); reserve(); status("Bewaren …");
+  clearTimeout(wachtBoek); wachtBoek = setTimeout(schrijfBoek, direct ? 0 : 1200);
+}
+async function schrijfBoek() {
+  if (LOKAAL) { status("Bewaard op dit toestel ✓"); return; }
+  const d = JSON.parse(JSON.stringify(B)); delete d.feedback;
+  try { bezig++; await F.setDoc(ref("boeken", ID), d, { merge: true }); fout = false; status("Bewaard ✓ " + new Date().toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" })); }
+  catch (e) { fout = true; status("Niet online bewaard – je werk staat veilig op dit toestel. Opnieuw proberen …", true); clearTimeout(wachtBoek); wachtBoek = setTimeout(schrijfBoek, 8000); }
+  finally { bezig--; }
+}
+function bewaarTekst(sid) {
+  if (ALLEENLEZEN) return; reserve(); status("Bewaren …");
+  clearTimeout(wachtTekst[sid]); wachtTekst[sid] = setTimeout(() => schrijfTekst(sid), 1500);
+}
+async function schrijfTekst(sid) {
+  if (LOKAAL) { status("Bewaard op dit toestel ✓"); return; }
+  const t = T[sid]; if (!t) return;
+  try { bezig++; await F.setDoc(ref("teksten", ID + "__" + sid), { leerling: ID, scene: sid, html: t.html, woorden: t.woorden, versies: t.versies || [], bijgewerkt: nu() }); fout = false; status("Bewaard ✓ " + new Date().toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" })); }
+  catch (e) { fout = true; status("Niet online bewaard – je werk staat veilig op dit toestel. Opnieuw proberen …", true); wachtTekst[sid] = setTimeout(() => schrijfTekst(sid), 8000); }
+  finally { bezig--; }
+}
+async function laadTekst(sid) {
+  if (T[sid]) return T[sid];
+  let t = null;
+  if (!LOKAAL) { try { const s = await F.getDoc(ref("teksten", ID + "__" + sid)); if (s.exists()) t = s.data(); } catch (e) {} }
+  if (!t) { const r = uitReserve(); if (r && r.teksten && r.teksten[sid]) t = r.teksten[sid]; }
+  T[sid] = t || { html: "", woorden: 0, versies: [] }; T[sid].versies = T[sid].versies || [];
+  return T[sid];
+}
+async function laadAlleTeksten() { for (const k of scenes()) await laadTekst(k.id); }
+window.addEventListener("beforeunload", e => { if (bezig || fout) { e.preventDefault(); e.returnValue = ""; } });
+
+/* =====================================================================
+   OPSTART: Firebase, aanmelden, rol
+   ===================================================================== */
+async function start() {
+  if (LOKAAL) { ID = "lokaal"; gebruiker = { displayName: "" }; return openBoek(); }
+  const u = "https://www.gstatic.com/firebasejs/" + V + "/firebase-";
+  const m = await Promise.all([import(u + "app.js"), import(u + "auth.js"), import(u + "firestore.js")]);
+  A = m[1]; F = m[2]; const app = m[0].initializeApp(CSF.firebaseConfig); auth = A.getAuth(app); db = F.getFirestore(app);
+  A.onAuthStateChanged(auth, async us => {
+    gebruiker = us && us.email ? us : null;
+    if (!gebruiker) { toon("laden", false); toon("login", true); return; }
+    const mail = gebruiker.email.toLowerCase();
+    if (!mail.endsWith("@" + DOMEIN)) { $("login-melding").textContent = "Meld je aan met je schoolaccount (@" + DOMEIN + ")."; toon("laden", false); toon("login", true); return A.signOut(auth); }
+    const veilig = p => p.catch(() => null);
+    const [be, co] = await Promise.all([veilig(F.getDoc(ref("beheerders", mail))), veilig(F.getDoc(ref("coaches", mail)))]);
+    COACH = !!((be && be.exists()) || (co && co.exists()));
+    let test = false; try { test = COACH && localStorage.getItem(TESTSLEUTEL) === mail; } catch (e) {}
+    ID = test ? "test--" + mail : mail;
+    toon("login", false);
+    if (COACH && !test) return coachScherm();
+    const ll = await veilig(F.getDoc(ref("leerlingen", ID)));
+    if (!ll || !ll.exists() || ll.data().actief === false) {
+      toon("laden", false); toon("login", true); $("loginBtn").hidden = true;
+      $("login-melding").innerHTML = "<b>Je staat nog niet op de CSF-lijst.</b> Vraag je coach om je toe te voegen. Daarna kan je hier schrijven."; return;
+    }
+    B = null; openBoek(ll.data());
+  });
+}
+$("loginBtn").addEventListener("click", () => { const p = new A.GoogleAuthProvider(); p.setCustomParameters({ hd: DOMEIN, prompt: "select_account" }); A.signInWithPopup(auth, p).catch(() => {}); });
+
+async function openBoek(leerling) {
+  let boek = null;
+  if (!LOKAAL) { try { const s = await F.getDoc(ref("boeken", ID)); if (s.exists()) boek = s.data(); } catch (e) {} }
+  const r = uitReserve();
+  if (r && r.boek && (!boek || String(r.boek.bijgewerkt) > String(boek.bijgewerkt))) {
+    /* de reservekopie op dit toestel is nieuwer: die gebruiken we en we zetten ze terug online */
+    const fb = boek ? boek.feedback : null; boek = r.boek; if (fb) boek.feedback = fb;
+    Object.assign(T, r.teksten || {}); setTimeout(() => { bewaarBoek(true); Object.keys(r.teksten || {}).forEach(bewaarTekst); }, 300);
+  }
+  toon("laden", false);
+  if (!boek) { B = { leerling: ID, naam: (leerling && leerling.naam) || (gebruiker && gebruiker.displayName) || "" }; return toonWizard(); }
+  B = vulAan(boek); toonApp();
+}
+function vulAan(b) {
+  b.binder = b.binder || []; b.personages = b.personages || []; b.plaatsen = b.plaatsen || []; b.dagen = b.dagen || {}; b.feedback = b.feedback || {};
+  b.prullenbak = b.prullenbak || []; b.instellingen = Object.assign({ kleur: "#17808a", inhoud: true, nummers: true, opdracht: "", flaptekst: "", alleKlaar: false }, b.instellingen || {});
+  b.woorddoel = +b.woorddoel || 6000; b.sessiedoel = +b.sessiedoel || 300; b.notities = b.notities || ""; b.premisse = b.premisse || ""; b.zin = b.zin || "";
+  return b;
+}
+
+/* ---------- nieuw boek ---------- */
+function toonWizard() { toon("wizard", true); $("w-titel").focus(); }
+$("w-start").addEventListener("click", () => {
+  const doel = document.querySelector("input[name=wdoel]:checked").value, sj = document.querySelector("input[name=wsj]:checked").value;
+  const titel = $("w-titel").value.trim() || "Mijn boek";
+  Object.assign(B, { titel, auteur: B.naam || "", genre: $("w-genre").value, doelgroep: $("w-doelgroep").value, woorddoel: doel === "eigen" ? Math.max(500, +$("w-eigen").value || 8000) : +doel,
+    deadline: $("w-deadline").value || "", sjabloon: sj, aangemaakt: nu(), binder: SJABLONEN[sj].map(x => nieuwHfd(x[0], x[1])) });
+  if (sj === "berg") B.binder.forEach((h, i) => h.kinderen.forEach(s => s.fase = String(i)));
+  B = vulAan(B); B.instellingen.kleur = KLEUREN[Math.floor(Math.random() * KLEUREN.length)];
+  toon("wizard", false); bewaarBoek(true); toonApp();
+});
+
+/* =====================================================================
+   COACH: lijst van boeken, lezen en feedback geven
+   ===================================================================== */
+async function coachScherm() {
+  toon("laden", false); toon("app", false); toon("coach", true);
+  let rijen = [];
+  try { const s = await F.getDocs(F.collection(db, "boeken")); rijen = s.docs.map(d => Object.assign({ _id: d.id }, d.data())); } catch (e) { $("coach-lijst").innerHTML = '<p class="hint">De boeken konden niet geladen worden. Zijn de nieuwe Firestore-regels gepubliceerd?</p>'; return; }
+  rijen.sort((a, b) => String(b.bijgewerkt).localeCompare(String(a.bijgewerkt)));
+  $("coach-lijst").innerHTML = rijen.length ? '<table class="lijst coachlijst"><tr><th>Leerling</th><th>Titel</th><th>Woorden</th><th>Doel</th><th>Laatst geschreven</th><th>Klaar tegen</th></tr>' +
+    rijen.map(b => { const bb = vulAan(JSON.parse(JSON.stringify(b))); const w = bb.binder.reduce((s, k) => s + woordenVanB(k), 0);
+      return '<tr><td>' + esc(b.naam || b._id) + (String(b._id).startsWith("test--") ? ' <span class="hint">(test)</span>' : "") + '</td><td><a href="#" data-open="' + esc(b._id) + '">' + esc(b.titel || "–") + "</a></td><td>" + getal(w) + "</td><td>" + getal(bb.woorddoel) + " (" + Math.round(w / bb.woorddoel * 100) + "%)</td><td>" + datum(b.bijgewerkt) + "</td><td>" + esc(b.deadline || "–") + "</td></tr>"; }).join("") + "</table>"
+    : '<p class="hint">Nog geen enkele leerling begon een boek.</p>';
+}
+function woordenVanB(k) { return k.soort === "scene" ? (k.woorden || 0) : (k.kinderen || []).reduce((s, c) => s + woordenVanB(c), 0); }
+$("coach-lijst").addEventListener("click", async e => {
+  const a = e.target.closest("[data-open]"); if (!a) return; e.preventDefault();
+  const s = await F.getDoc(ref("boeken", a.dataset.open)); if (!s.exists()) return;
+  ID = a.dataset.open; ALLEENLEZEN = true; B = vulAan(s.data()); for (const k in T) delete T[k]; huidig = null;
+  toon("coach", false); $("k-terug").hidden = false; toonApp();
+});
+$("k-terug").addEventListener("click", () => { ALLEENLEZEN = false; $("k-terug").hidden = true; toon("app", false); coachScherm(); });
+
+/* =====================================================================
+   DE APP
+   ===================================================================== */
+function toonApp() {
+  toon("app", true); document.body.classList.toggle("alleen-lezen", ALLEENLEZEN);
+  ["b-hfd", "b-scene", "b-vast", "b-sprint"].forEach(id => $(id).hidden = ALLEENLEZEN);
+  status(ALLEENLEZEN ? "Alleen lezen (coach)" : LOKAAL ? "Lokaal: enkel op dit toestel" : "Bewaard ✓");
+  if (!huidig) { const eerste = scenes()[0]; huidig = eerste ? eerste.id : null; }
+  kop(); kiesView(view);
+}
+function kop() {
+  const w = totaal(), p = Math.min(100, Math.round(w / B.woorddoel * 100));
+  $("k-titel").innerHTML = esc(B.titel || "Mijn boek") + "<small>" + esc(ALLEENLEZEN ? B.naam : B.genre || "") + "</small>";
+  $("k-woorden").textContent = getal(w) + " van " + getal(B.woorddoel) + " woorden"; $("k-pct").textContent = p + "%"; $("k-balk").style.width = p + "%";
+  document.title = (B.titel || "Schrijfatelier") + " · Schrijfatelier";
+  const nieuw = Object.values(B.feedback || {}).flat().filter(f => !f.gelezen).length;
+  $("fb-badge").innerHTML = nieuw && !ALLEENLEZEN ? '<span class="badge">' + nieuw + "</span>" : "";
+}
+function kiesView(v) {
+  view = v; document.querySelectorAll(".tabs [data-view]").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  document.querySelectorAll(".view").forEach(s => s.hidden = s.id !== "v-" + v);
+  ({ schrijven: tekenSchrijven, prikbord: tekenPrikbord, overzicht: tekenOverzicht, personages: tekenPersonages, wereld: tekenWereld, plan: tekenPlan, doelen: tekenDoelen, boek: tekenBoek, hulp: tekenHulp })[v]();
+}
+document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) kiesView(b.dataset.view); });
+
+/* ---------- binder tekenen en bewerken ---------- */
+function tekenBoom() {
+  const rij = k => {
+    const actief = k.id === huidig, w = woordenVan(k);
+    return '<li><div class="knoop ' + k.soort + (actief ? " actief" : "") + '" data-id="' + k.id + '" draggable="' + !ALLEENLEZEN + '" tabindex="0">' +
+      '<span class="pijl" data-pijl="' + k.id + '">' + (k.soort === "map" ? (k.open === false ? "▸" : "▾") : "") + "</span>" +
+      (k.soort === "scene" ? '<span class="stip st-' + (k.status || "idee") + '" title="' + STATUS[k.status || "idee"] + '"></span>' : "📁") +
+      '<span class="naam">' + esc(k.titel) + '</span><span class="w">' + (w ? getal(w) : "") + "</span>" +
+      ((B.feedback[k.id] || []).some(f => !f.gelezen) && !ALLEENLEZEN ? ' <span class="badge">!</span>' : "") + "</div>" +
+      (k.soort === "map" && k.open !== false ? "<ul>" + (k.kinderen || []).map(rij).join("") + "</ul>" : "") + "</li>";
+  };
+  $("boom").innerHTML = B.binder.map(rij).join("") || '<li class="hint">Nog leeg. Maak een hoofdstuk.</li>';
+  $("prullen").innerHTML = B.prullenbak.length && !ALLEENLEZEN ? "<details><summary>🗑️ Prullenbak (" + B.prullenbak.length + ")</summary>" + B.prullenbak.map((k, i) => '<div style="display:flex;gap:6px;align-items:center;margin:4px 0"><span style="flex:1">' + esc(k.titel) + '</span><button type="button" class="btn klein licht" data-terug="' + i + '">terugzetten</button></div>').join("") + "</details>" : "";
+}
+$("boom").addEventListener("click", e => {
+  const p = e.target.closest("[data-pijl]"); if (p && p.textContent) { const k = zoek(p.dataset.pijl); k.open = k.open === false; tekenBoom(); bewaarBoek(); return; }
+  const kn = e.target.closest(".knoop"); if (!kn) return; kiesKnoop(kn.dataset.id);
+});
+$("boom").addEventListener("dblclick", e => { const kn = e.target.closest(".knoop"); if (kn && !ALLEENLEZEN) hernoem(kn.dataset.id); });
+$("boom").addEventListener("keydown", e => { const kn = e.target.closest(".knoop"); if (!kn) return; if (e.key === "Enter") kiesKnoop(kn.dataset.id); if (e.key === "F2" && !ALLEENLEZEN) hernoem(kn.dataset.id); if (e.key === "Delete" && !ALLEENLEZEN) gooiWeg(kn.dataset.id); });
+$("prullen").addEventListener("click", e => { const b = e.target.closest("[data-terug]"); if (!b) return; const k = B.prullenbak.splice(+b.dataset.terug, 1)[0]; (k.soort === "map" || !B.binder.length ? B.binder : (B.binder.find(x => x.soort === "map") || { kinderen: B.binder }).kinderen).push(k); tekenBoom(); kop(); bewaarBoek(); });
+function kiesKnoop(id) { if (view !== "schrijven") kiesView("schrijven"); huidig = id; toonMarkering = false; tekenSchrijven(); }
+function hernoem(id) {
+  const k = zoek(id); vraag("Nieuwe naam", '<label for="dlg-naam">Naam van ' + (k.soort === "map" ? "het hoofdstuk" : "de scène") + '</label><input type="text" id="dlg-naam" maxlength="80" value="' + esc(k.titel) + '">',
+    [["Annuleer", null], ["Bewaar", () => { k.titel = $("dlg-naam").value.trim() || k.titel; tekenBoom(); kop(); bewaarBoek(); if (huidig === id) tekenBlad(); }]], () => $("dlg-naam").select());
+}
+function gooiWeg(id) {
+  const k = zoek(id), l = lijstVan(id);
+  vraag("Naar de prullenbak?", "<p><b>" + esc(k.titel) + "</b> gaat naar de prullenbak. Je kan het daar altijd terugzetten.</p>", [["Annuleer", null], ["Naar de prullenbak", () => {
+    l.splice(l.indexOf(k), 1); B.prullenbak.push(k); if (huidig === id || (k.kinderen && scenes(k.kinderen).some(s => s.id === huidig))) huidig = (scenes()[0] || {}).id || null; tekenSchrijven(); kop(); bewaarBoek(); }]]);
+}
+$("b-hfd").addEventListener("click", () => { const h = nieuwHfd("Hoofdstuk " + (B.binder.filter(k => k.soort === "map").length + 1)); B.binder.push(h); huidig = h.kinderen[0].id; tekenSchrijven(); kop(); bewaarBoek(); });
+$("b-scene").addEventListener("click", () => {
+  const k = huidig ? zoek(huidig) : null; let doel = k && k.soort === "map" ? k : k ? ouderVan(k.id) : B.binder.filter(x => x.soort === "map").slice(-1)[0];
+  const s = nieuweScene("Scène " + ((doel ? doel.kinderen.length : B.binder.length) + 1));
+  if (doel) { const l = doel.kinderen, i = k && k.soort === "scene" ? l.indexOf(k) + 1 : l.length; l.splice(i, 0, s); doel.open = true; } else B.binder.push(s);
+  huidig = s.id; tekenSchrijven(); bewaarBoek();
+});
+/* slepen in de binder: boven, onder of in een hoofdstuk */
+let sleepId = null;
+$("boom").addEventListener("dragstart", e => { const kn = e.target.closest(".knoop"); if (!kn) return; sleepId = kn.dataset.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", sleepId); });
+$("boom").addEventListener("dragover", e => {
+  const kn = e.target.closest(".knoop"); if (!kn || !sleepId || kn.dataset.id === sleepId) return; e.preventDefault();
+  document.querySelectorAll(".knoop").forEach(x => x.classList.remove("sleep-boven", "sleep-onder", "sleep-in"));
+  const r = kn.getBoundingClientRect(), y = (e.clientY - r.top) / r.height, doel = zoek(kn.dataset.id);
+  kn.classList.add(doel.soort === "map" && y > .3 && y < .7 ? "sleep-in" : y < .5 ? "sleep-boven" : "sleep-onder");
+});
+$("boom").addEventListener("dragleave", e => { const kn = e.target.closest(".knoop"); if (kn) kn.classList.remove("sleep-boven", "sleep-onder", "sleep-in"); });
+$("boom").addEventListener("drop", e => {
+  const kn = e.target.closest(".knoop"); if (!kn || !sleepId) return; e.preventDefault();
+  const plaats = kn.classList.contains("sleep-in") ? "in" : kn.classList.contains("sleep-boven") ? "boven" : "onder";
+  verplaats(sleepId, kn.dataset.id, plaats); sleepId = null;
+});
+$("boom").addEventListener("dragend", () => { sleepId = null; document.querySelectorAll(".knoop").forEach(x => x.classList.remove("sleep-boven", "sleep-onder", "sleep-in")); });
+function verplaats(id, doelId, plaats) {
+  const k = zoek(id), doel = zoek(doelId); if (!k || !doel || id === doelId) return;
+  if (k.soort === "map" && alleKnopen(k.kinderen || []).some(x => x[0].id === doelId)) return;   /* niet in zichzelf */
+  if (k.soort === "map" && plaats === "in") plaats = "onder";
+  const van = lijstVan(id); van.splice(van.indexOf(k), 1);
+  if (plaats === "in") { doel.kinderen.push(k); doel.open = true; }
+  else { const naar = lijstVan(doelId); naar.splice(naar.indexOf(doel) + (plaats === "onder" ? 1 : 0), 0, k); }
+  tekenBoom(); kop(); bewaarBoek(); if (view === "prikbord") tekenPrikbord();
+}
+
+/* ---------- schrijven ---------- */
+function tekenSchrijven() { tekenBoom(); tekenBlad(); tekenInsp(); }
+async function tekenBlad() {
+  const k = huidig ? zoek(huidig) : null, vak = $("blad-scroll");
+  if (!k) { vak.innerHTML = '<div class="blad"><p class="hint">Kies links een scène, of maak een hoofdstuk.</p></div>'; $("sc-info").textContent = ""; return; }
+  if (k.soort === "map") {
+    vak.innerHTML = '<div class="blad map-blad"><h2>' + esc(k.titel) + '</h2><label for="m-syn">Waarover gaat dit hoofdstuk?</label><textarea id="m-syn" ' + (ALLEENLEZEN ? "readonly" : "") + '>' + esc(k.synopsis || "") + '</textarea>' +
+      '<p class="hint" style="margin-top:16px">Scènes in dit hoofdstuk (' + getal(woordenVan(k)) + ' woorden). Klik op een scène om te schrijven.</p><div class="kaartjes">' +
+      (k.kinderen || []).map(s => '<div class="idx st-' + (s.status || "idee") + '" data-kies="' + s.id + '" style="cursor:pointer"><b>' + esc(s.titel) + "</b><span class=\"hint\">" + esc(s.synopsis || "nog geen samenvatting") + '</span><span class="w"><span>' + STATUS[s.status || "idee"] + "</span><span>" + getal(s.woorden) + " w.</span></span></div>").join("") + "</div>" +
+      '<p style="margin-top:16px"><button type="button" class="btn licht klein" id="m-lees">📖 Lees het hele hoofdstuk</button></p><div id="m-leestekst"></div></div>';
+    $("sc-info").textContent = "hoofdstuk · " + getal(woordenVan(k)) + " woorden";
+    const syn = $("m-syn"); syn.addEventListener("input", () => { k.synopsis = syn.value; bewaarBoek(); });
+    vak.querySelectorAll("[data-kies]").forEach(x => x.addEventListener("click", () => kiesKnoop(x.dataset.kies)));
+    $("m-lees").addEventListener("click", async () => { const sc = scenes(k.kinderen || []); for (const s of sc) await laadTekst(s.id); $("m-leestekst").innerHTML = '<div class="tekst">' + sc.map(s => T[s.id].html || "").join("<hr>") + "</div>"; });
+    return;
+  }
+  const t = await laadTekst(k.id); if (huidig !== k.id) return;
+  const markering = toonMarkering ? '<div class="leesband">Gemarkeerd door de schrijfcoach: <mark class="lang" style="background:#fff1d1">lange zin</mark> <span style="border-bottom:3px solid #8e6bd6">opvulwoord</span> <span style="border-bottom:3px solid var(--rood)">herhaling</span> <span style="border-bottom:3px solid var(--turk)">vertellen in plaats van tonen</span><button type="button" class="btn klein" id="mk-uit">Terug naar schrijven</button></div>' : "";
+  vak.innerHTML = markering + '<div class="blad"><h2 id="sc-titel" ' + (ALLEENLEZEN || toonMarkering ? "" : 'contenteditable="true"') + ' spellcheck="true">' + esc(k.titel) + '</h2><div class="tekst" id="tekst" lang="nl" spellcheck="true" ' + (ALLEENLEZEN || toonMarkering ? "" : 'contenteditable="true"') +
+    ' data-leeg="Begin hier te schrijven …">' + (toonMarkering ? markeer(t.html) : t.html || "") + "</div></div>";
+  if (toonMarkering) { $("mk-uit").addEventListener("click", () => { toonMarkering = false; tekenBlad(); }); return infoScene(); }
+  const ed = $("tekst"), ti = $("sc-titel");
+  if (!ALLEENLEZEN) {
+    ti.addEventListener("input", () => { k.titel = ti.textContent.trim() || "Naamloze scène"; tekenBoom(); bewaarBoek(); });
+    ti.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); ed.focus(); } });
+    ed.addEventListener("input", () => tekstGewijzigd(k));
+    ed.addEventListener("paste", e => { e.preventDefault(); const txt = (e.clipboardData || window.clipboardData).getData("text/plain"); document.execCommand("insertHTML", false, txt.split(/\n{1,}/).map(r => "<p>" + esc(r) + "</p>").join("")); });
+    ed.addEventListener("keydown", e => { if (e.key === "Tab") { e.preventDefault(); } });
+    document.execCommand("defaultParagraphSeparator", false, "p");
+    /* een leeg blad krijgt meteen een alinea, zodat elke Enter een nieuwe alinea maakt */
+    const startAlinea = () => { if (!ed.textContent.trim() && !ed.querySelector("p")) { ed.innerHTML = "<p><br></p>"; const r = document.createRange(); r.setStart(ed.firstChild, 0); r.collapse(true); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } };
+    ed.addEventListener("focus", startAlinea);
+    if (!t.html) ed.focus();
+  }
+  infoScene();
+}
+let laatstVersie = {};
+function tekstGewijzigd(k) {
+  const ed = $("tekst"), t = T[k.id], oud = t.woorden || 0;
+  /* eerste wijziging van de dag: automatisch een versie bewaren van hoe het was */
+  if (t.html && laatstVersie[k.id] !== vandaag() && !(t.versies || []).some(v => v.op && v.op.slice(0, 10) === vandaag())) { maakVersie(k.id, "automatisch: begin van " + vandaag(), true); }
+  laatstVersie[k.id] = vandaag();
+  t.html = kuis(ed.innerHTML); t.woorden = telWoorden(t.html); k.woorden = t.woorden;
+  const d = vandaag(); B.dagen[d] = Math.max(0, (B.dagen[d] || 0) + (t.woorden - oud));
+  if (k.status === "idee" && t.woorden >= 30) { k.status = "klad"; tekenBoom(); if ($("i-status")) $("i-status").value = "klad"; }
+  if (sprint) sprint.nu += t.woorden - oud;
+  infoScene(); kop(); bewaarTekst(k.id); bewaarBoek();
+  clearTimeout(tekenBoom.t); tekenBoom.t = setTimeout(tekenBoom, 600);
+  if (inspTab === "coach") { clearTimeout(tekenInsp.t); tekenInsp.t = setTimeout(tekenInsp, 1500); }
+}
+function infoScene() {
+  const k = zoek(huidig); if (!k || k.soort !== "scene") return; const vandaagW = B.dagen[vandaag()] || 0;
+  $("sc-info").textContent = getal(k.woorden) + " woorden in deze scène · vandaag " + getal(vandaagW) + " / " + getal(B.sessiedoel);
+}
+/* werkbalk */
+$("werkbalk").addEventListener("mousedown", e => { if (e.target.closest("[data-cmd]")) e.preventDefault(); });
+$("werkbalk").addEventListener("click", e => {
+  const b = e.target.closest("[data-cmd]"); if (!b || ALLEENLEZEN || !$("tekst") || !$("tekst").isContentEditable) return; $("tekst").focus();
+  const c = b.dataset.cmd;
+  if (c === "dialoog") { const sel = getSelection(), t = sel.toString(); document.execCommand("insertText", false, "“" + t + "”"); if (!t) { sel.modify && sel.modify("move", "backward", "character"); } }
+  else if (c === "breuk") document.execCommand("insertHTML", false, "<hr><p><br></p>");
+  else document.execCommand(c);
+  tekstGewijzigd(zoek(huidig));
+});
+$("b-insp").addEventListener("click", () => { const v = $("v-schrijven"); if (innerWidth <= 1100) v.classList.toggle("toon-insp"); else v.classList.toggle("zonder-insp"); });
+$("b-focus").addEventListener("click", () => { document.body.classList.toggle("focus"); if ($("tekst")) $("tekst").focus(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("focus")) document.body.classList.remove("focus"); });
+
+/* ---------- zijpaneel ---------- */
+document.querySelector(".insp-tabs").addEventListener("click", e => { const b = e.target.closest("[data-insp]"); if (!b) return; inspTab = b.dataset.insp; tekenInsp(); });
+function tekenInsp() {
+  document.querySelectorAll(".insp-tabs [data-insp]").forEach(b => b.setAttribute("aria-selected", b.dataset.insp === inspTab));
+  const k = huidig ? zoek(huidig) : null, el = $("insp");
+  if (!k || k.soort !== "scene") { el.innerHTML = '<p class="hint">Kies een scène.</p>'; return; }
+  const ro = ALLEENLEZEN ? " disabled" : "";
+  if (inspTab === "scene") {
+    el.innerHTML = '<label for="i-syn">Samenvatting (wat gebeurt er?)</label><textarea id="i-syn"' + ro + ">" + esc(k.synopsis || "") + "</textarea>" +
+      '<label for="i-status">Status</label><select id="i-status"' + ro + ">" + Object.keys(STATUS).map(s => "<option value=\"" + s + "\"" + (k.status === s ? " selected" : "") + ">" + STATUS[s] + "</option>").join("") + "</select>" +
+      '<label for="i-pov">Vanuit wie vertel je?</label><select id="i-pov"' + ro + '><option value="">–</option>' + B.personages.map(p => '<option value="' + esc(p.id) + '"' + (k.pov === p.id ? " selected" : "") + ">" + esc(p.naam || "naamloos") + "</option>").join("") + "</select>" +
+      '<label for="i-fase">Plaats op de verhaalberg</label><select id="i-fase"' + ro + '><option value="">–</option>' + FASEN.map((f, i) => '<option value="' + i + '"' + (k.fase === String(i) ? " selected" : "") + ">" + f + "</option>").join("") + "</select>" +
+      '<label for="i-not">Notities bij deze scène</label><textarea id="i-not"' + ro + ' placeholder="Ideeën, dingen om niet te vergeten …">' + esc(k.notitie || "") + "</textarea>" +
+      (ALLEENLEZEN ? "" : '<p style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn klein licht" id="i-naam">Hernoem</button><button type="button" class="btn klein licht" id="i-weg">🗑️ Prullenbak</button></p>') +
+      '<p class="hint">Een goede scène heeft een <b>doel</b> (wat wil je personage?), een <b>hindernis</b> en een <b>uitkomst</b> die het verhaal verder duwt.</p>';
+    if (ALLEENLEZEN) return;
+    $("i-syn").addEventListener("input", e => { k.synopsis = e.target.value; bewaarBoek(); });
+    $("i-not").addEventListener("input", e => { k.notitie = e.target.value; bewaarBoek(); });
+    $("i-status").addEventListener("change", e => { k.status = e.target.value; tekenBoom(); bewaarBoek(); });
+    $("i-pov").addEventListener("change", e => { k.pov = e.target.value; bewaarBoek(); });
+    $("i-fase").addEventListener("change", e => { k.fase = e.target.value; bewaarBoek(); });
+    $("i-naam").addEventListener("click", () => hernoem(k.id)); $("i-weg").addEventListener("click", () => gooiWeg(k.id));
+  } else if (inspTab === "coach") {
+    const t = T[k.id] || { html: "" }, a = analyse(t.html);
+    el.innerHTML = '<div class="cijfers"><div><b>' + getal(a.woorden) + "</b>woorden</div><div><b>" + getal(a.zinnen) + "</b>zinnen</div><div><b>" + a.gem + "</b>woorden per zin</div><div><b>" + a.lees + " min</b>leestijd</div></div>" +
+      '<ul class="analyse">' + a.tips.map(x => '<li class="' + x[0] + '">' + x[1] + "</li>").join("") + "</ul>" +
+      (a.woorden ? '<p><button type="button" class="btn klein" id="c-mark">Toon in mijn tekst</button></p>' : "") +
+      '<p class="hint">De schrijfcoach telt en zoekt patronen. Hij kent je verhaal niet: jij beslist wat je verandert. Spelling controleert je Chromebook zelf (rode golflijn).</p>';
+    if ($("c-mark")) $("c-mark").addEventListener("click", () => { toonMarkering = true; tekenBlad(); });
+  } else if (inspTab === "versies") {
+    const t = T[k.id] || { versies: [] };
+    el.innerHTML = '<p class="hint">Een versie is een foto van je scène. Maak er een voor je grote veranderingen doet. Elke dag dat je schrijft, bewaart het atelier ook zelf een versie. Je houdt er maximaal 10.</p>' +
+      (ALLEENLEZEN ? "" : '<p><input type="text" id="v-naam" placeholder="naam, bv. voor ik het einde herschreef" maxlength="60"><button type="button" class="btn klein" id="v-maak" style="margin-top:6px">📸 Bewaar een versie</button></p>') +
+      ((t.versies || []).slice().reverse().map((v, i) => { const idx = t.versies.length - 1 - i;
+        return '<div class="versie"><b>' + esc(v.naam || "versie") + '</b><br><span class="hint">' + datum(v.op) + " · " + getal(v.woorden) + ' woorden</span><div class="rij"><button type="button" class="btn klein licht" data-vbekijk="' + idx + '">Bekijk</button>' + (ALLEENLEZEN ? "" : '<button type="button" class="btn klein licht" data-vterug="' + idx + '">Zet terug</button>') + "</div></div>"; }).join("") || '<p class="hint">Nog geen versies.</p>');
+    if (!ALLEENLEZEN) $("v-maak").addEventListener("click", () => { maakVersie(k.id, $("v-naam").value.trim() || "versie van " + datum(nu())); tekenInsp(); });
+    el.querySelectorAll("[data-vbekijk]").forEach(b => b.addEventListener("click", () => { const v = t.versies[+b.dataset.vbekijk]; vraag(esc(v.naam || "versie"), '<div class="tekst" style="max-height:60vh;overflow:auto;font-size:16px">' + (v.html || "<i>leeg</i>") + "</div>", [["Sluit", null]]); }));
+    el.querySelectorAll("[data-vterug]").forEach(b => b.addEventListener("click", () => { const v = t.versies[+b.dataset.vterug];
+      vraag("Versie terugzetten?", "<p>Je huidige tekst wordt eerst zelf als versie bewaard. Daarna komt <b>" + esc(v.naam) + "</b> terug.</p>", [["Annuleer", null], ["Zet terug", () => {
+        maakVersie(k.id, "voor het terugzetten van " + (v.naam || "een versie")); const oud = t.woorden; t.html = v.html; t.woorden = v.woorden; k.woorden = v.woorden; B.dagen[vandaag()] = Math.max(0, (B.dagen[vandaag()] || 0) + v.woorden - oud);
+        bewaarTekst(k.id); bewaarBoek(); kop(); tekenSchrijven(); }]]); }));
+  } else {
+    const lijst = B.feedback[k.id] || [];
+    el.innerHTML = (lijst.length ? lijst.slice().reverse().map(f => '<div class="fb' + (f.gelezen || ALLEENLEZEN ? "" : " nieuw") + '"><div class="wie">' + esc(f.naam || f.coach) + " · " + datum(f.op) + (f.gelezen ? " · gelezen" : "") + "</div>" + esc(f.tekst).replace(/\n/g, "<br>") + "</div>").join("") : '<p class="hint">Nog geen feedback bij deze scène.</p>') +
+      (ALLEENLEZEN && COACH ? '<label for="f-tekst">Feedback bij deze scène</label><textarea id="f-tekst" maxlength="1500" placeholder="Wat is sterk? Wat kan beter? Geef één concrete tip."></textarea><p><button type="button" class="btn klein" id="f-stuur">Stuur feedback</button></p>' : "") +
+      (!ALLEENLEZEN && lijst.some(f => !f.gelezen) ? '<p><button type="button" class="btn klein" id="f-gelezen">Ik heb de feedback gelezen</button></p>' : "") +
+      (!ALLEENLEZEN ? '<p class="hint">Je coach leest je boek mee en kan hier tips geven. Vraag het gerust in je logboek als je feedback wil op een scène.</p>' : "");
+    if ($("f-stuur")) $("f-stuur").addEventListener("click", async () => {
+      const tekst = $("f-tekst").value.trim(); if (!tekst) return;
+      const f = { coach: gebruiker.email.toLowerCase(), naam: gebruiker.displayName || "", tekst, op: nu(), gelezen: false };
+      const nieuw = (B.feedback[k.id] || []).concat([f]);
+      try { await F.setDoc(ref("boeken", ID), { feedback: { [k.id]: nieuw } }, { merge: true }); B.feedback[k.id] = nieuw; tekenInsp(); tekenBoom(); status("Feedback verstuurd ✓"); } catch (e) { status("Feedback niet verstuurd. Probeer opnieuw.", true); }
+    });
+    if ($("f-gelezen")) $("f-gelezen").addEventListener("click", async () => {
+      const nieuw = lijst.map(f => Object.assign({}, f, { gelezen: true, gelezenOp: f.gelezenOp || nu() })); B.feedback[k.id] = nieuw;
+      if (!LOKAAL) { try { await F.setDoc(ref("boeken", ID), { feedback: { [k.id]: nieuw } }, { merge: true }); } catch (e) {} }
+      kop(); tekenInsp(); tekenBoom();
+    });
+  }
+}
+function maakVersie(sid, naam, stil) {
+  const t = T[sid]; if (!t) return; t.versies = (t.versies || []).concat([{ naam, op: nu(), html: t.html || "", woorden: t.woorden || 0 }]).slice(-10);
+  bewaarTekst(sid); if (!stil) status("Versie bewaard ✓");
+}
+
+/* ---------- de schrijfcoach ---------- */
+function zinnenVan(tekst) { return (tekst.replace(/\n+/g, " ").match(/[^.!?…]+[.!?…]+["”’»]?|[^.!?…]+$/g) || []).map(z => z.trim()).filter(z => /\p{L}/u.test(z)); }
+function woordenIn(z) { return z.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) || []; }
+function analyse(html) {
+  const tekst = platteTekst(html), z = zinnenVan(tekst), w = woordenIn(tekst), n = w.length, tips = [];
+  const gem = z.length ? Math.round(n / z.length * 10) / 10 : 0;
+  const res = { woorden: n, zinnen: z.length, gem: String(gem).replace(".", ","), lees: Math.max(1, Math.round(n / 200)), tips };
+  if (n < 40) { tips.push(["", "Schrijf eerst wat meer. Vanaf 40 woorden geeft de schrijfcoach tips."]); return res; }
+  const lang = z.filter(x => woordenIn(x).length > 25);
+  tips.push(lang.length ? ["let", "<b>" + lang.length + " lange " + (lang.length === 1 ? "zin" : "zinnen") + "</b> (meer dan 25 woorden). Lange zinnen zijn moeilijk te volgen. Knip er een in twee, zeker bij actie."] : ["ok", "<b>Zinslengte</b>: geen zinnen langer dan 25 woorden."]);
+  const kort = z.filter(x => woordenIn(x).length <= 6).length;
+  if (z.length >= 6 && kort / z.length > .6) tips.push(["let", "<b>Veel korte zinnen.</b> Dat geeft tempo, maar het kan hakkerig worden. Wissel af met een langere zin."]);
+  const tel = {}; w.forEach(x => { const l = x.toLowerCase(); if (STOP.includes(l)) tel[l] = (tel[l] || 0) + 1; });
+  const veel = Object.entries(tel).filter(([k, v]) => v >= 3 || v / n > .015).sort((a, b) => b[1] - a[1]);
+  tips.push(veel.length ? ["let", "<b>Opvulwoorden</b>: " + veel.slice(0, 5).map(([k, v]) => "‘" + k + "’ " + v + "×").join(", ") + ". Schrap er een paar: je tekst wordt krachtiger."] : ["ok", "<b>Opvulwoorden</b>: je gebruikt weinig woorden als ‘heel’, ‘echt’ of ‘plots’."]);
+  const enToen = (tekst.match(/\ben toen\b/gi) || []).length;
+  if (enToen >= 2) tips.push(["let", "<b>‘En toen’ staat er " + enToen + " keer.</b> Begin je zin eens met een tijd, een plaats of een geluid."]);
+  const herh = herhalingen(w);
+  tips.push(herh.length ? ["let", "<b>Herhaling</b> dicht bij elkaar: " + herh.slice(0, 5).map(x => "‘" + x + "’").join(", ") + ". Zoek een ander woord of schrap er een."] : ["ok", "<b>Herhaling</b>: geen opvallende woorden die vlak na elkaar terugkomen."]);
+  const begin = []; for (let i = 2; i < z.length; i++) { const a = (woordenIn(z[i])[0] || "").toLowerCase(); if (a && a === (woordenIn(z[i - 1])[0] || "").toLowerCase() && a === (woordenIn(z[i - 2])[0] || "").toLowerCase() && !begin.includes(a)) begin.push(a); }
+  if (begin.length) tips.push(["let", "<b>Drie zinnen na elkaar</b> beginnen met " + begin.map(x => "‘" + x + "’").join(", ") + ". Varieer het begin van je zinnen."]);
+  const vertel = tekst.match(VERTEL) || [];
+  tips.push(vertel.length ? ["let", "<b>Vertellen of tonen?</b> " + vertel.slice(0, 3).map(x => "‘" + x + "’").join(", ") + ". Laat liever zien wat je personage doet, zegt of voelt in zijn lijf. Bv. niet ‘hij was bang’, maar ‘zijn handen trilden’."] : ["ok", "<b>Tonen</b>: je zegt gevoelens niet letterlijk. Mooi."]);
+  if ((tekst.match(/“/g) || []).length !== (tekst.match(/”/g) || []).length) tips.push(["let", "<b>Aanhalingstekens</b>: er staat een “ zonder ” of omgekeerd. Controleer je dialogen."]);
+  else if (/[“"]/.test(tekst)) tips.push(["ok", "<b>Dialoog</b>: je aanhalingstekens kloppen. Begin een nieuwe alinea als iemand anders spreekt."]);
+  else if (n > 300) tips.push(["", "<b>Geen dialoog</b> in deze scène. Een gesprek maakt personages levendig. Past het hier?"]);
+  return res;
+}
+function herhalingen(w) {
+  const uit = [], laatste = {};
+  w.forEach((x, i) => { const l = x.toLowerCase(); if (l.length < 5 || GEWOON.has(l) || STOP.includes(l)) return; if (laatste[l] !== undefined && i - laatste[l] <= 30 && !uit.includes(l)) uit.push(l); laatste[l] = i; });
+  return uit;
+}
+function markeer(html) {
+  const d = document.createElement("div"); d.innerHTML = html || "";
+  const herh = new Set(herhalingen(woordenIn(platteTekst(html))));
+  const woordMark = s => s.replace(/[\p{L}\p{N}][\p{L}\p{N}'’-]*|[^\p{L}\p{N}]+/gu, tok => { const l = tok.toLowerCase();
+    return STOP.includes(l) ? '<mark class="stop">' + esc(tok) + "</mark>" : herh.has(l) ? '<mark class="herh">' + esc(tok) + "</mark>" : esc(tok); });
+  d.querySelectorAll("p").forEach(p => {
+    const zinnen = p.textContent.match(/[^.!?…]+[.!?…]+["”’»]?\s*|[^.!?…]+$/g) || [];
+    p.innerHTML = zinnen.map(z => {
+      let uit = "", vorige = 0;
+      z.replace(VERTEL, (m, ...a) => { const i = a[a.length - 2]; uit += woordMark(z.slice(vorige, i)) + '<mark class="vertel">' + woordMark(m) + "</mark>"; vorige = i + m.length; return m; });
+      uit += woordMark(z.slice(vorige));
+      return woordenIn(z).length > 25 ? '<mark class="lang">' + uit + "</mark>" : uit;
+    }).join("");
+  });
+  return d.innerHTML;
+}
+
+/* ---------- vastgelopen en sprint ---------- */
+$("b-vast").addEventListener("click", () => { const toonVraag = () => { $("dlg-in").innerHTML = '<p class="prompt">' + esc(VRAGEN[Math.floor(Math.random() * VRAGEN.length)]) + '</p><p class="hint">Schrijf er vijf minuten op los. Past het niet? Dan heb je toch geschreven: schrappen mag later.</p>'; };
+  vraag("💡 Een schrijfvraag", "", [["Andere vraag", () => { toonVraag(); return false; }], ["Aan de slag!", null]]); toonVraag(); });
+let sprint = null;
+$("b-sprint").addEventListener("click", () => {
+  if (sprint) return stopSprint(true);
+  vraag("⏱️ Schrijfsprint", '<p>Schrijf zonder te stoppen en zonder te verbeteren. Hoeveel woorden haal je?</p><div class="kies">' + [5, 10, 15, 20].map(m => '<label><input type="radio" name="spm" value="' + m + '"' + (m === 10 ? " checked" : "") + "><b>" + m + " minuten</b></label>").join("") + "</div>",
+    [["Annuleer", null], ["Start", () => { const m = +document.querySelector("input[name=spm]:checked").value; sprint = { einde: Date.now() + m * 60000, min: m, nu: 0 }; tikSprint(); sprint.t = setInterval(tikSprint, 1000); if ($("tekst")) $("tekst").focus(); }]]);
+});
+function tikSprint() {
+  const rest = Math.max(0, sprint.einde - Date.now()), s = Math.ceil(rest / 1000);
+  $("sprintchip").hidden = false; $("sprintchip").textContent = "⏱️ " + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") + " · " + Math.max(0, sprint.nu) + " woorden";
+  if (!rest) stopSprint();
+}
+function stopSprint(vroeg) {
+  clearInterval(sprint.t); $("sprintchip").hidden = true; const w = Math.max(0, sprint.nu), m = sprint.min; sprint = null;
+  B.sprints = (B.sprints || []).concat([{ op: nu(), min: m, woorden: w }]).slice(-50); bewaarBoek();
+  const rec = Math.max(...B.sprints.map(x => x.woorden));
+  vraag(vroeg ? "Sprint gestopt" : "⏱️ De tijd is om!", '<p class="groot" style="text-align:center">' + w + ' woorden</p><p style="text-align:center">in ' + m + " minuten" + (w && w === rec && B.sprints.length > 1 ? " · <b>nieuw record!</b> 🎉" : "") + "</p>", [["Verder schrijven", null]]);
+}
+
+/* ---------- prikbord ---------- */
+function tekenPrikbord() {
+  const el = $("v-prikbord");
+  el.innerHTML = '<p class="hint">Elke scène is een kaartje. Schrijf er kort op wat er gebeurt. Sleep kaartjes om de volgorde te veranderen, ook naar een ander hoofdstuk. De kleur bovenaan is de status: grijs idee, oranje eerste versie, turkoois herschreven, groen klaar.</p>' +
+    B.binder.map(h => h.soort !== "map" ? "" : '<div class="hfd"><h3>📁 ' + esc(h.titel) + ' <span class="hint">' + getal(woordenVan(h)) + ' woorden</span></h3>' + (h.synopsis ? '<p class="hint" style="margin:-4px 0 6px">' + esc(h.synopsis) + "</p>" : "") + '<div class="kaartjes" data-hfd="' + h.id + '">' +
+      (h.kinderen || []).filter(s => s.soort === "scene").map(s => '<div class="idx st-' + (s.status || "idee") + '" draggable="' + !ALLEENLEZEN + '" data-id="' + s.id + '"><b>' + esc(s.titel) + '</b><textarea aria-label="Samenvatting van ' + esc(s.titel) + '" placeholder="Wat gebeurt er?"' + (ALLEENLEZEN ? " readonly" : "") + ">" + esc(s.synopsis || "") + '</textarea><span class="w"><span>' + STATUS[s.status || "idee"] + '</span><a href="#" data-schrijf="' + s.id + '">schrijf →</a></span></div>').join("") +
+      (ALLEENLEZEN ? "" : '<button type="button" class="idx nieuw" data-nieuw="' + h.id + '">+ scène</button>') + "</div></div>").join("");
+  el.querySelectorAll(".idx textarea").forEach(ta => ta.addEventListener("input", () => { zoek(ta.closest(".idx").dataset.id).synopsis = ta.value; bewaarBoek(); }));
+  el.querySelectorAll("[data-schrijf]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); kiesKnoop(a.dataset.schrijf); }));
+  el.querySelectorAll("[data-nieuw]").forEach(b => b.addEventListener("click", () => { const h = zoek(b.dataset.nieuw); h.kinderen.push(nieuweScene("Scène " + (h.kinderen.length + 1))); bewaarBoek(); tekenPrikbord(); }));
+  let sl = null;
+  el.querySelectorAll(".idx[draggable=true]").forEach(c => { c.addEventListener("dragstart", e => { sl = c.dataset.id; e.dataTransfer.setData("text/plain", sl); }); });
+  el.querySelectorAll(".kaartjes").forEach(zone => {
+    zone.addEventListener("dragover", e => { if (!sl) return; e.preventDefault(); zone.classList.add("sleep-in"); });
+    zone.addEventListener("dragleave", () => zone.classList.remove("sleep-in"));
+    zone.addEventListener("drop", e => { e.preventDefault(); zone.classList.remove("sleep-in"); if (!sl) return;
+      const doelKaart = e.target.closest(".idx[data-id]");
+      if (doelKaart && doelKaart.dataset.id !== sl) { const r = doelKaart.getBoundingClientRect(); verplaats(sl, doelKaart.dataset.id, e.clientX < r.left + r.width / 2 ? "boven" : "onder"); }
+      else if (!doelKaart) verplaats(sl, zone.dataset.hfd, "in");
+      sl = null; tekenPrikbord(); });
+  });
+}
+
+/* ---------- overzicht ---------- */
+function tekenOverzicht() {
+  const ro = ALLEENLEZEN ? " disabled" : "", pers = id => (B.personages.find(p => p.id === id) || {}).naam || "";
+  let h = '<p class="hint">Je hele boek in één tabel. Pas status, verteller en plaats op de verhaalberg meteen aan.</p><table class="lijst"><tr><th>Scène</th><th>Samenvatting</th><th>Status</th><th>Verteller</th><th>Verhaalberg</th><th style="text-align:right">Woorden</th></tr>';
+  B.binder.forEach(k => {
+    if (k.soort === "map") h += '<tr><td class="hfdrij" colspan="5">📁 ' + esc(k.titel) + '</td><td class="hfdrij" style="text-align:right">' + getal(woordenVan(k)) + "</td></tr>";
+    scenes(k.soort === "map" ? k.kinderen : [k]).forEach(s => {
+      h += '<tr data-id="' + s.id + '"><td><a href="#" data-schrijf="' + s.id + '">' + esc(s.titel) + "</a></td><td>" + esc(s.synopsis || "") + '</td><td><select data-veld="status"' + ro + ">" + Object.keys(STATUS).map(x => '<option value="' + x + '"' + (s.status === x ? " selected" : "") + ">" + STATUS[x] + "</option>").join("") + "</select></td>" +
+        '<td><select data-veld="pov"' + ro + '><option value="">–</option>' + B.personages.map(p => '<option value="' + esc(p.id) + '"' + (s.pov === p.id ? " selected" : "") + ">" + esc(p.naam || "naamloos") + "</option>").join("") + "</select></td>" +
+        '<td><select data-veld="fase"' + ro + '><option value="">–</option>' + FASEN.map((f, i) => '<option value="' + i + '"' + (s.fase === String(i) ? " selected" : "") + ">" + f + "</option>").join("") + '</select></td><td style="text-align:right">' + getal(s.woorden) + "</td></tr>";
+    });
+  });
+  $("v-overzicht").innerHTML = h + '<tr><td class="hfdrij" colspan="5">Totaal</td><td class="hfdrij" style="text-align:right">' + getal(totaal()) + "</td></tr></table>";
+  $("v-overzicht").querySelectorAll("select[data-veld]").forEach(s => s.addEventListener("change", () => { zoek(s.closest("tr").dataset.id)[s.dataset.veld] = s.value; bewaarBoek(); }));
+  $("v-overzicht").querySelectorAll("[data-schrijf]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); kiesKnoop(a.dataset.schrijf); }));
+}
+
+/* ---------- personages, plaatsen en notities ---------- */
+const PVELD = [["rol", "Rol in het verhaal", "hoofdpersonage, vriend, tegenstander …"], ["uiterlijk", "Hoe ziet hij of zij eruit?", "één opvallend kenmerk is genoeg"], ["karakter", "Karakter", "drie woorden, bv. dapper, koppig, grappig"],
+  ["wil", "Wat wil dit personage het liefst?", "het doel dat het verhaal vooruit duwt"], ["angst", "Waar is het bang voor?", ""], ["geheim", "Welk geheim heeft het?", ""], ["verandering", "Hoe is het veranderd op het einde?", ""], ["stem", "Hoe praat het?", "een stopwoordje, kort of lang, formeel of plat"]];
+function fichesHtml(lijst, soort, velden) {
+  const ro = ALLEENLEZEN ? " readonly" : "";
+  return '<div class="fiches">' + lijst.map((p, i) => '<div class="fiche" data-i="' + i + '"><div class="kop2"><input type="text" data-veld="naam" value="' + esc(p.naam || "") + '" placeholder="Naam" aria-label="Naam"' + ro + ">" + (ALLEENLEZEN ? "" : '<button type="button" class="btn klein licht" data-weg="' + i + '" title="Wis">🗑️</button>') + "</div>" +
+    velden.map(v => '<label>' + v[1] + '</label><textarea data-veld="' + v[0] + '" placeholder="' + esc(v[2]) + '"' + ro + ">" + esc(p[v[0]] || "") + "</textarea>").join("") + "</div>").join("") +
+    (ALLEENLEZEN ? "" : '<button type="button" class="fiche" data-nieuw="' + soort + '" style="border-style:dashed;color:var(--zacht);min-height:120px">+ ' + (soort === "personages" ? "personage" : "plaats") + "</button>") + "</div>";
+}
+function koppelFiches(el, lijst, opnieuw) {
+  el.querySelectorAll(".fiche[data-i] [data-veld]").forEach(x => x.addEventListener("input", () => { lijst[+x.closest(".fiche").dataset.i][x.dataset.veld] = x.value; bewaarBoek(); }));
+  el.querySelectorAll("[data-weg]").forEach(b => b.addEventListener("click", () => vraag("Wissen?", "<p>Deze fiche wordt gewist.</p>", [["Annuleer", null], ["Wis", () => { lijst.splice(+b.dataset.weg, 1); bewaarBoek(); opnieuw(); }]])));
+  el.querySelectorAll("[data-nieuw]").forEach(b => b.addEventListener("click", () => { lijst.push({ id: nieuwId(), naam: "" }); bewaarBoek(); opnieuw(); const v = el.querySelectorAll(".fiche[data-i] input"); if (v.length) v[v.length - 1].focus(); }));
+}
+function tekenPersonages() {
+  const el = $("v-personages");
+  el.innerHTML = '<p class="hint">Levende personages willen iets, zijn ergens bang voor en veranderen tijdens het verhaal. Vul in wat je weet; de rest ontdek je al schrijvend.</p>' + fichesHtml(B.personages, "personages", PVELD);
+  koppelFiches(el, B.personages, tekenPersonages);
+}
+function tekenWereld() {
+  const el = $("v-wereld");
+  el.innerHTML = '<div class="twee"><div><h2>Plaatsen</h2><p class="hint">Waar speelt je verhaal? Beschrijf wat je ziet, hoort, ruikt en voelt.</p>' + fichesHtml(B.plaatsen, "plaatsen", [["beschrijving", "Hoe ziet het eruit?", ""], ["zintuigen", "Wat hoor, ruik en voel je er?", ""], ["belang", "Wat gebeurt er hier?", ""]]) +
+    '</div><div><h2>Notities en onderzoek</h2><p class="hint">Alles wat je opzoekt of niet wil vergeten: feiten, namen, een tijdlijn, links naar bronnen.</p><textarea id="w-not" style="min-height:420px"' + (ALLEENLEZEN ? " readonly" : "") + ">" + esc(B.notities) + "</textarea></div></div>";
+  koppelFiches(el, B.plaatsen, tekenWereld);
+  $("w-not").addEventListener("input", e => { B.notities = e.target.value; bewaarBoek(); });
+}
+
+/* ---------- verhaalplan ---------- */
+function tekenPlan() {
+  const ro = ALLEENLEZEN ? " readonly" : "", sc = scenes(), per = FASEN.map((f, i) => sc.filter(s => s.fase === String(i)));
+  const pt = [[60, 150], [175, 105], [300, 30], [425, 105], [540, 150]];
+  $("v-plan").innerHTML = '<div class="twee"><div><label for="p-pre">Wat als …? <span class="hint">(de vraag waarmee je verhaal begint)</span></label><textarea id="p-pre"' + ro + ' placeholder="Wat als een meisje ontdekt dat haar kat kan praten, maar alleen liegt?">' + esc(B.premisse) + "</textarea></div>" +
+    '<div><label for="p-zin">Je boek in één zin</label><textarea id="p-zin"' + ro + ' placeholder="Wie wil wat, wat staat in de weg, en wat staat er op het spel?">' + esc(B.zin) + "</textarea></div></div>" +
+    '<h2 style="margin-top:20px">De verhaalberg</h2><svg viewBox="0 -20 600 215" style="width:100%;max-width:720px" role="img" aria-label="De verhaalberg met het aantal scènes per fase"><path d="M20 150 L120 150 L300 30 L480 150 L580 150" fill="none" stroke="#3BC1C5" stroke-width="5" stroke-linejoin="round"/>' +
+    pt.map((p, i) => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (10 + Math.min(10, per[i].length * 2)) + '" fill="' + (per[i].length ? "#FCAF17" : "#e6eeee") + '"/><text x="' + p[0] + '" y="' + (p[1] + 5) + '" text-anchor="middle" font-size="13" font-weight="700">' + per[i].length + '</text><text x="' + (i === 1 ? p[0] - 62 : i === 3 ? p[0] + 62 : p[0]) + '" y="' + (i === 2 ? p[1] - 26 : i === 1 || i === 3 ? p[1] + 4 : p[1] + 36) + '" text-anchor="middle" font-size="13" fill="#17808a" font-family="Play">' + FASEN[i] + "</text>").join("") + "</svg>" +
+    '<div class="fasen">' + FASEN.map((f, i) => '<div class="fase"><h4>' + f + "</h4>" + (per[i].length ? '<ol class="lijst-sc">' + per[i].map(s => "<li>" + esc(s.titel) + "</li>").join("") + "</ol>" : '<p class="hint">Nog geen scènes. ' + ["Wie is je personage en wat is zijn gewone leven?", "Wat gaat er mis?", "Hoe wordt het moeilijker? Wat is het hoogtepunt?", "Hoe wordt het opgelost, en door wie?", "Hoe eindigt het, en wat is er veranderd?"][i] + "</p>") + "</div>").join("") + "</div>" +
+    '<p class="hint" style="margin-top:12px">Duid bij elke scène de fase aan in het zijpaneel of in het overzicht. ' + (sc.filter(s => s.fase === "").length ? sc.filter(s => s.fase === "").length + " scène(s) hebben nog geen fase." : "") + "</p>" +
+    (per[2].length && per[2].length < per[0].length ? '<p class="hint">💡 Je begin heeft meer scènes dan je spanning. Lezers willen vooral de spanning: laat het begin niet te lang duren.</p>' : "");
+  if (ALLEENLEZEN) return;
+  $("p-pre").addEventListener("input", e => { B.premisse = e.target.value; bewaarBoek(); });
+  $("p-zin").addEventListener("input", e => { B.zin = e.target.value; bewaarBoek(); });
+}
+
+/* ---------- doelen ---------- */
+function tekenDoelen() {
+  const w = totaal(), rest = Math.max(0, B.woorddoel - w), vd = B.dagen[vandaag()] || 0, sc = scenes();
+  let perDag = "";
+  if (B.deadline) { const d = Math.ceil((new Date(B.deadline + "T23:59:59") - new Date()) / 864e5); perDag = d > 0 ? "Nog <b>" + d + "</b> dagen tot " + new Date(B.deadline).toLocaleDateString("nl-BE", { day: "numeric", month: "long" }) + ". Schrijf gemiddeld <b>" + getal(Math.ceil(rest / d)) + "</b> woorden per dag." : "Je einddatum is voorbij. Spreek een nieuwe datum af met je coach."; }
+  const dagen = []; const st = new Date(); st.setDate(st.getDate() - 69);
+  for (let i = 0; i < 70; i++) { const d = new Date(st); d.setDate(st.getDate() + i); const k = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); const n = B.dagen[k] || 0; dagen.push('<i class="' + (n >= 1000 ? "l4" : n >= 500 ? "l3" : n >= 200 ? "l2" : n > 0 ? "l1" : "") + '" title="' + k + ": " + n + ' woorden"></i>'); }
+  let reeks = 0; for (let i = 0; i < 400; i++) { const d = new Date(); d.setDate(d.getDate() - i); const k = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); if (B.dagen[k]) reeks++; else if (i > 0) break; }
+  const telS = Object.keys(STATUS).map(s => [s, sc.filter(x => (x.status || "idee") === s).length]);
+  const ro = ALLEENLEZEN ? " disabled" : "";
+  $("v-doelen").innerHTML = '<div class="doelen">' +
+    '<div class="fiche"><h3>Mijn boek</h3><div class="groot">' + getal(w) + '</div><p>van <b>' + getal(B.woorddoel) + "</b> woorden (" + Math.round(w / B.woorddoel * 100) + "%). Nog " + getal(rest) + ' te gaan.</p><p class="hint">± ' + Math.max(1, Math.round(w / 250)) + " bladzijden in een boek.</p>" +
+    '<label for="d-doel">Mijn woorddoel</label><input type="number" id="d-doel" min="500" step="500" value="' + B.woorddoel + '"' + ro + '><label for="d-dl">Klaar tegen</label><input type="date" id="d-dl" value="' + esc(B.deadline || "") + '"' + ro + '><p class="hint">' + perDag + "</p></div>" +
+    '<div class="fiche"><h3>Vandaag</h3><div class="groot">' + getal(vd) + '</div><p>van je dagdoel van <b>' + getal(B.sessiedoel) + '</b> woorden.</p><div class="voortgang" style="width:auto"><div class="balk"><i style="width:' + Math.min(100, vd / B.sessiedoel * 100) + '%"></i></div></div>' +
+    '<label for="d-ses">Mijn dagdoel</label><input type="number" id="d-ses" min="50" step="50" value="' + B.sessiedoel + '"' + ro + ">" + (vd >= B.sessiedoel ? '<p>🎉 Dagdoel gehaald!</p>' : "") + "</div>" +
+    '<div class="fiche"><h3>Schrijfdagen</h3><p>' + (reeks ? "🔥 <b>" + reeks + "</b> " + (reeks === 1 ? "dag" : "dagen") + " na elkaar geschreven." : "Schrijf vandaag om een reeks te starten.") + '</p><div class="kalender" aria-label="Woorden per dag, de laatste 10 weken">' + dagen.join("") + '</div><p class="hint">De laatste 10 weken. Hoe donkerder, hoe meer woorden.</p>' +
+    ((B.sprints || []).length ? "<p>Beste sprint: <b>" + Math.max(...B.sprints.map(x => x.woorden)) + "</b> woorden.</p>" : "") + "</div>" +
+    '<div class="fiche"><h3>Scènes</h3><div class="statusbalk">' + telS.map(([s, n]) => n ? '<span class="st-' + s + '" style="flex:' + n + '"></span>' : "").join("") + "</div>" + telS.map(([s, n]) => '<div><span class="stip st-' + s + '" style="display:inline-block"></span> ' + STATUS[s] + ": <b>" + n + "</b></div>").join("") + "</div></div>";
+  if (ALLEENLEZEN) return;
+  $("d-doel").addEventListener("change", e => { B.woorddoel = Math.max(500, +e.target.value || B.woorddoel); bewaarBoek(); kop(); tekenDoelen(); });
+  $("d-dl").addEventListener("change", e => { B.deadline = e.target.value; bewaarBoek(); tekenDoelen(); });
+  $("d-ses").addEventListener("change", e => { B.sessiedoel = Math.max(50, +e.target.value || B.sessiedoel); bewaarBoek(); tekenDoelen(); });
+}
+
+/* ---------- boek maken: afdrukken, downloaden, reservekopie ---------- */
+function tekenBoek() {
+  const I = B.instellingen, ro = ALLEENLEZEN ? " disabled" : "";
+  $("v-boek").innerHTML = '<div class="boekinst"><div>' +
+    '<label for="bk-titel">Titel</label><input type="text" id="bk-titel" maxlength="80" value="' + esc(B.titel || "") + '"' + ro + '><label for="bk-sub">Ondertitel</label><input type="text" id="bk-sub" maxlength="100" value="' + esc(B.ondertitel || "") + '"' + ro + '>' +
+    '<label for="bk-aut">Auteur</label><input type="text" id="bk-aut" maxlength="60" value="' + esc(B.auteur || "") + '"' + ro + '><label>Kleur van de cover</label><div class="kleuren">' + KLEUREN.map(k => '<button type="button" data-kleur="' + k + '" style="background:' + k + '" aria-pressed="' + (I.kleur === k) + '" aria-label="kleur ' + k + '"' + ro + "></button>").join("") + "</div>" +
+    '<label for="bk-op">Opdracht <span class="hint">(bv. ‘Voor mijn oma’)</span></label><input type="text" id="bk-op" maxlength="120" value="' + esc(I.opdracht) + '"' + ro + '><label for="bk-flap">Flaptekst <span class="hint">(achterkant: maak de lezer nieuwsgierig, verklap het einde niet)</span></label><textarea id="bk-flap" maxlength="900"' + ro + ">" + esc(I.flaptekst) + "</textarea>" +
+    '<label><input type="checkbox" id="bk-inh"' + (I.inhoud ? " checked" : "") + ro + '> Inhoudstafel</label><label><input type="checkbox" id="bk-nr"' + (I.nummers ? " checked" : "") + ro + '> Hoofdstukken nummeren</label><label><input type="checkbox" id="bk-klaar"' + (I.alleKlaar ? " checked" : "") + ro + "> Enkel scènes met status ‘klaar’</label>" +
+    '</div><div><div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap"><div class="mini-cover" id="bk-cover"></div><div style="flex:1;min-width:220px"><h2>Je boek afdrukken</h2><p>Het atelier zet je hoofdstukken op A5-bladzijden: cover, titelblad, opdracht, inhoudstafel, de hoofdstukken en de flaptekst.</p>' +
+    '<p><button type="button" class="btn" id="bk-druk">🖨️ Afdrukken of bewaren als PDF</button></p><p class="hint">Kies in het afdrukvenster ‘Opslaan als PDF’ om een PDF te maken.</p>' +
+    '<h3 style="margin-top:22px">Downloaden</h3><p style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn licht" id="bk-html">Boek als webpagina (.html)</button><button type="button" class="btn licht" id="bk-txt">Tekst (.txt)</button></p>' +
+    '<h3 style="margin-top:22px">Reservekopie</h3><p class="hint">Je boek staat veilig online. Wil je toch een kopie op je eigen toestel? Download dan een reservekopie. Die kan je later terugzetten.</p><p style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn licht" id="bk-json">⬇ Download reservekopie</button>' + (ALLEENLEZEN ? "" : '<label class="btn licht" style="margin:0;font-weight:700;font-size:15px">⬆ Zet reservekopie terug<input type="file" id="bk-imp" accept=".json,application/json" hidden></label>') + "</p></div></div></div></div>";
+  cover();
+  if (ALLEENLEZEN) { ["bk-druk", "bk-html", "bk-txt", "bk-json"].forEach(id => $(id).disabled = false); }
+  const zet = (id, f) => $(id).addEventListener("input", e => { f(e.target); bewaarBoek(); cover(); kop(); });
+  if (!ALLEENLEZEN) {
+    zet("bk-titel", t => B.titel = t.value); zet("bk-sub", t => B.ondertitel = t.value); zet("bk-aut", t => B.auteur = t.value); zet("bk-op", t => I.opdracht = t.value); zet("bk-flap", t => I.flaptekst = t.value);
+    zet("bk-inh", t => I.inhoud = t.checked); zet("bk-nr", t => I.nummers = t.checked); zet("bk-klaar", t => I.alleKlaar = t.checked);
+    $("v-boek").querySelectorAll("[data-kleur]").forEach(b => b.addEventListener("click", () => { I.kleur = b.dataset.kleur; bewaarBoek(); tekenBoek(); }));
+    $("bk-imp").addEventListener("change", importeer);
+  }
+  $("bk-druk").addEventListener("click", async () => { await laadAlleTeksten(); $("drukwerk").innerHTML = drukHtml(); setTimeout(() => print(), 50); });
+  $("bk-html").addEventListener("click", async () => { await laadAlleTeksten(); bewaarBestand(bestandsnaam("html"), "<!doctype html><html lang=\"nl\"><head><meta charset=\"utf-8\"><title>" + esc(B.titel) + "</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 16px;line-height:1.7;font-size:18px}h1,h2{text-align:center}p{margin:0;text-indent:1.3em}p.eerste{text-indent:0}hr{border:0;text-align:center}hr::after{content:'* * *'}.pg{margin-bottom:60px}.cover{padding:40px;color:#fff;text-align:center;border-radius:8px}</style></head><body>" + drukHtml() + "</body></html>", "text/html"); });
+  $("bk-txt").addEventListener("click", async () => { await laadAlleTeksten(); bewaarBestand(bestandsnaam("txt"), alsTekst(), "text/plain"); });
+  $("bk-json").addEventListener("click", async () => { await laadAlleTeksten(); bewaarBestand(bestandsnaam("json"), JSON.stringify({ schrijfatelier: 1, op: nu(), boek: B, teksten: T }, null, 1), "application/json"); });
+}
+function cover() { const c = $("bk-cover"); if (!c) return; c.style.background = B.instellingen.kleur; c.innerHTML = "<span style=\"font-size:12px;opacity:.85\">" + esc(B.auteur || "") + "</span><b>" + esc(B.titel || "Mijn boek") + "</b><span style=\"font-size:12px;opacity:.85\">" + esc(B.ondertitel || "") + "</span>"; }
+function bestandsnaam(ext) { return (B.titel || "mijn-boek").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "." + ext; }
+function bewaarBestand(naam, inhoud, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([inhoud], { type: type + ";charset=utf-8" })); a.download = naam; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+function hoofdstukken() {
+  const I = B.instellingen, mee = s => (!I.alleKlaar || s.status === "klaar") && T[s.id] && telWoorden(T[s.id].html), uit = [];
+  B.binder.forEach(k => { const sc = scenes(k.soort === "map" ? k.kinderen : [k]).filter(mee); if (sc.length) uit.push({ titel: k.titel, scenes: sc }); });
+  return uit;
+}
+function drukHtml() {
+  const I = B.instellingen, h = hoofdstukken();
+  const hfdTitel = (x, i) => (I.nummers ? (i + 1) + ". " : "") + esc(x.titel);
+  return '<section class="pg cover" style="background:' + I.kleur + '"><div>' + esc(B.auteur || "") + "</div><h1>" + esc(B.titel || "Mijn boek") + "</h1><div>" + esc(B.ondertitel || "") + "</div></section>" +
+    '<section class="pg titelblad"><h1>' + esc(B.titel || "Mijn boek") + "</h1>" + (B.ondertitel ? "<p>" + esc(B.ondertitel) + "</p>" : "") + "<p>" + esc(B.auteur || "") + '</p><p style="margin-top:60mm;font-size:8pt">Geschreven in het CSF-schrijfatelier, Campus Lievegem, ' + new Date().getFullYear() + "</p></section>" +
+    (I.opdracht ? '<section class="pg opdracht">' + esc(I.opdracht) + "</section>" : "") +
+    (I.inhoud && h.length > 1 ? '<section class="pg toc"><h2>Inhoud</h2><ol style="list-style:none;padding:0">' + h.map((x, i) => "<li>" + hfdTitel(x, i) + "</li>").join("") + "</ol></section>" : "") +
+    h.map((x, i) => '<section class="pg hoofdstuk"><h2>' + hfdTitel(x, i) + "</h2>" + x.scenes.map(s => (T[s.id] && T[s.id].html) || "").filter(Boolean).join("<hr>").replace(/<p>/, '<p class="eerste">').replace(/<hr><p>/g, '<hr><p class="eerste">') + "</section>").join("") +
+    (I.flaptekst ? '<section class="pg flap"><h2 style="font-family:var(--boek)">' + esc(B.titel || "") + "</h2><p>" + esc(I.flaptekst).replace(/\n/g, "<br>") + "</p></section>" : "");
+}
+function alsTekst() {
+  const h = hoofdstukken(); let r = (B.titel || "Mijn boek").toUpperCase() + "\n" + (B.ondertitel ? B.ondertitel + "\n" : "") + (B.auteur || "") + "\n\n";
+  h.forEach((x, i) => { r += "\n" + (B.instellingen.nummers ? (i + 1) + ". " : "") + x.titel + "\n\n" + x.scenes.map(s => platteTekst((T[s.id] && T[s.id].html) || "").replace(/\n{2,}/g, "\n").trim()).filter(Boolean).join("\n\n* * *\n\n") + "\n"; });
+  return r;
+}
+function importeer(e) {
+  const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+  r.onload = () => { let d; try { d = JSON.parse(r.result); } catch (x) { d = null; }
+    if (!d || !d.schrijfatelier || !d.boek) return vraag("Dat lukt niet", "<p>Dit is geen reservekopie van het schrijfatelier.</p>", [["Sluit", null]]);
+    vraag("Reservekopie terugzetten?", "<p>Je huidige boek wordt vervangen door de reservekopie van " + datum(d.op) + " (<b>" + esc(d.boek.titel) + "</b>). Je huidige teksten worden eerst als versie bewaard.</p>", [["Annuleer", null], ["Zet terug", async () => {
+      await laadAlleTeksten(); scenes().forEach(s => maakVersie(s.id, "voor het terugzetten van een reservekopie", true));
+      const fb = B.feedback; B = vulAan(Object.assign(d.boek, { leerling: ID, feedback: fb }));
+      Object.entries(d.teksten || {}).forEach(([sid, t]) => { T[sid] = Object.assign({ versies: (T[sid] && T[sid].versies) || [] }, t); bewaarTekst(sid); });
+      huidig = (scenes()[0] || {}).id || null; bewaarBoek(true); toonApp(); }]]); };
+  r.readAsText(f);
+}
+
+/* ---------- hulp ---------- */
+function tekenHulp() {
+  $("v-hulp").innerHTML = '<div style="max-width:760px"><h2>Zo werkt het schrijfatelier</h2>' +
+    '<p><b>Schrijven.</b> Links staat je boek: hoofdstukken (📁) met scènes. Klik op een scène om te schrijven. Dubbelklik om een naam te veranderen. Sleep om de volgorde te veranderen. Alles wordt vanzelf bewaard.</p>' +
+    '<p><b>Scènes.</b> Schrijf je boek in kleine stukjes: een scène is één moment op één plek. Zo verlies je nooit het overzicht, en kan je scènes later verschuiven.</p>' +
+    '<p><b>Het zijpaneel.</b> Bij <i>Scène</i> vul je een samenvatting, de status en notities in. De <i>Schrijfcoach</i> telt je woorden en zinnen en tipt je over lange zinnen, opvulwoorden, herhaling en ‘tonen in plaats van vertellen’. Bij <i>Versies</i> bewaar je een foto van je scène voor je iets groots verandert. Bij <i>Feedback</i> lees je de tips van je coach.</p>' +
+    '<p><b>Prikbord en overzicht.</b> Bekijk je verhaal als kaartjes of als tabel. Zo zie je meteen waar een gat zit.</p>' +
+    '<p><b>Personages, plaatsen en notities.</b> Hou bij wie wie is en hoe een plek eruitziet. Zo blijft je verhaal kloppen: de ogen van je hoofdpersonage blijven blauw.</p>' +
+    '<p><b>Verhaalplan.</b> Schrijf je ‘wat als’-vraag en je boek in één zin. Op de verhaalberg zie je hoeveel scènes elke fase heeft.</p>' +
+    '<p><b>Doelen.</b> Je kiest zelf hoeveel woorden je boek telt. Je ziet je dagdoel, je schrijfreeks en hoeveel je nog moet schrijven tot je einddatum.</p>' +
+    '<p><b>Vastgelopen?</b> Klik op 💡 voor een schrijfvraag. Met ⏱️ <b>Sprint</b> schrijf je een paar minuten tegen de klok. Met 🔲 <b>Focus</b> zie je alleen je tekst (Esc om terug te gaan).</p>' +
+    '<p><b>Boek maken.</b> Kies een cover, schrijf een flaptekst en druk je boek af op A5, of bewaar het als PDF.</p>' +
+    '<p><b>Sneltoetsen.</b> Ctrl+B vet · Ctrl+I schuin · Ctrl+Z ongedaan maken · F2 hernoemen in de lijst · Esc focus uit.</p>' +
+    '<p class="hint">Is er iets misgelopen? Bij elke scène staan versies. En bij ‘Boek maken’ kan je een reservekopie downloaden.</p>' +
+    (LOKAAL ? "" : '<p><button type="button" class="btn licht" id="h-af">Afmelden</button></p>') + "</div>";
+  if ($("h-af")) $("h-af").addEventListener("click", () => A.signOut(auth).then(() => location.reload()));
+}
+
+/* ---------- een eenvoudige dialoog ---------- */
+function vraag(kop, inhoud, knoppen, na) {
+  const d = $("dlg"); $("dlg-kop").innerHTML = kop; $("dlg-in").innerHTML = inhoud;
+  $("dlg-voet").innerHTML = knoppen.map((k, i) => '<button type="button" class="btn' + (i < knoppen.length - 1 ? " licht" : "") + '" data-k="' + i + '">' + k[0] + "</button>").join("");
+  $("dlg-voet").querySelectorAll("[data-k]").forEach(b => b.addEventListener("click", () => { const f = knoppen[+b.dataset.k][1]; if (f && f() === false) return; d.close(); }));
+  d.showModal(); if (na) na();
+}
+
+start().catch(e => { console.error(e); $("laden").innerHTML = '<p>Het schrijfatelier kon niet laden. Controleer je internetverbinding en herlaad de pagina.</p>'; });
+</script>
+</body>
+</html>

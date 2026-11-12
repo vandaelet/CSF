@@ -20,6 +20,8 @@ Dit is de website met de CSF-projecten. Het is een gewone websitemap zonder bouw
 | `assets/portaal.js` | Aanmelden, digitaal logboek en dashboard voor coaches | Normaal niet |
 | `firestore.rules` | Toegangsregels voor Firebase (plakken in Firestore → Rules) | Na elke wijziging opnieuw publiceren |
 | `test/` | Automatische tests met een nep-Firebase (zie ‘Testen’) | Normaal niet |
+| `oefenbeurs/` | De oefenbeurs van het project ‘Beleggen voor beginners’: elke game een nieuwe wereld | Normaal niet |
+| `schrijfatelier/` | Het schrijfatelier van het project ‘Mijn eigen boek’ (vervangt Scrivener op Chromebooks). Boeken staan in Firestore (`boeken`, `teksten`); coaches lezen mee en geven feedback per scène | Normaal niet |
 
 Elk projectbestand bevat **alles** van dat project: de projectfiche, leerkaarten, test, controlevragen, lesplanning én de werkbundel. De werkbundel wordt in de browser opgebouwd en afgedrukt via de knop **Afdrukken**. Er zijn dus geen PDF's meer om bij te houden.
 
@@ -88,6 +90,10 @@ Elke projectpagina heeft genummerde tabbladen: **1. Projectfiche**, **2. Leerkaa
 - **Eén project tegelijk.** De leerling kiest zijn project in ‘Mijn logboek’, samen met de vakleerkracht(en) van wie hij de les verlaat (hij typt de familienaam en klikt op de leerkracht; de lijst staat in Dashboard → tabblad Vakleerkrachten, voor elke coach, één ‘Voornaam Familienaam’ per regel; het portaal maakt zelf het adres familienaam.voornaam@svsl.be, met ‘Kopieer alle e-mailadressen’ om iedereen te mailen). Van andere projecten ziet hij enkel de projectfiche.
 - **Goedkeuren.** Een afgewerkt project keurt de coach goed in het dashboard (klik op de leerling → ‘Keur project goed’). Pas dan kiest de leerling een nieuw project. Goedgekeurde projecten staan in zijn **portfolio**. Met ‘Annuleer’ wis je een logboek; de leerling kiest dan opnieuw.
 - **Resultaten.** Welke leerkaarten de leerling las en wat hij antwoordde bij ‘Test jezelf’, ‘Controleer je oplossing’ en de quizzen, komt in zijn logboek. De leerling kan een antwoord niet meer wijzigen. De coach ziet de scores en de antwoorden in het dashboard.
+
+## Projecten die langer mogen duren
+
+Een project kan een `extraLes` hebben (zie ‘Mijn eigen boek’). Na het laatste lesuur van de leidraad volgt dan telkens dat extra lesuur, zo lang als nodig. Op de projectpagina staat het als ‘Lesuur 17 en verder’.
 
 ## Leidraad en feedback in het logboek
 

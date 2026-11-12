@@ -409,7 +409,8 @@
   /* ---------- leidraad in het logboek: afvinken, wat niet af is schuift door naar de volgende les ---------- */
   function routine(st) { return CSF.logMoment ? CSF.logMoment(st.soort, st.tekst) : /logboek/i.test(String(st.soort || "")); }
   function leidraadItems(p, k) {
-    var les = p && p.lessen && p.lessen[k - 1]; if (!les) return [];
+    /* projecten die langer mogen duren (p.extraLes): na het laatste lesuur volgt telkens een extra lesuur */
+    var les = p && p.lessen && (p.lessen[k - 1] || (p.extraLes && k > p.lessen.length ? p.extraLes : null)); if (!les) return [];
     return les.stappen.map(function (st, j) { return { les: k, i: j, tijd: st[0], soort: st[1], tekst: st[2], af: false }; });
   }
   function leidraadVoor(p, vorige) {
@@ -426,12 +427,12 @@
     if (!p || !p.lessen || !p.lessen.length) return '<p class="hint">Dit project heeft nog geen leidraad per lesuur. Volg de afspraken met je coach.</p>';
     var items = ld.items || [], perLes = {};
     items.forEach(function (x, idx) { (perLes[x.les] = perLes[x.les] || []).push([x, idx]); });
-    var nAf = items.filter(function (x) { return x.af; }).length, volgende = ld.les < p.lessen.length;
+    var nAf = items.filter(function (x) { return x.af; }).length, volgende = ld.les < p.lessen.length || !!p.extraLes;
     var lesNrs = Object.keys(perLes).map(Number).sort(function (a, b) { return a - b; });
     return '<div class="lb-stappen lb-leidraad"><h4>Leidraad van vandaag <span class="hint">· ' + nAf + " van " + items.length + ' afgevinkt</span></h4>' +
       '<p class="hint">Vink af wat je gedaan hebt. Wat je niet afvinkt, komt automatisch in je volgende les.</p>' +
       lesNrs.map(function (k) {
-        var les = p.lessen[k - 1], door = perLes[k].some(function (y) { return y[0].door; });
+        var les = p.lessen[k - 1] || p.extraLes, door = perLes[k].some(function (y) { return y[0].door; });
         return '<p class="lb-leidraadkop"><b>Lesuur ' + k + (les ? " · " + les.titel : "") + "</b>" + (door ? ' <span class="lb-pill oranje">nog af te werken</span>' : "") + "</p>" +
           '<ul class="lb-vinklijst">' + perLes[k].map(function (y) {
             var x = y[0], idv = "ld-" + y[1];
@@ -445,7 +446,7 @@
     return (ld.items || []).map(function (x) { return (x.af ? "✓ " : "○ ") + "lesuur " + x.les + ": " + String(x.tekst).replace(/<[^>]+>/g, "") + (x.af || routine(x) ? "" : " (schuift door)"); });
   }
   function stappenHtml(p, n) {
-    var les = p && p.lessen && p.lessen.length ? p.lessen[Math.min(n, p.lessen.length) - 1] : null;
+    var les = p && p.lessen && p.lessen.length ? (n > p.lessen.length && p.extraLes ? p.extraLes : p.lessen[Math.min(n, p.lessen.length) - 1]) : null;
     if (!les) return '<p class="hint">Dit project heeft nog geen stappenplan per lesuur. Volg de afspraken met je coach.</p>';
     return '<div class="lb-stappen"><h4>Stappenplan · lesuur ' + n + " · " + les.titel + '</h4><ol class="stappen">' + les.stappen.map(function (s) {
       return '<li class="' + (CSF.logMoment(s[1], s[2]) ? "lb" : "") + '"><span class="t">' + s[0] + '</span><span class="s">' + s[1] + '</span><span class="w">' + s[2] + "</span></li>";

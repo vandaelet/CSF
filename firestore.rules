@@ -127,6 +127,19 @@ service cloud.firestore {
                     && request.resource.data.tekst is string && request.resource.data.tekst.size() <= 2000;
       allow update, delete: if beheerder();
     }
+    // schrijfatelier (project ‘Mijn eigen boek’): het boek van een leerling; de coach leest mee en schrijft enkel feedback
+    match /boeken/{email} {
+      allow read: if coach() || wie(email);
+      allow create, update: if wie(email) && opLijst(email) && request.resource.data.leerling == email;
+      allow update: if coach() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback']);
+      allow delete: if coach();
+    }
+    // schrijfatelier: de tekst van één scène, document <e-mail>__<scène-id>
+    match /teksten/{id} {
+      allow read: if coach() || wie(id.split('__')[0]);
+      allow create, update: if wie(id.split('__')[0]) && opLijst(id.split('__')[0]) && request.resource.data.leerling == id.split('__')[0];
+      allow delete: if coach() || wie(id.split('__')[0]);
+    }
     // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, de beheerder schrijft; coaches ook de zichtbaarheid en de vakleerkrachten
     match /instellingen/{id} {
       allow read: if coach() || (aangemeld() && id in ['zichtbaarheid', 'klassen', 'vakleerkrachten']);
