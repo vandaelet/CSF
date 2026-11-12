@@ -1080,6 +1080,14 @@
           "<h4>Opstart</h4>" + opstartHtml(lb.opstart || {}) + "</details>";
       }).join("") : '<p class="hint">Deze leerling heeft nog geen logboek gestart.</p>') +
       "</div>";
+    /* schrijfatelier: heeft de leerling een boek, dan bovenaan een knop naar dat boek (ook zonder logboek van het project) */
+    if (rol.coach && !el.querySelector('a[href*="schrijfatelier/?leerling="]')) haal("boeken/" + l._id).then(function (s) {
+      if (!s.exists() || el.querySelector('a[href*="schrijfatelier/?leerling="]')) return;
+      var bk = s.data(), w = 0; (function tel(lijst) { (lijst || []).forEach(function (k) { if (k.soort === "scene") w += k.woorden || 0; else tel(k.kinderen); }); })(bk.binder);
+      var rij = document.createElement("p"); rij.className = "lb-linkrij";
+      rij.innerHTML = '📖 <a class="btn lb-klein" href="schrijfatelier/?leerling=' + encodeURIComponent(l._id) + '" target="_blank" rel="noopener">Open het boek ‘' + esc(bk.titel || "zonder titel") + "’ in het schrijfatelier ↗</a> <span class=\"hint\">" + w + " van " + (bk.woorddoel || "–") + " woorden</span>";
+      var h = el.querySelector(".lb-detail h3"); if (h) h.after(rij);
+    }).catch(function () {});
     el.querySelectorAll(".lb-goedkeur").forEach(function (rij) {
       var id = rij.dataset.lb, out = rij.querySelector(".fb"), kb = rij.querySelector("[data-keur]");
       if (kb) kb.addEventListener("click", function () {
