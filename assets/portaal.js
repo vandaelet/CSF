@@ -1071,6 +1071,7 @@
         return '<details class="lb-hist" open><summary>' + esc(lb.projectnaam) + ' <span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span></summary>" +
           (rol.coach ? '<div class="lb-acties lb-goedkeur" data-lb="' + esc(lb.leerling + "__" + lb.project) + '">' + (lb.goedgekeurd ? '<span class="lb-pill groen">goedgekeurd door ' + esc(lb.goedgekeurdDoor || "") + " op " + datum(lb.goedgekeurdOp) + "</span>"
             : '<button type="button" class="btn lb-klein" data-keur="1">Keur project goed</button>') + ' <button type="button" class="btn donker lb-klein" data-annuleer="1">' + (lb.goedgekeurd ? "Haal uit portfolio" : "Annuleer: leerling kiest opnieuw") + '</button><span class="fb" aria-live="polite"></span></div>' : "") +
+          (rol.coach && pr && pr.atelier ? '<p class="lb-linkrij">📖 <a class="btn lb-klein" href="' + esc(pr.atelier) + "?leerling=" + encodeURIComponent(lb.leerling) + '" target="_blank" rel="noopener">Open het boek van ' + esc((l.naam || "de leerling").split(" ")[0]) + " in het schrijfatelier ↗</a></p>" : "") +
           (lb.opstart && lb.opstart.link ? '<p class="lb-linkrij">🔗 <b>Link naar het project:</b> <a href="' + esc(lb.opstart.link) + '" target="_blank" rel="noopener">' + esc(lb.opstart.link) + " ↗</a></p>" : "") +
           (lb.status === "geannuleerd" && lb.gewisseldNaar ? '<p class="hint">De leerling wisselde naar een ander project.</p>' : "") +
           (pr ? "<h4>Leerkaarten en vragen</h4>" + scoreHtml(pr, res) + antwoordenHtml(pr, res) : "") +

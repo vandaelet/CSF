@@ -33,6 +33,7 @@
     oplossing: "De schrijfcoach in het atelier, je coach en je proeflezers geven feedback. De kennisvragen controleer je bij ‘Controleer je oplossing’.",
     product: "Een eigen boek met cover, hoofdstukken en flaptekst, afgedrukt of als PDF",
     links: [["Schrijfatelier", ATELIER]],
+    atelier: ATELIER,   /* het dashboard toont bij de leerling een knop naar zijn boek */
 
     leerkaarten: [
       ["Van idee tot verhaal", "Elk verhaal begint met een vraag: <b>wat als …?</b> Wat als een jongen ontdekt dat zijn buurman nooit slaapt? Kies de vraag die jou het nieuwsgierigst maakt. Schrijf daarna je boek in één zin: <b>wie</b> wil <b>wat</b>, wat staat er <b>in de weg</b>, en wat staat er <b>op het spel</b>?",

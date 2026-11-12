@@ -281,6 +281,7 @@ dialog .dv{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 16px}
   <div class="kaart">
     <div style="display:flex;gap:12px;align-items:center"><img src="../assets/logo.png" alt="Campus Lievegem"><h1 style="flex:1;margin:0">Schrijfatelier · coach</h1><a class="btn licht" href="../#dashboard">Dashboard</a></div>
     <p>Hier zie je de boeken van alle leerlingen. Open een boek om het te lezen en feedback te geven bij een scène. Je kan niets aan de tekst van een leerling veranderen. Wil je zelf het atelier uitproberen? Zet op de CSF-site de testleerling aan en open daarna het atelier opnieuw.</p>
+    <p id="coach-melding" class="hint" aria-live="polite"></p>
     <div id="coach-lijst"><p class="hint">Laden …</p></div>
   </div>
 </div>
@@ -490,7 +491,12 @@ async function start() {
     let test = false; try { test = COACH && localStorage.getItem(TESTSLEUTEL) === mail; } catch (e) {}
     ID = test ? "test--" + mail : mail;
     toon("login", false);
-    if (COACH && !test) return coachScherm();
+    if (COACH && !test) {
+      /* vanuit het dashboard: meteen het boek van die leerling openen */
+      const lln = new URLSearchParams(location.search).get("leerling");
+      if (lln) { const gelukt = await openLeerlingBoek(lln.toLowerCase()); if (gelukt) return; }
+      return coachScherm();
+    }
     const ll = await veilig(F.getDoc(ref("leerlingen", ID)));
     if (!ll || !ll.exists() || ll.data().actief === false) {
       toon("laden", false); toon("login", true); $("loginBtn").hidden = true;
@@ -547,13 +553,14 @@ async function coachScherm() {
     : '<p class="hint">Nog geen enkele leerling begon een boek.</p>';
 }
 function woordenVanB(k) { return k.soort === "scene" ? (k.woorden || 0) : (k.kinderen || []).reduce((s, c) => s + woordenVanB(c), 0); }
-$("coach-lijst").addEventListener("click", async e => {
-  const a = e.target.closest("[data-open]"); if (!a) return; e.preventDefault();
-  const s = await F.getDoc(ref("boeken", a.dataset.open)); if (!s.exists()) return;
-  ID = a.dataset.open; ALLEENLEZEN = true; B = vulAan(s.data()); for (const k in T) delete T[k]; huidig = null;
-  toon("coach", false); $("k-terug").hidden = false; toonApp();
-});
-$("k-terug").addEventListener("click", () => { ALLEENLEZEN = false; $("k-terug").hidden = true; toon("app", false); coachScherm(); });
+$("coach-lijst").addEventListener("click", e => { const a = e.target.closest("[data-open]"); if (!a) return; e.preventDefault(); openLeerlingBoek(a.dataset.open); });
+async function openLeerlingBoek(id) {
+  let s = null; try { s = await F.getDoc(ref("boeken", id)); } catch (e) {}
+  if (!s || !s.exists()) { $("coach-melding").innerHTML = "<b>" + esc(id) + "</b> begon nog geen boek in het schrijfatelier."; return false; }
+  ID = id; ALLEENLEZEN = true; B = vulAan(s.data()); for (const k in T) delete T[k]; huidig = null;
+  toon("laden", false); toon("coach", false); $("k-terug").hidden = false; toonApp(); return true;
+}
+$("k-terug").addEventListener("click", () => { $("coach-melding").textContent = ""; ALLEENLEZEN = false; $("k-terug").hidden = true; toon("app", false); coachScherm(); });
 
 /* =====================================================================
    DE APP

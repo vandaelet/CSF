@@ -102,6 +102,18 @@ async function login(p, u) {
   ok(fb && Object.values(fb)[0][0].tekst.includes('Sterk begin'), 'feedback bewaard bij de scène');
   ok(db['boeken/jan.peeters@svsl.be'].titel === 'Het geheim van de vuurtoren', 'coach veranderde niets anders aan het boek');
 
+  /* ---- coach opent het boek rechtstreeks vanuit het dashboard ---- */
+  await p.goto(B + 'schrijfatelier/?leerling=jan.peeters%40svsl.be'); await p.waitForSelector('#app:not([hidden])'); await p.waitForTimeout(300);
+  ok((await p.textContent('#k-titel')).includes('Het geheim van de vuurtoren') && !(await p.isHidden('#k-terug')), 'link vanuit het dashboard opent het boek van de leerling');
+  await p.goto(B + 'schrijfatelier/?leerling=niemand%40svsl.be'); await p.waitForSelector('#coach:not([hidden])'); await p.waitForTimeout(300);
+  ok((await p.textContent('#coach-melding')).includes('begon nog geen boek'), 'leerling zonder boek: melding');
+  /* ---- dashboard: knop naar het boek bij de leerling ---- */
+  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('__fakedb')); d['leerlingen/jan.peeters@svsl.be'].coach = 'coach.anna@svsl.be'; d['leerlingen/jan.peeters@svsl.be'].coachNaam = 'Anna Coach';
+    d['logboeken/jan.peeters@svsl.be__nederlands-mijn-eigen-boek'] = { leerling: 'jan.peeters@svsl.be', naam: 'Jan Peeters', project: 'nederlands-mijn-eigen-boek', projectnaam: 'Mijn eigen boek', gestart: '2026-11-01T08:00:00Z', status: 'bezig', opstart: { klas: '2D' }, lessen: [], kijkers: [] };
+    localStorage.setItem('__fakedb', JSON.stringify(d)); });
+  await p.goto(B + '#dashboard'); await p.waitForSelector('.db-rij[data-ll="jan.peeters@svsl.be"]'); await p.click('.db-rij[data-ll="jan.peeters@svsl.be"]'); await p.waitForSelector('.lb-detail');
+  const knop = await p.getAttribute('.lb-detail a[href*="schrijfatelier/?leerling="]', 'href').catch(() => null);
+  ok(knop === 'schrijfatelier/?leerling=jan.peeters%40svsl.be', 'dashboard: knop naar het boek van de leerling');
   /* ---- leerling ziet de feedback ---- */
   await login(p, JAN); await p.waitForSelector('#app:not([hidden])');
   ok((await p.textContent('#fb-badge')).includes('1'), 'leerling ziet 1 nieuwe feedback');
