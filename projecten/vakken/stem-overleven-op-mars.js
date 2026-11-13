@@ -1,12 +1,12 @@
-/* Oefenproject STEM · Overleven op Mars */
+/* Project STEM · (vroeger een oefenproject) Overleven op Mars */
 (function () {
   var h = CSF.h;
   var raster = '<div style="display:grid;grid-template-columns:repeat(20,1fr);border:1.5px solid #000">' + '<div style="border:0.5px solid #aaa;aspect-ratio:1"></div>'.repeat(20 * 14) + "</div>";
   CSF.project({
     id: "stem",
-    soort: "oefen",
-    domein: "STEM",
-    jaar: "1e jaar",
+    soort: "vak",
+    vak: "STEM",
+    jaar: "1e en 2e jaar",
     tijd: "3 lesuren",
     sterren: 3,
     voorWie: "Voor leerlingen met plezier in rekenen aan een echt probleem.",

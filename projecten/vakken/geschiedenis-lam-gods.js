@@ -1,4 +1,4 @@
-/* Oefenproject Cultuur · Curator voor één dag: het Lam Gods */
+/* Project geschiedenis · (vroeger een oefenproject) Curator voor één dag: het Lam Gods */
 (function () {
   var h = CSF.h;
   var URL = "https://closertovaneyck.kikirpa.be/";
@@ -10,9 +10,9 @@
               ["Onderste rij, uiterst rechts", "Wie is de reus tussen de pelgrims?"]];
   CSF.project({
     id: "cultuur",
-    soort: "oefen",
-    domein: "Cultuur",
-    jaar: "1e jaar",
+    soort: "vak",
+    vak: "geschiedenis",
+    jaar: "1e en 2e jaar",
     tijd: "3 lesuren",
     sterren: 2,
     voorWie: "Voor leerlingen met zin om verhalen in kunst te ontdekken.",

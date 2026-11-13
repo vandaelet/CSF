@@ -1,4 +1,4 @@
-/* Oefenproject Creatief · beeld · Zelfportret in vijf stijlen */
+/* Project beeld · (vroeger een oefenproject) beeld · Zelfportret in vijf stijlen */
 (function () {
   var h = CSF.h;
 
@@ -19,9 +19,9 @@
 
   CSF.project({
     id: "beeld",
-    soort: "oefen",
-    domein: "Creatief · beeld",
-    jaar: "1e jaar",
+    soort: "vak",
+    vak: "beeld",
+    jaar: "1e en 2e jaar",
     tijd: "3 lesuren",
     sterren: 2,
     voorWie: "Voor leerlingen met plezier in tekenen en zin om naar kunst te leren kijken.",

@@ -1,4 +1,4 @@
-/* Oefenproject Creatief · muziek · Beatmaker */
+/* Project muziek · (vroeger een oefenproject) muziek · Beatmaker */
 (function () {
   var h = CSF.h;
 
@@ -25,9 +25,9 @@
 
   CSF.project({
     id: "muziek",
-    soort: "oefen",
-    domein: "Creatief · muziek",
-    jaar: "1e jaar",
+    soort: "vak",
+    vak: "muziek",
+    jaar: "1e en 2e jaar",
     tijd: "3 lesuren",
     sterren: 2,
     voorWie: "Voor leerlingen met gevoel voor ritme en zin om zelf muziek te maken.",

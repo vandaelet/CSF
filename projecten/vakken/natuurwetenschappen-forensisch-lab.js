@@ -1,4 +1,4 @@
-/* Oefenproject Wetenschappen · Forensisch lab
+/* Project natuurwetenschappen · (vroeger een oefenproject) Forensisch lab
    Alles van dit project staat in dit ene bestand: de projectfiche, de leerkaarten,
    de lesplanning, de controlevragen en de werkbundel (onderaan). */
 (function () {
@@ -40,9 +40,9 @@
 
   CSF.project({
     id: "wetenschappen",
-    soort: "oefen",
-    domein: "Wetenschappen",
-    jaar: "1e jaar",
+    soort: "vak",
+    vak: "natuurwetenschappen",
+    jaar: "1e en 2e jaar",
     tijd: "3 lesuren",
     sterren: 2,
     voorWie: "Voor leerlingen met plezier in puzzelen met bewijs en nauwkeurig meten.",

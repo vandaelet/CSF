@@ -1,11 +1,11 @@
-/* Oefenproject Talen · Taalbouwers */
+/* Project Nederlands · (vroeger een oefenproject) Taalbouwers */
 (function () {
   var h = CSF.h;
   CSF.project({
     id: "talen",
-    soort: "oefen",
-    domein: "Talen",
-    jaar: "1e jaar",
+    soort: "vak",
+    vak: "Nederlands",
+    jaar: "1e en 2e jaar",
     tijd: "3 lesuren",
     sterren: 3,
     voorWie: "Voor leerlingen met nieuwsgierigheid naar de bouw van talen.",

@@ -53,20 +53,28 @@ window.CSF = {
   /* Kiestest bij de oefenprojecten: elk antwoord verwijst naar een project-id. */
   kiestest: [
     ["Waar word je het blijst van?", [
-      ["Een mysterie oplossen met bewijs", "wetenschappen"],
-      ["De bouw van een taal uitzoeken", "talen"],
-      ["Tekenen en schilderen", "beeld"],
-      ["Ritme en muziek maken", "muziek"],
-      ["Rekenen aan een echt probleem", "stem"],
-      ["Verhalen achter oude kunst ontdekken", "cultuur"]
+      ["Iets testen en meten", "oefen-vliegtuig"],
+      ["Een moeilijke puzzel kraken", "oefen-logigram"],
+      ["Een spannend verhaal schrijven", "oefen-mysterie"],
+      ["Tekenen en symbolen ontdekken", "oefen-wapenschild"],
+      ["Anderen overtuigen van mijn idee", "oefen-pitch"],
+      ["Iets bouwen met mijn handen", "oefen-toren"],
+      ["Uitzoeken wat waar is en wat niet", "oefen-factcheck"],
+      ["Sporten en spelletjes", "oefen-sport"],
+      ["Nadenken over mezelf en de toekomst", "oefen-tijdcapsule"],
+      ["Muziek maken", "oefen-filmmuziek"]
     ]],
     ["Wat zou je het liefst in je handen hebben?", [
-      ["Een liniaal en een dossier vol bewijs", "wetenschappen"],
-      ["Een woordenboek van een taal die niet bestaat", "talen"],
-      ["Kleurpotloden en een spiegel", "beeld"],
-      ["Oortjes en een eigen beat", "muziek"],
-      ["Een rekenmachine en een ruimtepak", "stem"],
-      ["Een vergrootglas boven een schilderij", "cultuur"]
+      ["Een meetlint en een papieren vliegtuig", "oefen-vliegtuig"],
+      ["Een potlood en een puzzelrooster", "oefen-logigram"],
+      ["Een blad met precies 100 vakjes", "oefen-mysterie"],
+      ["Kleurpotloden en een schild", "oefen-wapenschild"],
+      ["Een stopwatch en een microfoon", "oefen-pitch"],
+      ["Tien blaadjes en een rol plakband", "oefen-toren"],
+      ["Een vergrootglas boven een bericht", "oefen-factcheck"],
+      ["Een bal en een fluitje", "oefen-sport"],
+      ["Een envelop met een geheime brief", "oefen-tijdcapsule"],
+      ["Oortjes en een eigen soundtrack", "oefen-filmmuziek"]
     ]]
   ]
 };

@@ -10,7 +10,7 @@ Dit is de website met de CSF-projecten. Het is een gewone websitemap zonder bouw
 | `assets/` | Logo, opmaak (`style.css`) en de motor van de site (`app.js`) | Normaal niet |
 | `site.js` | Algemene teksten: welkom, **Wat wordt van mij verwacht?**, TASC-stappen, kiestest | Ja |
 | `projecten/lijst.js` | Welke projecten op de site staan, in welke volgorde | Ja |
-| `projecten/oefen/` | De oefenprojecten (één bestand per project) | Ja |
+| `projecten/oefen/` | De oefenprojecten van 2 lesuren (één bestand per project). Ze gebruiken `CSF.lessen2` voor de leidraad | Ja |
 | `projecten/vakken/` | De echte projecten, ingedeeld per vak | Ja |
 | `projecten/_sjabloon.js` | Een leeg project om te kopiëren | Kopiëren |
 | `coach/coachfiches.js` | De coachfiches, **versleuteld** | Enkel vervangen via het hulpscherm |
@@ -39,7 +39,7 @@ Collega's van de werkgroep kan je toegang geven via **Settings** → **Collabora
 
 ## Iets aanpassen
 
-1. Open op github.com het bestand dat je wil wijzigen (bijvoorbeeld `projecten/oefen/talen.js`).
+1. Open op github.com het bestand dat je wil wijzigen (bijvoorbeeld `projecten/oefen/toren.js`).
 2. Klik op het **potloodje** (Edit).
 3. Pas de tekst aan. Laat aanhalingstekens `"…"`, komma's en haakjes staan.
 4. Klik **Commit changes**. Na een minuut of twee is de site bijgewerkt (vernieuw de pagina).

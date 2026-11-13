@@ -59,6 +59,20 @@
     return out;
   };
 
+  /* Lesplanning van een oefenproject: 2 lesuren met alle stappen van een gewoon project, in het klein. */
+  CSF.lessen2 = function (o) {
+    return [{ titel: o.t1, stappen: [
+      ["5'", "Logboek", "Vul de opstart en het begin van je logboek in: voorziene tijd, motivatie en afgesproken evaluatie (laatste blad)."],
+      ["5'", "Wat is de opdracht?", o.opdracht], ["15'", "Leerkaarten", o.leer || "Lees de twee leerkaarten. Maak de korte test bij de leerkaarten."],
+      ["5'", "Ideeën en het beste idee", o.ideeen], ["15'", "Uitwerking", o.start],
+      ["5'", "Resultaat en logboek", "Kijk terug op dit lesuur. Noteer je geslaagde stappen en je problemen. Vul je logboek in."]] },
+      { titel: o.t2, stappen: [
+      ["5'", "Logboek", "Vul het begin van je logboek in. Lees je notities van de vorige keer. Kies je eerste taak voor vandaag."],
+      ["20'", "Uitwerking", o.werk], ["5'", "Controleer je oplossing", o.controle || "Los de oefeningen in je werkbundel op. Controleer ze daarna op de site bij ‘Controleer je oplossing’."],
+      ["10'", "Presenteren!", o.presenteer],
+      ["10'", "Wat heb ik geleerd?", "Vul het evaluatierooster op het laatste blad in. Vul daarna in je logboek de evaluatie en de reflectie in."]] }];
+  };
+
   /* Standaard lesplanning van 3 lesuren. Elk lesuur doorloopt de TASC-stappen. */
   CSF.lessen3 = function (o) {
     return CSF.lessenN({ t1: o.t1, weet: o.weet, opdracht: o.opdracht, ideeen: o.ideeen, start: o.start,
@@ -181,7 +195,7 @@
   function vStart() {
     var oef = oefen(), P = CSF.portaal, z = zicht(), hu = P && P.actief && P.huidig ? P.huidig() : null, hp = hu ? zoek(hu) : null;
     var deuren = (z !== "oefen" ? '<a class="deur" href="#overzicht"><span class="dt">Projectenoverzicht</span><span class="wie">1e en 2e jaar</span><span class="dd">Alle CSF-projecten van de werkgroep, per vak. Elk project heeft dezelfde opbouw: leerkaarten, projectfiche, leidraad per lesuur en werkbundel.</span><span class="pijl">Naar het overzicht →</span></a>' : "") +
-      (z !== "alle" ? '<a class="deur" href="#oefenproject"><span class="dt">Oefenprojecten eerste jaar</span><span class="wie">1e jaar · 3 lesuren</span><span class="dd">Korte oefenprojecten. Leer de aanpak van een CSF-project.</span><span class="doms">' +
+      (z !== "alle" ? '<a class="deur" href="#oefenproject"><span class="dt">Oefenprojecten eerste jaar</span><span class="wie">1e jaar · 2 lesuren</span><span class="dd">Korte, uitdagende oefenprojecten. Leer hoe een CSF-project werkt, voor je aan een groot project begint.</span><span class="doms">' +
         oef.map(function (p) { return '<span style="--h:var(' + kleur(p) + ')">' + esc(label(p)) + "</span>"; }).join("") + '</span><span class="pijl">Naar de oefenprojecten →</span></a>' : "");
     return '<div class="wrap">' + kop() + kruimel([["Start"]]) +
       '<div class="vel">' + afsprakenKader() +
@@ -203,7 +217,7 @@
     }).join("");
     return '<div class="wrap">' + kop() + kruimel([["Start", "#start"], ["Oefenproject"]]) +
       '<div class="vel"><h2 class="banner">Oefenproject · 1e jaar</h2>' +
-      '<p><span class="kw">Kies één oefenproject.</span> Elk project duurt 3 lesuren van 50 minuten. Lees de opdracht hier op het scherm. Werk op papier in je werkbundel. Druk je werkbundel af met de knop bij je project.</p>' +
+      '<p><span class="kw">Kies één oefenproject.</span> Elk oefenproject duurt 2 lesuren van 50 minuten. Je oefent alle stappen van een groot CSF-project: projectfiche, leerkaarten, leidraad, logboek, werkbundel, controleren, presenteren en evalueren. Lees de opdracht hier op het scherm. Werk op papier in je werkbundel. Druk je werkbundel af met de knop bij je project.</p>' +
       '<p>Kies in lesuur 1 je eigen <span class="kw">invalshoek</span>: jouw draai aan het project, zonder extra werk.</p>' +
       '<div class="ritme"><div><b>Start van elk lesuur</b><span>Vul het begin van je logboek in. Noteer je voorkennis en je plan voor vandaag.</span></div><div><b>Tijdens het lesuur</b><span>Volg het stappenplan bovenaan het lesuur in je werkbundel.</span></div><div><b>Einde van elk lesuur</b><span>Beoordeel je werk. Vertel kort over je werk. Noteer je leerpunten. Vul je logboek in.</span></div></div></div>' +
       '<div class="vel"><h2 class="banner">Kies je oefenproject</h2><div class="kiezen">' + oefen().map(kaart).join("") + "</div>" +

@@ -7,16 +7,26 @@
    ===================================================================== */
 
 CSF.lijst = [
-  // Oefenprojecten (1e jaar)
-  "projecten/oefen/wetenschappen.js",
-  "projecten/oefen/talen.js",
-  "projecten/oefen/beeld.js",
-  "projecten/oefen/muziek.js",
-  "projecten/oefen/stem.js",
-  "projecten/oefen/cultuur.js",
+  // Oefenprojecten (1e jaar, 2 lesuren): leren hoe een CSF-project werkt
+  "projecten/oefen/vliegtuig.js",
+  "projecten/oefen/logigram.js",
+  "projecten/oefen/mysterie.js",
+  "projecten/oefen/wapenschild.js",
+  "projecten/oefen/pitch.js",
+  "projecten/oefen/toren.js",
+  "projecten/oefen/factcheck.js",
+  "projecten/oefen/sport.js",
+  "projecten/oefen/tijdcapsule.js",
+  "projecten/oefen/filmmuziek.js",
 
   // Projectenoverzicht (1e en 2e jaar), ingedeeld per vak.
   // Volledig uitgewerkt:
+  "projecten/vakken/natuurwetenschappen-forensisch-lab.js",
+  "projecten/vakken/nederlands-taalbouwers.js",
+  "projecten/vakken/beeld-zelfportret-in-vijf-stijlen.js",
+  "projecten/vakken/muziek-beatmaker.js",
+  "projecten/vakken/stem-overleven-op-mars.js",
+  "projecten/vakken/geschiedenis-lam-gods.js",
   "projecten/vakken/natuurwetenschappen-botten.js",
 
   // Projectfiches uit de presentatie (werkbundel volgt):

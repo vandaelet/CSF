@@ -404,7 +404,7 @@ const DB = {
   const tekst = await p.textContent('#app');
   check(tekst.includes('4 lesuren') && tekst.includes('Nieuwe uitleg <b>niet vet</b>.') && await p.locator('.tags .sterren').first().evaluate(e => e.textContent.replace(/[^★]/g, '').length) >= 5, 'projectpagina toont de nieuwe tijd en tekst (HTML blijft tekst)');
   check((await p.locator('.tags .sterren').first().innerHTML()).startsWith('★★★★<span'), 'projectpagina toont 4 sterren');
-  await p.goto(B + '#overzicht'); await p.goto(B + '#oefenproject'); await wacht(300);
+  await p.goto(B + '#oefenproject'); await p.goto(B + '#overzicht'); await wacht(300);
   check((await p.textContent('#app')).includes('4 lesuren'), 'overzicht toont de nieuwe tijd');
   await p.goto(B + '#dashboard'); await p.waitForSelector('[data-tab="projecten"]'); await p.click('[data-tab="projecten"]'); await p.selectOption('#pr-kies', 'talen'); await p.waitForSelector('#pr-herstel');
   await p.click('#pr-herstel'); await wacht(700);
