@@ -91,6 +91,14 @@ Elke projectpagina heeft genummerde tabbladen: **1. Projectfiche**, **2. Leerkaa
 - **Goedkeuren.** Een afgewerkt project keurt de coach goed in het dashboard (klik op de leerling → ‘Keur project goed’). Pas dan kiest de leerling een nieuw project. Goedgekeurde projecten staan in zijn **portfolio**. Met ‘Annuleer’ wis je een logboek; de leerling kiest dan opnieuw.
 - **Resultaten.** Welke leerkaarten de leerling las en wat hij antwoordde bij ‘Test jezelf’, ‘Controleer je oplossing’ en de quizzen, komt in zijn logboek. De leerling kan een antwoord niet meer wijzigen. De coach ziet de scores en de antwoorden in het dashboard.
 
+## Vaste opbouw van elk project (oefenproject en gewoon project)
+
+1. **Projectfiche.** Wie een project aanklikt, ziet enkel de projectfiche (met invalshoek en afgesproken evaluatie). Bovenaan en onderaan staan ‘Kies dit project’ en ‘Terug naar de projecten’.
+2. **Logboek.** ‘Kies dit project’ brengt de leerling naar zijn logboek. Daar vult hij de opstart en het begin van het lesuur in. In het logboek staat de link naar zijn project.
+3. **Project.** Het eigen project gaat pas open als het begin van het logboek van dit lesuur ingevuld is. De tabbladen staan altijd in dezelfde volgorde: 1. Leerkaarten → 2. Werkbundel (open als alle leerkaarten gelezen zijn) → 3. Leidraad per lesuur → 4. Controleer je oplossing, daarna Projectfiche en een tabblad ‘Mijn logboek’.
+4. **Terug naar het logboek.** Wie zijn project sluit (naar start of een overzicht), komt automatisch in zijn logboek. Na het aanmelden komt een leerling met een lopend project eerst in zijn logboek. Andere projecten kan hij enkel als projectfiche bekijken.
+5. **Coach.** In het dashboard opent een klik op een leerling zijn logboek, met een knop ‘Bekijk het project’ en een groene markering als hij nu een lesuur bezig is.
+
 ## Projecten die langer mogen duren
 
 Een project kan een `extraLes` hebben (zie ‘Mijn eigen boek’). Na het laatste lesuur van de leidraad volgt dan telkens dat extra lesuur, zo lang als nodig. Op de projectpagina staat het als ‘Lesuur 17 en verder’.

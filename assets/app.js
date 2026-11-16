@@ -176,9 +176,8 @@
   /* wat nog ontbreekt voor de werkbundel: [stap, label, klaar] */
   function stapStand(p) {
     var lk = (p.leerkaarten || []).length, g = gelezen(p), b = bekeken(p), nGel = (p.leerkaarten || []).filter(function (_, i) { return g.indexOf(i) >= 0; }).length;
-    return [["fiche", "Projectfiche bekeken", b.indexOf("fiche") >= 0],
-      ["start", lk ? "Alle leerkaarten gelezen (" + nGel + " van " + lk + ")" : "Leerkaarten en oefeningen bekeken", lk ? nGel >= lk : b.indexOf("start") >= 0],
-      ["leidraad", "Leidraad per lesuur bekeken", b.indexOf("leidraad") >= 0], ["evaluatie", "Evaluatie bekeken", b.indexOf("evaluatie") >= 0]];
+    /* vaste volgorde van elk project: eerst alle leerkaarten lezen, dan pas de werkbundel */
+    return [["start", lk ? "Alle leerkaarten gelezen (" + nGel + " van " + lk + ")" : "Leerkaarten bekeken", lk ? nGel >= lk : b.indexOf("start") >= 0]];
   }
   function magAfdrukken(p) {
     if (CSF.portaal && CSF.portaal.isCoach && CSF.portaal.isCoach()) return true;
@@ -257,10 +256,18 @@
       '<div class="leeg"><b>De werkbundel van dit project volgt nog.</b><span>Wil je dit project kiezen? Bespreek het met je CSF-coach. Je coach bezorgt je het materiaal.</span></div>' +
       '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
   }
+  /* bovenaan en onderaan de projectfiche: kiezen of terug (het portaal vult de keuzeknop in) */
+  function kiesBlok(p, terug) {
+    return '<div class="kiesblok" data-kiesblok="' + esc(p.id) + '"><a class="btn licht" href="' + terug[1] + '">← Terug naar de projecten</a><span class="kies-plek"></span></div>';
+  }
 
   function vProject(p) {
     if (isFiche(p)) return vFiche(p);
     var terug = p.soort === "vak" ? ["Projectenoverzicht", "#overzicht"] : ["Oefenproject", "#oefenproject"];
+    var PP = CSF.portaal, eigenProj = !!(PP && PP.actief && PP.isLeerling && PP.isLeerling() && PP.huidig && PP.huidig() === p.id);
+    var isCoachNu = !!(PP && PP.actief && PP.isCoach && PP.isCoach());
+    /* het eigen project van de leerling: terug gaat altijd naar zijn logboek */
+    if (eigenProj) terug = ["Mijn logboek", "#logboek-" + p.id];
     var test = (p.test || []).map(function (q, i) {
       return '<div class="tvraag" data-key="t_' + i + '" data-uitleg="' + esc(q[3]) + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + p.test.length + "</span>" + q[0] + '</p><div class="opties">' +
         q[1].map(function (o, j) { return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
@@ -297,14 +304,19 @@
     }).join("");
     var modus = CSF.portaal && CSF.portaal.projectModus ? CSF.portaal.projectModus(p) : "vol";
     var stand = stapStand(p);
-    var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["fiche", "1. Projectfiche"], ["start", "2. Leerkaarten en oefeningen"], ["leidraad", "3. Leidraad per lesuur"],
-      ["evaluatie", "4. Evaluatie"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "5. Werkbundel"]].concat(controle ? [["controle", (open ? "" : "🔒 ") + "6. Controleer je oplossing"]] : []);
-    var actief = "fiche"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "fiche"; } catch (e) {}
-    if (!tabs.some(function (t) { return t[0] === actief; })) actief = "fiche";
+    /* Vaste opbouw van elk project (oefenproject of gewoon project):
+       - nog niet gekozen: enkel de projectfiche, met bovenaan en onderaan ‘Kies dit project’ en ‘Terug naar de projecten’
+       - gekozen (of coach): 1. leerkaarten → 2. werkbundel → 3. leidraad → 4. controleer je oplossing, plus projectfiche en een tabblad naar het logboek */
+    var tabs = modus === "fiche" ? [["fiche", "Projectfiche"]] : [["start", "1. Leerkaarten"], ["werkbundel", (open ? "🖨 " : "🔒 ") + "2. Werkbundel"], ["leidraad", "3. Leidraad per lesuur"]]
+      .concat(controle ? [["controle", (open ? "" : "🔒 ") + "4. Controleer je oplossing"]] : []).concat([["fiche", "Projectfiche"]]);
+    var logTab = modus === "fiche" ? "" : '<a class="ptab ptab-log" href="' + (isCoachNu ? "#dashboard" : "#logboek-" + esc(p.id)) + '">📒 ' + (isCoachNu ? "Logboeken (dashboard)" : "Mijn logboek") + "</a>";
+    var actief = modus === "fiche" ? "fiche" : "start"; try { if (modus !== "fiche") actief = sessionStorage.getItem("tab-" + p.id) || "start"; } catch (e) {}
+    if (!tabs.some(function (t) { return t[0] === actief; })) actief = tabs[0][0];
     /* onderaan elk tabblad: knoppen naar de vorige en de volgende stap */
     var schoon = function (t) { return t.replace(/^[^A-Za-zÀ-ÿ0-9]+\s*/, "").replace(/^\d+\.\s*/, ""); };
     var stapNav = function (id) {
-      var i = tabs.map(function (t) { return t[0]; }).indexOf(id), vorig = tabs[i - 1], volg = tabs[i + 1];
+      if (id === "fiche") return "";
+      var reeks = tabs.filter(function (t) { return t[0] !== "fiche"; }), i = reeks.map(function (t) { return t[0]; }).indexOf(id), vorig = reeks[i - 1], volg = reeks[i + 1];
       if (!vorig && !volg) return "";
       var nogLezen = id === "start" && lk.length && nGel < lk.length ? '<p class="hint">Je las ' + nGel + " van de " + lk.length + " leerkaarten. Lees ze allemaal voor je de werkbundel afdrukt.</p>" : "";
       return '<div class="stapnav">' + nogLezen + '<div class="stapknoppen">' + (vorig ? '<button type="button" class="btn licht" data-stap="' + vorig[0] + '">← ' + esc(schoon(vorig[1])) + "</button>" : "<span></span>") +
@@ -315,9 +327,9 @@
       '<section class="vel" style="--hc:var(' + kleur(p) + ')"><h2 class="banner groot">' + esc(p.naam) + "</h2>" +
       '<div class="tags"><span class="tag dom">' + esc(label(p)) + '</span><span class="tag">' + esc(p.jaar) + '</span><span class="tag">' + esc(p.tijd) + "</span>" + (p.sterren ? '<span class="tag">Uitdaging ' + sterren(p) + "</span>" : "") + '<span class="tag">uitwerking op papier</span></div>' +
       '<p class="lead">' + p.kort + "</p>" + (p.voorWie ? '<p class="hint" style="margin-top:6px"><span class="kw">Voor wie?</span> ' + p.voorWie + "</p>" : "") +
-      '<div id="logboek-blok"></div>' +
-      '<div class="ptabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="ptab' + ((t[0] === "werkbundel" || t[0] === "controle") && !open ? " slot" : "") + '" role="tab" data-tab="' + t[0] + '" aria-selected="' + (actief === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
-      paneel("start", '<div class="blok"><h3 class="banner">Start hier: lees de leerkaarten</h3><p>De leerkaarten geven je de nieuwe leerstof die je nodig hebt voor dit project. Open elke leerkaart. Lees ze aandachtig. Klik daarna op <b>‘Ik heb deze leerkaart gelezen’</b>. De werkbundel gaat open als je alle leerkaarten gelezen hebt en de projectfiche, de leidraad en de evaluatie bekeken hebt.</p>' +
+      '<div id="logboek-blok"></div>' + (modus === "fiche" ? kiesBlok(p, terug) : "") +
+      (modus === "fiche" ? "" : '<div class="ptabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="ptab' + ((t[0] === "werkbundel" || t[0] === "controle") && !open ? " slot" : "") + '" role="tab" data-tab="' + t[0] + '" aria-selected="' + (actief === t[0]) + '">' + t[1] + "</button>"; }).join("") + logTab + "</div>") +
+      paneel("start", '<div class="blok"><h3 class="banner">Start hier: lees de leerkaarten</h3><p>De leerkaarten geven je de nieuwe leerstof die je nodig hebt voor dit project. Open elke leerkaart. Lees ze aandachtig. Klik daarna op <b>‘Ik heb deze leerkaart gelezen’</b>. De werkbundel gaat open als je alle leerkaarten gelezen hebt.</p>' +
         '<div class="lk-stand' + (open ? " klaar" : "") + '" aria-live="polite"><div class="balk"><span style="width:' + (lk.length ? 100 * nGel / lk.length : 100) + '%"></span></div><span>' + (lk.length ? nGel + " van " + lk.length + " leerkaarten gelezen" : "Dit project heeft geen leerkaarten.") + (open ? ' · <a href="#wb-' + p.id + '">Naar de werkbundel →</a>' : "") + "</span></div>" + kaarten + "</div>" +
         (test ? '<div class="blok"><h3 class="banner">Test jezelf</h3><p class="hint">Begrijp je de leerkaarten? Test het hier.</p><div class="test">' + test + '<p class="score" aria-live="polite"></p></div></div>' : "") +
         /* de quizzen staan meteen na de leerkaarten; ‘Controleer je oplossing’ komt pas na de werkbundel */
@@ -326,21 +338,22 @@
       paneel("fiche", '<div class="blok"><h3 class="banner">Projectfiche</h3><dl>' +
         "<dt>Omschrijving project</dt><dd>" + p.omschrijving + "</dd><dt>Doel van het project</dt><dd>" + p.doel + "</dd>" +
         "<dt>Bereikte vaardigheden</dt><dd>" + lijst(p.bereikt) + "</dd><dt>Vaardigheden die ik moet toepassen</dt><dd>" + lijst(p.toepassen) + "</dd>" +
-        "<dt>Materiële benodigdheden</dt><dd>" + lijst(p.materiaal) + "</dd><dt>Waar kan ik de oplossing vinden?</dt><dd>" + p.oplossing + "</dd><dt>Voorziene tijd</dt><dd>" + esc(p.tijd) + "</dd><dt>Eindproduct</dt><dd>" + p.product + "</dd></dl></div>") +
-      paneel("leidraad", inv + '<div class="blok"><h3 class="banner">Leidraad per lesuur</h3><p class="hint">Dit is een leidraad, geen strak schema. Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat hetzelfde stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’. Wat je gedaan hebt, vink je af in de leidraad van je logboek.</p>' +
+        "<dt>Materiële benodigdheden</dt><dd>" + lijst(p.materiaal) + "</dd><dt>Waar kan ik de oplossing vinden?</dt><dd>" + p.oplossing + "</dd><dt>Voorziene tijd</dt><dd>" + esc(p.tijd) + "</dd><dt>Eindproduct</dt><dd>" + p.product + "</dd></dl></div>" +
+        inv + '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>" +
+        (modus === "fiche" ? kiesBlok(p, terug) : "")) +
+      paneel("leidraad", '<div class="blok"><h3 class="banner">Leidraad per lesuur</h3><p class="hint">Dit is een leidraad, geen strak schema. Doorloop elk lesuur de TASC-stappen. Bovenaan elk lesuur in je werkbundel staat hetzelfde stappenplan. Gele regels zijn logboekmomenten: vul dan je logboek in via ‘Mijn logboek’. Wat je gedaan hebt, vink je af in de leidraad van je logboek.</p>' +
         '<div class="lessen">' + lessen + "</div></div>") +
 
-      paneel("evaluatie", '<div class="blok"><h3 class="banner">Afgesproken evaluatie</h3><p class="hint">Noteer deze criteria in lesuur 1 in je logboek bij ‘afgesproken evaluatie’. Je coach beoordeelt je project met deze criteria.</p>' + lijst(p.criteria) + "</div>") +
       (controle ? paneel("controle", '<div class="blok"><h3 class="banner">Controleer je oplossing</h3>' + (!open
-        ? '<div class="lb-melding oranje">🔒 <b>Eerst de werkbundel.</b> Bekijk eerst de stappen 1 tot 4 en los de oefeningen in je werkbundel op. Daarna controleer je hier je antwoorden.</div>'
+        ? '<div class="lb-melding oranje">🔒 <b>Eerst de werkbundel.</b> Lees eerst alle leerkaarten en los de oefeningen in je werkbundel op. Daarna controleer je hier je antwoorden.</div>'
         : !wbOpgelost(p) ? '<p>Los eerst de oefeningen in je werkbundel op. Schrijf je antwoorden op papier. Kom daarna terug om ze te controleren.</p><p><button type="button" class="btn" id="wb-opgelost">Ik heb de oefeningen in mijn werkbundel opgelost</button></p>'
         : '<p class="hint">Tik het antwoord uit je werkbundel hier in. Na 3 pogingen kan je het antwoord bekijken.</p>' + controle) + "</div>") : "") +
       paneel("werkbundel", '<div class="blok"><h3 class="banner">Werkbundel</h3>' + (open
-        ? '<p>Je bekeek alle stappen. Bekijk de werkbundel en druk hem af op A4.</p><p><a class="btn" href="#wb-' + p.id + '">🖨 Bekijk en druk de werkbundel af</a></p>'
-        : '<div class="lb-melding oranje">🔒 <b>De werkbundel gaat pas open als je de stappen 1 tot 4 bekeken hebt.</b> Klik op een stap die nog niet klaar is.</div>') +
+        ? '<p>Je las alle leerkaarten. Bekijk de werkbundel en druk hem af op A4.</p><p><a class="btn" href="#wb-' + p.id + '">🖨 Bekijk en druk de werkbundel af</a></p>'
+        : '<div class="lb-melding oranje">🔒 <b>De werkbundel gaat pas open als je alle leerkaarten gelezen hebt.</b></div>') +
         '<ul class="stapcheck">' + stand.map(function (x, i) { return '<li class="' + (x[2] ? "ok" : "") + '"><span class="sc-vink" aria-hidden="true">' + (x[2] ? "✓" : i + 1) + '</span>' +
           (x[2] ? esc(x[1]) : '<a href="#" data-naartab="' + x[0] + '">' + esc(x[1]) + "</a>") + "</li>"; }).join("") + "</ul></div>") +
-      '<p style="margin-top:22px"><a href="' + terug[1] + '">← ' + terug[0] + "</a></p></section>" + footer() + "</div>";
+      (modus === "fiche" ? "" : '<p style="margin-top:22px"><a class="btn licht" href="' + terug[1] + '">← ' + (eigenProj ? "Sluit het project en ga terug naar mijn logboek" : "Terug naar " + terug[0].toLowerCase()) + "</a></p>") + "</section>" + footer() + "</div>";
   }
 
   /* ---------- Werkbundel (A4) ---------- */
@@ -576,6 +589,9 @@
     var h = (location.hash || "#start").slice(1), app = document.getElementById("app"), p, Pp = CSF.portaal;
     if (Pp && Pp.poortNodig && Pp.poortNodig(h)) { Pp.poort(app); document.title = CSF.titel + " " + CSF.school; return; }
     var leerling = Pp && Pp.actief && Pp.isLeerling && Pp.isLeerling();
+    /* wie zijn eigen project sluit (naar start of een overzicht), komt automatisch terug in zijn logboek */
+    var vorige = teken.vorige; teken.vorige = h;
+    if (leerling && vorige && vorige.indexOf("p-") === 0 && Pp.huidig && Pp.huidig() === vorige.slice(2) && (h === "start" || h === "overzicht" || h === "oefenproject")) { location.replace("#logboek-" + vorige.slice(2)); return; }
     if (leerling && h.indexOf("p-") === 0 && (p = zoek(h.slice(2))) && !Pp.ziet(p) && Pp.huidig() !== p.id) { app.innerHTML = vNietZichtbaar(p.naam); return; }
     if (leerling && h === "overzicht" && zicht() === "oefen") { app.innerHTML = vNietZichtbaar("Projectenoverzicht"); return; }
     if (leerling && h === "oefenproject" && zicht() === "alle") { app.innerHTML = vNietZichtbaar("Oefenprojecten eerste jaar"); return; }

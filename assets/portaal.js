@@ -717,7 +717,7 @@
         keuze("geslaagd", "Mijn manier van werken lijkt me dus", ["GESLAAGD", "NIET GESLAAGD"], { verplicht: true }) +
         veld("geslaagdWaarom", "Mijn eigen feedback: waarom vind ik dat? Wat hou ik zo, wat doe ik volgende keer anders?", { lang: true, rijen: 3, verplicht: true });
     doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill oranje">Lesuur ' + n + ' loopt</span><p>Je lesuur is gestart. Werk nu verder aan je project. Vink in de leidraad hieronder af wat je gedaan hebt. Vul het <b>einde</b> van je logboek in op het einde van het lesuur.</p>' +
-      '<p class="lb-naarproject"><a class="btn" href="#p-' + esc(p.id) + '">Ga naar mijn project en werk verder →</a> <span class="hint">Klaar? Klik op het project op ‘Logboek einde les invullen’ of kom hier terug.</span></p></div>' +
+      '<p class="lb-naarproject"><a class="btn" href="#p-' + esc(p.id) + '">Ga naar mijn project en werk verder →</a> <span class="hint">Klaar? Sluit je project: je komt vanzelf terug in je logboek. Vul dan het einde van je logboek in.</span></p><p class="hint">Andere projecten bekijken? In het <a href="#overzicht">projectenoverzicht</a> en bij de <a href="#oefenproject">oefenprojecten</a> lees je enkel de projectfiches.</p></div>' +
       '<div id="lb-ld"></div><h3 class="lb-eindekop">Einde van lesuur ' + n + "</h3>" + formulier("lb-einde", inhoud, "Bewaar het einde van lesuur " + n) + geschiedenis;
     /* de leidraad van vandaag: afvinken wordt meteen bewaard */
     var ld = l.leidraad ? JSON.parse(JSON.stringify(l.leidraad)) : leidraadVoor(p, ls.slice(0, -1)), box = doel.querySelector("#lb-ld");
@@ -770,7 +770,7 @@
       var vak = blok.firstChild;
       if (!gebruiker) { vak.innerHTML = "<p><b>Mijn logboek.</b> Meld je aan om je logboek in te vullen. Het stappenplan van elk lesuur verschijnt na je begin-logboek.</p>" + '<button type="button" class="btn" id="loginBtn">Aanmelden met je schoolaccount</button><span class="fb" id="login-fb"></span>'; koppelLogin(vak); return; }
       if (rol.coach) {
-        vak.innerHTML = '<p><b>Je bent aangemeld als coach.</b> <a href="#dashboard">Open het dashboard</a>. <button type="button" class="btn licht lb-klein" id="lb-wens">Vraag een aanpassing aan dit project</button></p>';
+        vak.innerHTML = '<p><b>Je bent aangemeld als coach.</b> Je ziet het project zoals een leerling die het koos. De logboeken van je leerlingen vind je in het <a href="#dashboard">dashboard</a>. <button type="button" class="btn licht lb-klein" id="lb-wens">Vraag een aanpassing aan dit project</button></p>';
         vak.querySelector("#lb-wens").addEventListener("click", function () { var t = app.querySelector('.ptab[aria-selected="true"]'); P.vraagAanpassing(p.naam.split(":")[0] + (t ? ", tabblad " + t.textContent.replace(/^[^A-Za-z0-9]+/, "") : "")); });
         return;
       }
@@ -779,6 +779,11 @@
       var hu = lopend(MIJN.lbs);
       if (!hu || hu.project !== p.id) {
         var inPf = portfolio(MIJN.lbs).some(function (x) { return x.project === p.id; });
+        /* bovenaan en onderaan de projectfiche: de keuzeknop */
+        var knop = inPf ? '<a class="btn" href="#logboek-' + esc(p.id) + '">Bekijk mijn logboek</a>'
+          : hu ? '<a class="btn" href="#logboek-' + esc(hu.project) + '">Terug naar mijn logboek</a>'
+          : P.ziet(p) ? '<a class="btn" href="#logboek-' + esc(p.id) + '">Kies dit project →</a>' : "";
+        app.querySelectorAll(".kies-plek").forEach(function (k) { k.innerHTML = knop; });
         vak.innerHTML = inPf ? '<p><b>Dit project staat in je portfolio.</b> <a href="#logboek-' + esc(p.id) + '">Bekijk je logboek</a>.</p>'
           : hu ? '<p><b>Je werkt aan ‘' + esc(String(hu.projectnaam).split(":")[0]) + '’.</b> Van andere projecten zie je enkel de projectfiche. <a href="#p-' + esc(hu.project) + '">Naar mijn project</a>.</p>'
           : P.ziet(p) ? '<p><b>Wil je dit project doen?</b> Kies het in je logboek. Daarna openen de leerkaarten, de leidraad en de werkbundel.</p><a class="btn" href="#logboek-' + esc(p.id) + '">Kies dit project</a>'
@@ -790,6 +795,14 @@
         var tekst = !lb ? "Je logboek voor dit project is nog niet gestart." : lb.status === "afgerond" ? "Je project is afgerond." :
           laatste && !laatste.einde ? "Lesuur " + laatste.nr + " loopt. Vul op het einde van het lesuur je logboek in." : "Vul bij het begin van het lesuur je logboek in. Daarna verschijnt het stappenplan.";
         var bezig = lb && lb.status !== "afgerond" && laatste && !laatste.einde;
+        /* het project gaat pas open nadat het begin van het logboek van dit lesuur ingevuld is */
+        var sectie = app.querySelector("section.vel");
+        if (lb && lb.status !== "afgerond" && !bezig && sectie) {
+          sectie.classList.add("lb-dicht");
+          vak.innerHTML = '<div class="lb-melding oranje"><b>Vul eerst het begin van je logboek in.</b> Daarna gaan je leerkaarten, je werkbundel en de leidraad open.</div><a class="btn" href="#logboek-' + esc(p.id) + '">Naar mijn logboek</a>';
+          return;
+        }
+        if (!lb && sectie) { sectie.classList.add("lb-dicht"); vak.innerHTML = '<div class="lb-melding oranje"><b>Start eerst je logboek voor dit project.</b></div><a class="btn" href="#logboek-' + esc(p.id) + '">Naar mijn logboek</a>'; return; }
         vak.innerHTML = "<p><b>Mijn logboek.</b> " + tekst + "</p>" + (bezig ? '<a class="btn" href="#logboek-' + esc(p.id) + '">Logboek einde les invullen</a>' : '<a class="btn" href="#logboek-' + esc(p.id) + '">Open mijn logboek</a>');
         if (bezig) { var z = document.createElement("a"); z.className = "btn lb-zweef"; z.href = "#logboek-" + p.id; z.textContent = "Logboek einde les invullen"; blok.appendChild(z); }
         if (lb && lb.status === "afgerond") return;
@@ -817,33 +830,22 @@
     }).catch(function () { el.innerHTML = '<div class="lb-melding rood">Het portaal kon niet laden.</div>'; });
   };
 
-  /* ---------- bij het aanmelden: vul je begin-logboek in? (één keer per dag) ---------- */
+  /* ---------- bij het aanmelden: het logboek is altijd de eerste stap ----------
+     Heeft de leerling een lopend project, dan komt hij na het aanmelden (één keer per sessie) meteen in zijn logboek. */
   var gevraagd = false;
   function vraagBegin() {
-    if (gevraagd || !rol.leerling || !rol.leerling.klas || document.querySelector(".lb-modaal")) return;
-    if (/^#?logboek/.test(location.hash)) return;
+    if (gevraagd || !rol.leerling || !rol.leerling.klas) return;
     gevraagd = true;
-    var dag = vandaag();
-    Promise.all([haal("gezien/" + mail()).catch(function () { return null; }), lijst("logboeken", ["leerling", "==", mail()])]).then(function (r) {
-      var g = r[0] && r[0].exists() ? r[0].data() : {}, lbs = r[1];
-      if ((g.antwoorden || {})[dag]) return;
+    var sl = "csf-eerst-logboek-" + mail(); try { if (sessionStorage.getItem(sl)) return; sessionStorage.setItem(sl, "1"); } catch (e) {}
+    if (/^#?(logboek|dashboard|coach)/.test(location.hash)) return;
+    lijst("logboeken", ["leerling", "==", mail()]).then(function (lbs) {
       var lopend = lbs.filter(function (lb) { return lb.status !== "afgerond" && lb.status !== "geannuleerd"; });
-      if (!lopend.length) return;   /* nog geen project: de leerling kiest eerst een project in zijn logboek */
-      if (lopend.some(function (lb) { return (lb.lessen || []).some(function (l) { return l.datum === dag; }); })) return;
-      var doel = lopend.length === 1 ? "#logboek-" + lopend[0].project : "#logboek";
-      var m = document.createElement("div");
-      m.className = "lb-modaal";
-      m.innerHTML = '<div class="lb-modaalvak" role="dialog" aria-modal="true" aria-labelledby="lb-mtitel"><h2 id="lb-mtitel">Vul je logboek in</h2>' +
-        "<p>Heb je vandaag CSF? Vul dan nu het begin van je logboek in." + (lopend.length === 1 ? " Je project: <b>" + esc(String(lopend[0].projectnaam).split(":")[0]) + "</b>." : "") + "</p>" +
-        '<div class="lb-acties"><button type="button" class="btn" id="lb-m-ja">Ja, ik vul het nu in</button><button type="button" class="btn licht" id="lb-m-nee">Neen, ik moet mijn logboek niet aanvullen deze les</button></div></div>';
-      document.body.appendChild(m);
-      var antw = function (w) { var a = {}; a[dag] = w; return F.setDoc(ref("gezien/" + mail()), { antwoorden: a, tijd: nu() }, { merge: true }).catch(function () {}); };
-      var sluit = function () { m.remove(); };
-      m.querySelector("#lb-m-ja").addEventListener("click", function () { antw("ja"); sluit(); location.hash = doel; });
-      m.querySelector("#lb-m-nee").addEventListener("click", function () { antw("nee"); sluit(); });
-      m.querySelector("#lb-m-ja").focus();
+      if (!lopend.length) return;   /* nog geen project: de leerling bekijkt eerst de projectfiches en kiest */
+      if (/^#?(logboek|dashboard|coach)/.test(location.hash)) return;
+      location.hash = lopend.length === 1 ? "#logboek-" + lopend[0].project : "#logboek";
     }).catch(function () {});
   }
+
 
   /* ---------- leerling: vraag aan de coach (onderaan het projectvenster) ---------- */
   function vragenBlok(el, p) {
@@ -1071,6 +1073,8 @@
         return '<details class="lb-hist" open><summary>' + esc(lb.projectnaam) + ' <span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span></summary>" +
           (rol.coach ? '<div class="lb-acties lb-goedkeur" data-lb="' + esc(lb.leerling + "__" + lb.project) + '">' + (lb.goedgekeurd ? '<span class="lb-pill groen">goedgekeurd door ' + esc(lb.goedgekeurdDoor || "") + " op " + datum(lb.goedgekeurdOp) + "</span>"
             : '<button type="button" class="btn lb-klein" data-keur="1">Keur project goed</button>') + ' <button type="button" class="btn donker lb-klein" data-annuleer="1">' + (lb.goedgekeurd ? "Haal uit portfolio" : "Annuleer: leerling kiest opnieuw") + '</button><span class="fb" aria-live="polite"></span></div>' : "") +
+          (pr ? (function () { var ls = lb.lessen || [], la = ls[ls.length - 1], nuBezig = lb.status !== "afgerond" && lb.status !== "geannuleerd" && la && !la.einde;
+            return '<p class="lb-linkrij">' + (nuBezig ? '<span class="lb-pill groen">● bezig in lesuur ' + la.nr + (la.datum ? " (" + datum(la.datum) + ")" : "") + "</span> " : "") + '<a class="btn licht lb-klein" href="#p-' + esc(pr.id) + '" target="_blank" rel="noopener">Bekijk het project ↗</a></p>'; })() : "") +
           (rol.coach && pr && pr.atelier ? '<p class="lb-linkrij">📖 <a class="btn lb-klein" href="' + esc(pr.atelier) + "?leerling=" + encodeURIComponent(lb.leerling) + '" target="_blank" rel="noopener">Open het boek van ' + esc((l.naam || "de leerling").split(" ")[0]) + " in het schrijfatelier ↗</a></p>" : "") +
           (lb.opstart && lb.opstart.link ? '<p class="lb-linkrij">🔗 <b>Link naar het project:</b> <a href="' + esc(lb.opstart.link) + '" target="_blank" rel="noopener">' + esc(lb.opstart.link) + " ↗</a></p>" : "") +
           (lb.status === "geannuleerd" && lb.gewisseldNaar ? '<p class="hint">De leerling wisselde naar een ander project.</p>' : "") +
