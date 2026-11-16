@@ -25,7 +25,7 @@
     naam: "Mijn eigen boek",
     kort: "Schrijf een echt boek in je eigen schrijfatelier: van het eerste idee tot een gedrukt exemplaar.",
     voorWie: "Voor wie droomt van een eigen boek en het volhoudt om weken aan één verhaal te werken.",
-    omschrijving: "Heb je ooit een boek gelezen en gedacht: dat kan ik ook? ✍️ Dan is dit je kans. In je eigen <b>schrijfatelier</b> werk je zoals echte schrijvers: met hoofdstukken en scènes, een prikbord, fiches voor je personages en een verhaalberg. Je kiest zelf hoe dik je boek wordt. Een schrijfcoach tipt je over je zinnen en je coach leest mee. Op het einde druk je je boek af, met cover en flaptekst. Het grootste schrijfproject van CSF: het vraagt doorzetting. Maar straks kan jij zeggen dat je een boek schreef!",
+    omschrijving: "Heb je ooit gedacht: zo’n boek kan ik ook schrijven? ✍️ In je eigen <b>schrijfatelier</b> werk je zoals echte schrijvers: met hoofdstukken, personages en een verhaalberg. Je kiest zelf hoe dik je boek wordt. Op het einde druk je je boek af, met cover en flaptekst. Het grootste schrijfproject van CSF: het vraagt doorzetting.",
     doel: "Je schrijft een lang verhaal met een duidelijke opbouw. Je maakt personages die iets willen en veranderen. Je schrijft scènes met dialogen en je toont in plaats van te vertellen. Je herschrijft je tekst met feedback. Je plant een groot project en houdt het vol.",
     bereikt: ["Een idee uitwerken tot een verhaalplan", "Levende personages bedenken", "Een verhaal opbouwen met scènes", "Tonen in plaats van vertellen", "Dialogen juist schrijven", "Herschrijven met feedback"],
     toepassen: ["Doorzetten en plannen: weken aan één boek werken", "Feedback vragen en verwerken", "Kritisch kijken naar je eigen tekst"],

@@ -15,7 +15,7 @@
     naam: "Mysterie in 100 woorden",
     kort: "Schrijf een spannend verhaal van precies 100 woorden, met een einde dat niemand ziet aankomen.",
     voorWie: "Voor wie graag schrijft en het een uitdaging vindt om met weinig woorden veel te zeggen.",
-    omschrijving: "Honderd woorden. Niet één meer, niet één minder. 🔍 Daarin moet een heel verhaal passen: een begin dat meteen spannend is, een mysterie en een einde dat je lezer doet schrikken of glimlachen. Dat lukt alleen als je kiest, schrapt en herschrijft. Precies wat echte schrijvers doen. Op het einde lees je je verhaal voor. Krijgt je klas kippenvel?",
+    omschrijving: "Honderd woorden. Niet één meer, niet één minder. 🔍 Daarin past een heel verhaal: een spannend begin, een mysterie en een verrassend einde. Je kiest, schrapt en herschrijft, zoals echte schrijvers. Op het einde lees je je verhaal voor. Krijgt je klas kippenvel?",
     doel: "Je schrijft een kladversie, vraagt feedback, herschrijft en werkt je tekst af tot precies 100 woorden.",
     bereikt: ["Een verhaal opbouwen met begin, mysterie en verrassend einde", "Overbodige woorden schrappen", "Sterke werkwoorden kiezen", "Feedback geven en gebruiken"],
     toepassen: ["Durven schrappen in je eigen tekst", "Feedback vragen aan een klasgenoot", "Voorlezen voor een groep"],

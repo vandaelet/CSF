@@ -942,12 +942,13 @@
       if (D.coachFilter === "zonder" && x.l.coach) return false;
       if (D.coachFilter !== "alle" && D.coachFilter !== "zonder" && x.l.coach !== D.coachFilter) return false;
       if (D.aandacht && !aandacht(x)) return false;
+      if (D.klas && x.l.klas !== D.klas) return false;
       var q = D.zoek.toLowerCase(); return !q || (x.l.naam + " " + x.l._id + " " + (x.l.klas || "")).toLowerCase().indexOf(q) >= 0;
     }).sort(function (a, b) { return RANG[a.st[0]] - RANG[b.st[0]] || String(a.l.naam).localeCompare(String(b.l.naam), "nl"); });
     var rood = alle.filter(function (x) { return x.st[0] === "rood"; }).length;
     var filters = rol.coach ? '<div class="crij lb-filters"><label for="db-coach" class="hint">Coach</label><select id="db-coach"><option value="alle">Alle coaches</option>' +
       d.coaches.map(function (c) { return '<option value="' + esc(c._id) + '"' + (D.coachFilter === c._id ? " selected" : "") + ">" + esc(c.naam || c._id) + "</option>"; }).join("") +
-      '<option value="zonder"' + (D.coachFilter === "zonder" ? " selected" : "") + '>Zonder coach</option></select><input type="search" id="db-zoek" placeholder="Zoek een leerling" value="' + esc(D.zoek) + '" aria-label="Zoek een leerling"><label class="lb-chip"><input type="checkbox" id="db-aandacht"' + (D.aandacht ? " checked" : "") + '><span>Enkel wie aandacht nodig heeft (' + alle.filter(aandacht).length + ")</span></label></div>" : "";
+      '<option value="zonder"' + (D.coachFilter === "zonder" ? " selected" : "") + '>Zonder coach</option></select><select id="db-klas" aria-label="Klas"><option value="">Alle klassen</option>' + alle.map(function (x) { return x.l.klas || ""; }).filter(function (k, i, a) { return k && a.indexOf(k) === i; }).sort().map(function (k) { return '<option' + (D.klas === k ? " selected" : "") + ">" + esc(k) + "</option>"; }).join("") + '</select><input type="search" id="db-zoek" placeholder="Zoek een leerling" value="' + esc(D.zoek) + '" aria-label="Zoek een leerling"><label class="lb-chip"><input type="checkbox" id="db-aandacht"' + (D.aandacht ? " checked" : "") + '><span>Enkel wie aandacht nodig heeft (' + alle.filter(aandacht).length + ")</span></label></div>" : "";
     var uit = r.filter(function (x) { return x.teken[0] === "uit"; }).length;
     z.innerHTML = '<p class="hint lb-legende"><span class="lb-item"><span class="lb-teken ok">✓</span> in orde</span><span class="lb-item"><span class="lb-teken uit">!</span> logboek ontbreekt</span><span class="lb-item"><span class="lb-bol ok"></span> lesuur ingevuld</span><span class="lb-item"><span class="lb-bol half"></span> einde ontbreekt</span>' + (uit ? "<b>" + uit + " met een uitroepteken</b>" : "") + '<span class="lb-item">Klik op een leerling voor het logboek.</span></p>' +
       (rood ? '<div class="lb-melding rood">' + rood + (rood > 1 ? " leerlingen hebben" : " leerling heeft") + " een ontbrekend logboek.</div>" : "") + filters +
@@ -961,6 +962,7 @@
       (rol.coach ? '<div class="lb-export"><span class="hint">Exporteren:</span><button type="button" class="tab2" id="db-kopieer">Kopieer voor Google Sheets</button><button type="button" class="tab2" id="db-csv">Overzicht (CSV)</button><button type="button" class="tab2" id="db-csv-les">Alle lesuren (CSV)</button><span class="fb" id="db-exportfb" aria-live="polite"></span></div>' : "") +
       '<div id="db-detail"></div>';
     var cs = z.querySelector("#db-coach"); if (cs) cs.addEventListener("change", function () { D.coachFilter = cs.value; tabOverzicht(z, doel); });
+    var kl = z.querySelector("#db-klas"); if (kl) kl.addEventListener("change", function () { D.klas = kl.value; tabOverzicht(z, doel); });
     var ad = z.querySelector("#db-aandacht"); if (ad) ad.addEventListener("change", function () { D.aandacht = ad.checked; tabOverzicht(z, doel); });
     var zk = z.querySelector("#db-zoek"); if (zk) zk.addEventListener("input", function () { D.zoek = zk.value; var pos = zk.selectionStart; tabOverzicht(z, doel); var n = z.querySelector("#db-zoek"); n.focus(); n.setSelectionRange(pos, pos); });
     z.querySelectorAll(".db-rij").forEach(function (tr) {
