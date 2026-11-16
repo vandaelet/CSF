@@ -383,22 +383,29 @@
   /* ---------- weergave van ingevulde stukken ---------- */
   function rij(label, waarde) {
     if (waarde == null || waarde === "" || (Array.isArray(waarde) && !waarde.length)) return "";
-    return "<tr><th>" + label + "</th><td>" + (Array.isArray(waarde) ? waarde.map(esc).join("<br>") : esc(waarde).replace(/\n/g, "<br>")) + "</td></tr>";
+    return '<div class="lb-r"><dt>' + label + "</dt><dd>" + (Array.isArray(waarde) ? waarde.map(esc).join("<br>") : esc(waarde).replace(/\n/g, "<br>")) + "</dd></div>";
   }
-  function tabel(rijen) { var r = rijen.join(""); return r ? '<table class="lb-tabel">' + r + "</table>" : ""; }
+  function tabel(rijen) { var r = rijen.join(""); return r ? '<dl class="lb-dl">' + r + "</dl>" : ""; }
+  function chips(lijst) { return (lijst || []).length ? '<span class="lb-chips">' + lijst.map(function (x) { return '<span class="lb-chipje">' + esc(x) + "</span>"; }).join("") + "</span>" : ""; }
   function opstartHtml(o) {
     return tabel([rij("Klas", o.klas), (o.momenten && o.momenten.length ? rij("Lessen die ik verlaat", o.momenten.map(momentTekst)) : rij("Uit de les van", o.vakleerkracht) + rij("Vak", o.vak) + rij("Moment", (o.dag || "") + (o.lesuur ? " · lesuur " + o.lesuur : ""))),
       rij("Coach", o.coach), rij("Voorziene tijd", o.voorzieneTijd), rij("Motivatie", o.motivatie), rij("Afgesproken evaluatie", o.evaluatieExtra || (o.evaluatieGelezen && o.evaluatieGelezen.length ? "criteria van het project genoteerd" : "")), rij("Link naar het project", o.link)]);
   }
+  /* één lesuur als kaart: begin links, einde rechts (de leidraad hoort niet meer in het logboek) */
   function lesHtml(l) {
-    var b = l.begin || {}, e = l.einde || {};
-    return '<div class="lb-les"><h4>Lesuur ' + l.nr + ' <span class="hint">· ' + datum(l.datum) + (l.ander ? " · bij het vorige project " + esc(String(l.ander).split(":")[0]) : "") + "</span>" + (l.einde ? "" : ' <span class="lb-pill oranje">einde ontbreekt</span>') + "</h4>" +
-      tabel([rij("Stappen", b.stappen), rij("Voorziene tijd (min)", b.minuten), rij("Wat ga ik vandaag doen?", b.plan), rij("Vraag aan de coach (begin)", b.vraagCoach),
-        l.leidraad ? rij("Leidraad (" + (l.leidraad.items || []).filter(function (x) { return x.af; }).length + "/" + (l.leidraad.items || []).length + " afgevinkt)", leidraadTekst(l.leidraad)) : "",
-        rij("Wat weet ik van dit onderwerp?", e.weet), rij("Wat is de opdracht?", e.opdracht), rij("Mijn ideeën", e.ideeen), rij("Het beste idee", e.besteIdee),
-        rij("Nodig om te starten", e.nodig), rij("Wat doe ik eerst?", e.eerst), rij("Totaalproject geschat op", e.schatting),
-        rij("Tijd", e.tijd), rij("Reden", e.reden), rij("Moeilijk", e.moeilijk), rij("Eerste sessie", e.verloop),
-        rij("Gemiste leerstof", e.gemist), rij("Zo ingehaald", e.ingehaald), rij("Nog vragen", e.vragen), rij("Vragen gesteld", e.via), rij("Vraag aan de coach (einde)", e.vraagCoach), rij("Mijn manier van werken", e.geslaagd), rij("Mijn eigen feedback", e.geslaagdWaarom)]) + "</div>";
+    var b = l.begin || {}, e = l.einde || {}, eerste = l.nr === 1 && (e.weet || e.opdracht || e.verloop);
+    var werkwijze = e.geslaagd ? '<span class="lb-pill ' + (/NIET/.test(e.geslaagd) ? "rood" : "groen") + '">' + esc(e.geslaagd.toLowerCase()) + "</span>" : "";
+    var beginDl = tabel([rij("Plan voor vandaag", b.plan), b.stappen && b.stappen.length ? '<div class="lb-r"><dt>TASC-stappen</dt><dd>' + chips(b.stappen) + "</dd></div>" : "",
+      rij("Voorziene tijd", b.minuten ? b.minuten + " minuten" : ""), rij("Vraag aan de coach", b.vraagCoach)]) || '<p class="hint">Niets ingevuld.</p>';
+    var eindeDl = !l.einde ? '<p class="hint">Nog niet ingevuld.</p>' : eerste
+      ? tabel([rij("Wat weet ik al?", e.weet), rij("De opdracht", e.opdracht), rij("Mijn ideeën", e.ideeen), rij("Het beste idee", e.besteIdee), rij("Nodig om te starten", e.nodig),
+          rij("Wat doe ik eerst?", e.eerst), rij("Totaalproject geschat op", e.schatting), rij("Genoeg tijd?", e.tijd), rij("Reden", e.reden), rij("Moeilijk", e.moeilijk), rij("Zo verliep de eerste sessie", e.verloop), rij("Vraag aan de coach", e.vraagCoach)])
+      : tabel([e.geslaagd ? '<div class="lb-r"><dt>Mijn manier van werken</dt><dd>' + werkwijze + "</dd></div>" : "", rij("Mijn eigen feedback", e.geslaagdWaarom), rij("Gemiste leerstof", e.gemist), rij("Zo ingehaald", e.ingehaald),
+          rij("Nog vragen", e.vragen), rij("Vragen gesteld", e.via), rij("Genoeg tijd?", e.tijd), rij("Reden", e.reden), rij("Moeilijk", e.moeilijk), rij("Vraag aan de coach", e.vraagCoach)]);
+    return '<article class="lb-les"><header class="lb-les-kop"><span class="lb-les-nr">Lesuur ' + l.nr + '</span><span class="lb-les-dat">' + datum(l.datum) + "</span>" +
+      (l.ander ? '<span class="hint">bij het vorige project ' + esc(String(l.ander).split(":")[0]) + "</span>" : "") +
+      '<span class="lb-les-st">' + (l.einde ? werkwijze || '<span class="lb-pill groen">ingevuld</span>' : '<span class="lb-pill oranje">einde ontbreekt</span>') + "</span></header>" +
+      '<div class="lb-les-kol"><section><h5>Begin van het lesuur</h5>' + beginDl + "</section><section><h5>Einde van het lesuur</h5>" + eindeDl + "</section></div></article>";
   }
   function afsluitingHtml(a) {
     return tabel([rij("Tijd", a.tijd), rij("Reden", a.reden), rij("Moeilijk", a.moeilijk), rij("Het project vind ik", a.oordeel), rij("Tip voor de volgende leerling", a.aanrader),
@@ -406,45 +413,7 @@
       rij("Netjes en verzorgd", a.verzorgd), rij("Wat ik nu weet", a.nuWeet), rij("Over mezelf geleerd", a.overMezelf), rij("Goed en beter", a.goedBeter),
       rij("Volgende keer anders", a.volgendeKeer), rij("Gemiste leerstof verwerken", a.inhalen)]);
   }
-  /* ---------- leidraad in het logboek: afvinken, wat niet af is schuift door naar de volgende les ---------- */
-  function routine(st) { return CSF.logMoment ? CSF.logMoment(st.soort, st.tekst) : /logboek/i.test(String(st.soort || "")); }
-  function leidraadItems(p, k) {
-    /* projecten die langer mogen duren (p.extraLes): na het laatste lesuur volgt telkens een extra lesuur */
-    var les = p && p.lessen && (p.lessen[k - 1] || (p.extraLes && k > p.lessen.length ? p.extraLes : null)); if (!les) return [];
-    return les.stappen.map(function (st, j) { return { les: k, i: j, tijd: st[0], soort: st[1], tekst: st[2], af: false }; });
-  }
-  function leidraadVoor(p, vorige) {
-    var prev = vorige[vorige.length - 1];
-    if (prev && prev.leidraad) {
-      var rest = (prev.leidraad.items || []).filter(function (x) { return !x.af && !routine(x); }).map(function (x) { return Object.assign({}, x, { door: true }); });
-      if (rest.length) return { les: prev.leidraad.les, items: rest };
-      return { les: prev.leidraad.les + 1, items: leidraadItems(p, prev.leidraad.les + 1) };
-    }
-    var k = vorige.filter(function (x) { return !x.ander; }).length + 1;
-    return { les: k, items: leidraadItems(p, k) };
-  }
-  function leidraadHtml(p, ld) {
-    if (!p || !p.lessen || !p.lessen.length) return '<p class="hint">Dit project heeft nog geen leidraad per lesuur. Volg de afspraken met je coach.</p>';
-    var items = ld.items || [], perLes = {};
-    items.forEach(function (x, idx) { (perLes[x.les] = perLes[x.les] || []).push([x, idx]); });
-    var nAf = items.filter(function (x) { return x.af; }).length, volgende = ld.les < p.lessen.length || !!p.extraLes;
-    var lesNrs = Object.keys(perLes).map(Number).sort(function (a, b) { return a - b; });
-    return '<div class="lb-stappen lb-leidraad"><h4>Leidraad van vandaag <span class="hint">· ' + nAf + " van " + items.length + ' afgevinkt</span></h4>' +
-      '<p class="hint">Vink af wat je gedaan hebt. Wat je niet afvinkt, komt automatisch in je volgende les.</p>' +
-      lesNrs.map(function (k) {
-        var les = p.lessen[k - 1] || p.extraLes, door = perLes[k].some(function (y) { return y[0].door; });
-        return '<p class="lb-leidraadkop"><b>Lesuur ' + k + (les ? " · " + les.titel : "") + "</b>" + (door ? ' <span class="lb-pill oranje">nog af te werken</span>' : "") + "</p>" +
-          '<ul class="lb-vinklijst">' + perLes[k].map(function (y) {
-            var x = y[0], idv = "ld-" + y[1];
-            return '<li class="' + (routine(x) ? "lb" : "") + '"><label for="' + idv + '"><input type="checkbox" id="' + idv + '" data-ld="' + y[1] + '"' + (x.af ? " checked" : "") + '><span class="t">' + esc(x.tijd || "") + '</span> <span class="s">' + x.soort + '</span> <span class="w">' + x.tekst + "</span></label></li>";
-          }).join("") + "</ul>";
-      }).join("") +
-      (volgende ? '<p><button type="button" class="btn licht lb-klein" id="ld-meer">Alles af? Voeg lesuur ' + (ld.les + 1) + " van de leidraad toe</button></p>" : "") +
-      (p.werkbundel && p.werkbundel.length ? '<p><a class="btn licht" href="#wb-' + p.id + '">Open de werkbundel</a> <a class="btn licht" href="#p-' + p.id + '">Naar het project</a></p>' : "") + "</div>";
-  }
-  function leidraadTekst(ld) {
-    return (ld.items || []).map(function (x) { return (x.af ? "✓ " : "○ ") + "lesuur " + x.les + ": " + String(x.tekst).replace(/<[^>]+>/g, "") + (x.af || routine(x) ? "" : " (schuift door)"); });
-  }
+  /* De leidraad per lesuur staat enkel nog op de projectpagina (optioneel te raadplegen); ze hoort niet meer in het logboek. */
   function stappenHtml(p, n) {
     var les = p && p.lessen && p.lessen.length ? (n > p.lessen.length && p.extraLes ? p.extraLes : p.lessen[Math.min(n, p.lessen.length) - 1]) : null;
     if (!les) return '<p class="hint">Dit project heeft nog geen stappenplan per lesuur. Volg de afspraken met je coach.</p>';
@@ -610,7 +579,7 @@
       if (open.length) return feedbackPoort(doel, open, kopje);
       if (!lb) return opstart(doel, p, id, kopje);
       var ls = lb.lessen || [], laatste = ls[ls.length - 1], n = ls.length;
-      var geschiedenis = (ls.length ? '<details class="lb-hist"><summary>Mijn ingevulde lesuren (' + ls.length + ")</summary>" + ls.slice().reverse().map(lesHtml).join("") + "</details>" : "") +
+      var geschiedenis = (ls.length ? '<details class="lb-hist"><summary>Mijn lesuren (' + ls.length + ") · laatste bovenaan</summary>" + ls.slice().reverse().map(lesHtml).join("") + "</details>" : "") +
         '<details class="lb-hist"><summary>Mijn opstart</summary>' + opstartHtml(lb.opstart || {}) + "</details>";
       if (lb.status === "afgerond") {
         doel.innerHTML = kopje + (lb.goedgekeurd ? '<div class="lb-melding groen">Je coach keurde dit project goed op ' + datum(lb.goedgekeurdOp) + '. Het staat in je portfolio. Proficiat!</div>' : '<div class="lb-melding groen">Je project is afgerond. Proficiat! Je coach moet het nog goedkeuren. Daarna kies je een nieuw project.</div>') + '<h3>Evaluatie en reflectie</h3>' + afsluitingHtml(lb.afsluiting || {}) + geschiedenis;
@@ -684,12 +653,12 @@
         veld("minuten", "Projecttijd voor deze stappen (minuten)", { type: "number", waarde: 50, verplicht: true }) +
         veld("plan", "Wat ga ik vandaag doen?", { lang: true, verplicht: true })) +
       veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." });
-    doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill turkoois">Begin van lesuur ' + n + '</span><p>Vul dit in bij het <b>begin</b> van het lesuur. Daarna verschijnt het stappenplan van vandaag.</p></div>' +
+    doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill turkoois">Begin van lesuur ' + n + '</span><p>Vul dit in bij het <b>begin</b> van het lesuur. Daarna gaat je project open.</p></div>' +
       formulier("lb-begin", inhoud, "Start lesuur " + n) +
       (ls.length ? '<div class="lb-afsluiten"><h3>Is je project af?</h3><p>Vul dan je evaluatie en je reflectie in.</p><button type="button" class="btn licht" id="lb-naar-afsluiten">Mijn project is af</button></div>' : "") +
       geschiedenis;
     bij(doel.querySelector("#lb-begin"), function (d) {
-      var nieuw = ls.concat([{ nr: n, datum: vandaag(), begin: { tijd: nu(), stappen: d.stappen, minuten: Number(d.minuten) || 0, plan: d.plan || "", vraagCoach: d.vraagCoach || "" }, leidraad: leidraadVoor(p, ls) }]);
+      var nieuw = ls.concat([{ nr: n, datum: vandaag(), begin: { tijd: nu(), stappen: d.stappen, minuten: Number(d.minuten) || 0, plan: d.plan || "", vraagCoach: d.vraagCoach || "" } }]);
       var vr = String(d.vraagCoach || "").trim().slice(0, 1000), ll = rol.leerling;
       var vraagKlaar = vr ? F.setDoc(ref("vragen/" + nieuwId()), { leerling: mail(), naam: ll.naam || wieNaam(), klas: ll.klas || "", coach: ll.coach || "", coachNaam: ll.coachNaam || "",
         project: p.id, projectnaam: p.naam, tekst: "Lesuur " + n + ": " + vr, datum: nu(), open: true, antwoord: "", gelezen: false }) : Promise.resolve();
@@ -716,26 +685,18 @@
         veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." }) +
         keuze("geslaagd", "Mijn manier van werken lijkt me dus", ["GESLAAGD", "NIET GESLAAGD"], { verplicht: true }) +
         veld("geslaagdWaarom", "Mijn eigen feedback: waarom vind ik dat? Wat hou ik zo, wat doe ik volgende keer anders?", { lang: true, rijen: 3, verplicht: true });
-    doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill oranje">Lesuur ' + n + ' loopt</span><p>Je lesuur is gestart. Werk nu verder aan je project. Vink in de leidraad hieronder af wat je gedaan hebt. Vul het <b>einde</b> van je logboek in op het einde van het lesuur.</p>' +
-      '<p class="lb-naarproject"><a class="btn" href="#p-' + esc(p.id) + '">Ga naar mijn project en werk verder →</a> <span class="hint">Klaar? Sluit je project: je komt vanzelf terug in je logboek. Vul dan het einde van je logboek in.</span></p><p class="hint">Andere projecten bekijken? In het <a href="#overzicht">projectenoverzicht</a> en bij de <a href="#oefenproject">oefenprojecten</a> lees je enkel de projectfiches.</p></div>' +
-      '<div id="lb-ld"></div><h3 class="lb-eindekop">Einde van lesuur ' + n + "</h3>" + formulier("lb-einde", inhoud, "Bewaar het einde van lesuur " + n) + geschiedenis;
-    /* de leidraad van vandaag: afvinken wordt meteen bewaard */
-    var ld = l.leidraad ? JSON.parse(JSON.stringify(l.leidraad)) : leidraadVoor(p, ls.slice(0, -1)), box = doel.querySelector("#lb-ld");
-    var bewaarLd = function () { var nw = ls.slice(); nw[nw.length - 1] = Object.assign({}, nw[nw.length - 1], { leidraad: ld }); ls = nw; l = nw[nw.length - 1]; return F.updateDoc(ref("logboeken/" + id), { lessen: nw }); };
-    var tekenLd = function () {
-      box.innerHTML = leidraadHtml(p, ld);
-      box.querySelectorAll("[data-ld]").forEach(function (c) { c.addEventListener("change", function () { ld.items[Number(c.dataset.ld)].af = c.checked; bewaarLd().catch(function () {}); tekenLd(); }); });
-      var m = box.querySelector("#ld-meer");
-      if (m) m.addEventListener("click", function () { ld.les += 1; ld.items = ld.items.concat(leidraadItems(p, ld.les)); bewaarLd().catch(function () {}); tekenLd(); });
-    };
-    tekenLd();
+    doel.innerHTML = kopje + '<div class="lb-nu"><div><span class="lb-pill oranje">Lesuur ' + n + ' loopt</span><h3>Werk verder aan je project</h3>' +
+      '<p class="hint">Klaar? Sluit je project: je komt vanzelf terug in je logboek. Vul dan hieronder het einde van je logboek in.</p></div>' +
+      '<div class="lb-nu-acties lb-naarproject"><a class="btn" href="#p-' + esc(p.id) + '">Ga naar mijn project →</a><a class="lb-zacht" href="#p-' + esc(p.id) + '" data-ldlink="1">Leidraad van dit lesuur bekijken (mag)</a></div></div>' +
+      '<h3 class="lb-eindekop">Einde van lesuur ' + n + "</h3>" + formulier("lb-einde", inhoud, "Bewaar het einde van lesuur " + n) + geschiedenis;
+    var ldl = doel.querySelector("[data-ldlink]"); if (ldl) ldl.addEventListener("click", function () { try { sessionStorage.setItem("tab-" + p.id, "leidraad"); } catch (e) {} });
     bij(doel.querySelector("#lb-einde"), function (d) {
       d.tijdstip = nu();
       /* een vraag aan de coach komt ook bij ‘Open vragen’ in het dashboard */
       var vr = String(d.vraagCoach || "").trim().slice(0, 1000), ll = rol.leerling;
       var vraagKlaar = vr ? F.setDoc(ref("vragen/" + nieuwId()), { leerling: mail(), naam: ll.naam || wieNaam(), klas: ll.klas || "", coach: ll.coach || "", coachNaam: ll.coachNaam || "",
         project: p.id, projectnaam: p.naam, tekst: "Lesuur " + n + ": " + vr, datum: nu(), open: true, antwoord: "", gelezen: false }) : Promise.resolve();
-      var nieuw = ls.slice(); nieuw[nieuw.length - 1] = Object.assign({}, l, { einde: d, leidraad: ld });
+      var nieuw = ls.slice(); nieuw[nieuw.length - 1] = Object.assign({}, l, { einde: d });
       return vraagKlaar.then(function () { return F.updateDoc(ref("logboeken/" + id), { lessen: nieuw }); });
     });
   }
@@ -1065,24 +1026,26 @@
           '<div class="lb-acties"><button type="submit" class="btn">Verstuur feedback</button><span class="fb" aria-live="polite"></span></div></form>' : "")) : "";
     /* nieuwe antwoorden van de leerling: gezien zodra de coach het detail opent */
     if (rol.coach) fb.filter(function (f) { return f.reactie && !f.reactieGezien; }).forEach(function (f) { f.reactieGezien = true; F.updateDoc(ref("feedback/" + f._id), { reactieGezien: true }).catch(function () {}); });
+    var voornaam = esc(String(l.naam || "de leerling").split(" ")[0]);
     el.innerHTML = '<div class="lb-detail"><h3>' + esc(l.naam || l._id) + ' <span class="hint">· ' + esc(l.klas || "") + " · coach: " + esc(l.coachNaam || "–") + "</span></h3>" +
       (neeDagen.length ? '<p class="hint">Volgens de leerling geen logboek nodig op: ' + neeDagen.map(datum).join(", ") + ".</p>" : "") +
-      (rol.coach ? '<div class="lb-fbboven"><h4>Feedback</h4>' + fbSamenvatting(fb) + (feedbackLijst(fb, { project: lbs.length > 1 }) || '<p class="hint">Nog geen feedback gegeven.</p>') + FBFORM + "</div>" : "") +
       (lbs.length ? lbs.map(function (lb) {
         var st = status(lb, l), pr = project(lb.project), res = (d.resultaten.filter(function (x) { return x._id === lb.leerling + "__" + lb.project; })[0]) || {};
-        return '<details class="lb-hist" open><summary>' + esc(lb.projectnaam) + ' <span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span></summary>" +
+        var ls = lb.lessen || [], la = ls[ls.length - 1], nuBezig = lb.status !== "afgerond" && lb.status !== "geannuleerd" && la && !la.einde;
+        return '<section class="lb-proj"><div class="lb-proj-kop"><h4>' + esc(lb.projectnaam) + '</h4><span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span>" +
+            (nuBezig ? '<span class="lb-pill groen">● bezig in lesuur ' + la.nr + (la.datum ? " (" + datum(la.datum) + ")" : "") + "</span>" : "") + "</div>" +
+          '<div class="lb-proj-acties">' + (pr ? '<a class="btn licht lb-klein" href="#p-' + esc(pr.id) + '" target="_blank" rel="noopener">Bekijk het project ↗</a>' : "") +
+            (rol.coach && pr && pr.atelier ? '<a class="btn licht lb-klein" href="' + esc(pr.atelier) + "?leerling=" + encodeURIComponent(lb.leerling) + '" target="_blank" rel="noopener">📖 Open het boek van ' + voornaam + " in het schrijfatelier ↗</a>" : "") +
+            (lb.opstart && lb.opstart.link ? '<a class="btn licht lb-klein" href="' + esc(lb.opstart.link) + '" target="_blank" rel="noopener">🔗 Online werk van de leerling ↗</a>' : "") + "</div>" +
           (rol.coach ? '<div class="lb-acties lb-goedkeur" data-lb="' + esc(lb.leerling + "__" + lb.project) + '">' + (lb.goedgekeurd ? '<span class="lb-pill groen">goedgekeurd door ' + esc(lb.goedgekeurdDoor || "") + " op " + datum(lb.goedgekeurdOp) + "</span>"
             : '<button type="button" class="btn lb-klein" data-keur="1">Keur project goed</button>') + ' <button type="button" class="btn donker lb-klein" data-annuleer="1">' + (lb.goedgekeurd ? "Haal uit portfolio" : "Annuleer: leerling kiest opnieuw") + '</button><span class="fb" aria-live="polite"></span></div>' : "") +
-          (pr ? (function () { var ls = lb.lessen || [], la = ls[ls.length - 1], nuBezig = lb.status !== "afgerond" && lb.status !== "geannuleerd" && la && !la.einde;
-            return '<p class="lb-linkrij">' + (nuBezig ? '<span class="lb-pill groen">● bezig in lesuur ' + la.nr + (la.datum ? " (" + datum(la.datum) + ")" : "") + "</span> " : "") + '<a class="btn licht lb-klein" href="#p-' + esc(pr.id) + '" target="_blank" rel="noopener">Bekijk het project ↗</a></p>'; })() : "") +
-          (rol.coach && pr && pr.atelier ? '<p class="lb-linkrij">📖 <a class="btn lb-klein" href="' + esc(pr.atelier) + "?leerling=" + encodeURIComponent(lb.leerling) + '" target="_blank" rel="noopener">Open het boek van ' + esc((l.naam || "de leerling").split(" ")[0]) + " in het schrijfatelier ↗</a></p>" : "") +
-          (lb.opstart && lb.opstart.link ? '<p class="lb-linkrij">🔗 <b>Link naar het project:</b> <a href="' + esc(lb.opstart.link) + '" target="_blank" rel="noopener">' + esc(lb.opstart.link) + " ↗</a></p>" : "") +
           (lb.status === "geannuleerd" && lb.gewisseldNaar ? '<p class="hint">De leerling wisselde naar een ander project.</p>' : "") +
-          (pr ? "<h4>Leerkaarten en vragen</h4>" + scoreHtml(pr, res) + antwoordenHtml(pr, res) : "") +
-          (lb.afsluiting ? "<h4>Evaluatie en reflectie</h4>" + afsluitingHtml(lb.afsluiting) : "") +
-          "<h4>Lesuren <span class=\"hint\">· laatste bovenaan</span></h4>" + ((lb.lessen || []).length ? (lb.lessen || []).slice().reverse().map(lesHtml).join("") : '<p class="hint">Nog geen lesuren.</p>') +
-          "<h4>Opstart</h4>" + opstartHtml(lb.opstart || {}) + "</details>";
+          (lb.afsluiting ? '<h5 class="lb-sub">Evaluatie en reflectie</h5>' + afsluitingHtml(lb.afsluiting) : "") +
+          '<h5 class="lb-sub">Lesuren <span class="hint">· laatste bovenaan</span></h5>' + (ls.length ? ls.slice().reverse().map(lesHtml).join("") : '<p class="hint">Nog geen lesuren.</p>') +
+          (pr ? '<details class="lb-hist"><summary>Leerkaarten, test en controle</summary>' + scoreHtml(pr, res) + antwoordenHtml(pr, res) + "</details>" : "") +
+          '<details class="lb-hist"><summary>Opstart</summary>' + opstartHtml(lb.opstart || {}) + "</details></section>";
       }).join("") : '<p class="hint">Deze leerling heeft nog geen logboek gestart.</p>') +
+      (rol.coach ? '<section class="lb-fbboven"><h4>Feedback aan ' + voornaam + "</h4>" + fbSamenvatting(fb) + (feedbackLijst(fb, { project: lbs.length > 1 }) || '<p class="hint">Nog geen feedback gegeven.</p>') + FBFORM + "</section>" : "") +
       "</div>";
     /* schrijfatelier: heeft de leerling een boek, dan bovenaan een knop naar dat boek (ook zonder logboek van het project) */
     if (rol.coach && !el.querySelector('a[href*="schrijfatelier/?leerling="]')) haal("boeken/" + l._id).then(function (s) {

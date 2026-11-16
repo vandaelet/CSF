@@ -90,12 +90,9 @@ const DB = {
   check(await p.locator('section.vel.lb-dicht').count() === 1 && (await p.textContent('.lb-projectblok')).includes('Vul eerst het begin'), 'eigen project blijft dicht tot het begin-logboek ingevuld is');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-begin');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
-  check(await p.locator('.lb-stappen').count() === 1, 'stappenplan van lesuur 1 verschijnt na het begin-logboek');
-  check(await p.locator('.lb-leidraad [data-ld]').count() > 2, 'leidraad van lesuur 1 staat als afvinklijst in het logboek');
-  check(await p.locator('.lb-naarproject a[href="#p-wetenschappen"]').count() === 1, 'na het begin-logboek: link naar het project om verder te werken');
-  const afTekst = (await p.locator('.lb-vinklijst li:not(.lb) .w').first().textContent()).trim();
-  await p.locator('.lb-vinklijst li:not(.lb) input').first().check(); await wacht(400);
-  d = await fakedb(p); { const L1 = d['logboeken/peeters.lien@svsl.be__wetenschappen'].lessen[0].leidraad; check(L1.les === 1 && L1.items.filter(x => x.af).length === 1, 'afvinken wordt meteen bewaard'); }
+  check(await p.locator('[data-ld], .lb-vinklijst').count() === 0, 'de leidraad wordt niet meer afgevinkt in het logboek');
+  check(await p.locator('.lb-naarproject a[href="#p-wetenschappen"]').count() >= 1 && await p.locator('[data-ldlink]').count() === 1, 'na het begin-logboek: link naar het project en (optioneel) naar de leidraad');
+  d = await fakedb(p); check(!d['logboeken/peeters.lien@svsl.be__wetenschappen'].lessen[0].leidraad, 'de leidraad komt niet in het logboek');
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(400);
   check(await p.locator('section.vel.lb-dicht').count() === 0 && await p.locator('.ptab').first().getAttribute('data-tab') === 'start' && !(await p.locator('#tp-start').isHidden()), 'na het begin-logboek: project open, eerst de leerkaarten');
   check(JSON.stringify(await p.locator('.ptab[data-tab]').evaluateAll(l => l.map(b => b.dataset.tab))) === JSON.stringify(['start', 'werkbundel', 'leidraad', 'controle', 'fiche']), 'vaste volgorde: leerkaarten, werkbundel, leidraad, controle, projectfiche');
@@ -156,10 +153,6 @@ const DB = {
   check(VR.length === 1 && VR[0][1].open === true && VR[0][1].coach === 'els@svsl.be' && VR[0][1].project === 'wetenschappen', 'vraag aan de coach bewaard');
   await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.'); await p.fill('#vraagCoach', 'Mag ik met een vergrootglas werken?');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
-  { const tk = await p.textContent('.lb-leidraad');
-    check(tk.includes('nog af te werken') && tk.includes('Lesuur 1') && !tk.includes(afTekst), 'wat niet afgevinkt is, schuift door naar de volgende les'); }
-  await p.click('#ld-meer'); await wacht(300);
-  check((await p.textContent('.lb-leidraad')).includes('Lesuur 2'), 'leerling voegt het volgende lesuur van de leidraad toe');
   await p.fill('#gemist', 'Breuken'); await p.fill('#ingehaald', 'Cursus gelezen.'); await p.check('#vragen-1'); await p.check('#geslaagd-0');
   await p.click('#lb-einde button[type=submit]'); await wacht(200);
   check(await p.locator('#geslaagdWaarom.lb-mist, .lb-mist #geslaagdWaarom').count() + await p.locator('.lb-mist').count() > 0 && await p.locator('#lb-naar-afsluiten').count() === 0, 'eigen feedback bij geslaagd of niet geslaagd is verplicht');
