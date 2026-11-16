@@ -333,6 +333,18 @@
     });
     box.addEventListener("click", function (e) { var w = e.target.closest(".moment-weg"); if (w) { w.closest(".moment").remove(); hernummer(); } });
   }
+  /* bij het wijzigen van de opstart: de bewaarde lessen terug invullen */
+  function vulMomenten(form, o) {
+    var ms = o.momenten && o.momenten.length ? o.momenten : o.dag ? [{ dag: o.dag, lesuur: o.lesuur, vak: o.vak, leerkracht: o.vakleerkracht, email: "" }] : [];
+    ms.forEach(function (m, i) {
+      if (i) form.querySelector("#moment-plus").click();
+      var r = form.querySelectorAll("#momenten .moment")[i]; if (!r) return;
+      r.querySelector(".m-dag").value = m.dag || ""; r.querySelector(".m-uur").value = m.lesuur || ""; r.querySelector(".m-vak").value = m.vak || "";
+      var lk = r.querySelector(".m-lk"), gek = r.querySelector(".vk-keuze"), zk = r.querySelector(".vk-zoek");
+      if (lk) lk.value = m.leerkracht || "";
+      else if (gek && m.leerkracht && m.email) { gek.innerHTML = '<label class="lb-chip vk-gekozen" title="Klik om te wijzigen"><input type="checkbox" class="m-mail" value="' + esc(m.email) + '" data-naam="' + esc(m.leerkracht) + '" checked><span>' + esc(m.leerkracht) + " ✕</span></label>"; if (zk) zk.hidden = true; }
+    });
+  }
   function leesMomenten(form) {
     return [].map.call(form.querySelectorAll("#momenten .moment"), function (m) {
       var ch = m.querySelector(".m-mail"), lk = m.querySelector(".m-lk");
@@ -597,18 +609,66 @@
       if (!lb && hu && hu.project !== pid) return melding(doel, "Je werkt al aan het project <b>" + esc(hu.projectnaam) + '</b>. Je kan pas een nieuw project kiezen als je coach dat project goedkeurt. <a href="#logboek">Naar mijn logboek</a>.', "oranje");
       if (!lb && !P.ziet(p)) return melding(doel, 'Dit project staat niet open voor jou. Kies een project in <a href="#logboek">Mijn logboek</a>.', "oranje");
       if (open.length) return feedbackPoort(doel, open, kopje);
-      if (!lb) return opstart(doel, p, id, kopje);
-      var ls = lb.lessen || [], laatste = ls[ls.length - 1], n = ls.length;
-      var geschiedenis = (ls.length ? '<details class="lb-hist"><summary>Mijn lesuren (' + ls.length + ") · laatste bovenaan</summary>" + ls.slice().reverse().map(lesHtml).join("") + "</details>" : "") +
-        '<details class="lb-hist"><summary>Mijn opstart</summary>' + opstartHtml(lb.opstart || {}) + "</details>" +
-        (portfolio(r[3]).length ? '<p class="lb-archieflink"><a href="#logboek">📁 Mijn vorige projecten (' + portfolio(r[3]).length + ") terugbekijken</a></p>" : "");
-      if (lb.status === "afgerond") {
-        doel.innerHTML = kopje + (lb.goedgekeurd ? '<div class="lb-melding groen">Je coach keurde dit project goed op ' + datum(lb.goedgekeurdOp) + '. Het staat in je portfolio. Proficiat!</div>' : '<div class="lb-melding groen">Je project is afgerond. Proficiat! Je coach moet het nog goedkeuren. Daarna kies je een nieuw project.</div>') + '<h3>Evaluatie en reflectie</h3>' + afsluitingHtml(lb.afsluiting || {}) + geschiedenis;
+      logboekTabs(doel, p, id, lb, kopje, portfolio(r[3]).length);
+    }).catch(function (e) { melding(doel, "Je logboek kon niet laden. (" + esc(e && e.message) + ")", "rood"); });
+  }
+
+  /* ---------- het logboek in vier tabbladen: Opstart · Begin lesuur N · Einde lesuur N · Zelfevaluatie ----------
+     Het tabblad van de stap die nu aan de beurt is, staat open. Na het einde van lesuur N volgt vanzelf het begin van lesuur N+1. */
+  function logboekTabs(doel, p, id, lb, kopje, nArchief) {
+    var ls = lb ? lb.lessen || [] : [], laatste = ls[ls.length - 1];
+    var staat = !lb ? "opstart" : lb.status === "afgerond" ? "klaar" : laatste && !laatste.einde ? "einde" : "begin";
+    var N = staat === "einde" ? laatste.nr : staat === "begin" ? ls.length + 1 : 0;
+    var tabs = [
+      ["opstart", "Opstart", lb ? "ok" : "nu"],
+      ["begin", "Begin lesuur" + (N ? " " + N : ""), staat === "begin" ? "nu" : staat === "einde" ? "ok" : "dicht"],
+      ["einde", "Einde lesuur" + (N ? " " + N : ""), staat === "einde" ? "nu" : "dicht"],
+      ["eval", "Zelfevaluatie", staat === "klaar" ? "ok" : staat === "begin" && ls.length ? "kan" : "dicht"]
+    ];
+    var actief = staat === "opstart" ? "opstart" : staat === "klaar" ? "eval" : staat;
+    var geschiedenis = (ls.length ? '<details class="lb-hist"><summary>Mijn lesuren (' + ls.length + ") · laatste bovenaan</summary>" + ls.slice().reverse().map(lesHtml).join("") + "</details>" : "") +
+      (nArchief ? '<p class="lb-archieflink"><a href="#logboek">📁 Mijn vorige projecten (' + nArchief + ") terugbekijken</a></p>" : "");
+    doel.innerHTML = kopje + '<div class="lb-ltabs" role="tablist">' + tabs.map(function (t, i) {
+        return '<button type="button" role="tab" class="lb-ltab ' + t[2] + '" data-lbtab="' + t[0] + '" aria-selected="' + (t[0] === actief) + '"><span class="lb-ltab-nr">' + (t[2] === "ok" ? "✓" : t[2] === "dicht" ? "🔒" : i + 1) + "</span>" + t[1] + "</button>";
+      }).join("") + '</div><div id="lb-paneel" class="lb-paneel"></div>' + geschiedenis;
+    var paneel = doel.querySelector("#lb-paneel");
+    var slot = function (tekst) { paneel.innerHTML = '<div class="lb-slotmelding"><span aria-hidden="true">🔒</span><p>' + tekst + "</p></div>"; };
+    var toon = function (t) {
+      doel.querySelectorAll(".lb-ltab").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.lbtab === t); });
+      if (t === "opstart") {
+        if (!lb) return opstart(paneel, p, id, "");
+        paneel.innerHTML = '<div class="lb-paneelkop"><p>Je vulde je opstart in op ' + datum(String(lb.gestart || "").slice(0, 10)) + (lb.opstart && lb.opstart.gewijzigd ? " (gewijzigd op " + datum(String(lb.opstart.gewijzigd).slice(0, 10)) + ")" : "") + ".</p>" +
+          (staat !== "klaar" ? '<button type="button" class="btn licht lb-klein" id="lb-opstart-wijzig">Wijzig mijn opstart</button>' : "") + "</div>" + opstartHtml(lb.opstart || {});
+        var w = paneel.querySelector("#lb-opstart-wijzig"); if (w) w.addEventListener("click", function () { opstart(paneel, p, id, "", lb); });
         return;
       }
-      if (laatste && !laatste.einde) return einde(doel, p, id, ls, kopje, geschiedenis);
-      begin(doel, p, id, ls, kopje, geschiedenis, lb);
-    }).catch(function (e) { melding(doel, "Je logboek kon niet laden. (" + esc(e && e.message) + ")", "rood"); });
+      if (t === "begin") {
+        if (staat === "opstart") return slot("Vul eerst je <b>opstart</b> in. Daarna vul je bij het begin van elk lesuur dit tabblad in.");
+        if (staat === "klaar") return slot("Je project is afgerond. Je ingevulde lesuren vind je onderaan bij <b>Mijn lesuren</b>.");
+        if (staat === "begin") return begin(paneel, p, id, ls, "", "", lb);
+        var b = laatste.begin || {};
+        paneel.innerHTML = '<div class="lb-melding groen">✓ Je startte lesuur ' + N + (b.tijd ? " om " + String(b.tijd).slice(11, 16) : "") + '. Vul op het einde van het lesuur het tabblad <b>Einde lesuur ' + N + "</b> in.</div>" +
+          tabel([rij("Plan voor vandaag", b.plan), rij("TASC-stappen", b.stappen), rij("Voorziene minuten", b.minuten), rij("Vraag aan mijn coach", b.vraagCoach)]) +
+          '<p><button type="button" class="btn" data-lbtab="einde">Naar einde lesuur ' + N + " →</button></p>";
+        return;
+      }
+      if (t === "einde") {
+        if (staat === "einde") return einde(paneel, p, id, ls, "", "");
+        if (staat === "begin") return slot("Vul eerst het <b>begin van lesuur " + N + "</b> in. Daarna gaat je project open. Op het einde van het lesuur vul je hier het einde in.");
+        if (staat === "klaar") return slot("Je project is afgerond. Je ingevulde lesuren vind je onderaan bij <b>Mijn lesuren</b>.");
+        return slot("Vul eerst je <b>opstart</b> in.");
+      }
+      if (staat === "klaar") {
+        paneel.innerHTML = (lb.goedgekeurd ? '<div class="lb-melding groen">Je coach keurde dit project goed op ' + datum(lb.goedgekeurdOp) + ". Het staat bij je vorige projecten. Proficiat!</div>" : '<div class="lb-melding groen">Je project is afgerond. Proficiat! Je coach moet het nog goedkeuren. Daarna kies je een nieuw project.</div>') +
+          "<h3>Mijn zelfevaluatie</h3>" + afsluitingHtml(lb.afsluiting || {});
+        return;
+      }
+      if (staat === "begin" && ls.length) return afsluiten(paneel, p, id, "");
+      if (staat === "einde") return slot("Vul eerst het <b>einde van lesuur " + N + "</b> in. Is je project daarna af? Dan vul je hier je zelfevaluatie in.");
+      return slot("Op het einde van je project vul je hier je <b>zelfevaluatie</b> in.");
+    };
+    doel.onclick = function (e) { var b = e.target.closest("[data-lbtab]"); if (b && doel.contains(b)) { e.preventDefault(); toon(b.dataset.lbtab); } };
+    toon(actief);
   }
 
   function feedbackPoort(doel, open, kopje) {
@@ -632,21 +692,24 @@
     });
   }
 
-  function opstart(doel, p, id, kopje) {
-    var L = rol.leerling;
+  function opstart(doel, p, id, kopje, oud) {
+    var L = rol.leerling, o = oud ? oud.opstart || {} : null;
     var crit = (p.criteria || []).length ? '<div class="lb-veld"><span class="lb-label">Afgesproken evaluatie</span><ul class="vink">' + p.criteria.map(function (c) { return "<li>" + c + "</li>"; }).join("") + "</ul></div>" : "";
-    doel.innerHTML = kopje + '<div class="lb-melding">Dit is de <b>opstart</b> van je logboek. Je vult dit één keer in. Daarna vul je bij elk lesuur een begin en een einde in.</div>' +
+    o = o || {};
+    doel.innerHTML = kopje + (oud ? '<div class="lb-melding">Je <b>wijzigt</b> je opstart. Pas aan wat nodig is en bewaar.</div>' : '<div class="lb-melding">Dit is de <b>opstart</b> van je logboek. Je vult dit één keer per project in. Daarna vul je bij elk lesuur een begin en een einde in.</div>') +
       formulier("lb-opstart",
-        veld("klas", "Ik zit in klas", { waarde: L.klas, verplicht: true }) + momentenBlok() +
+        veld("klas", "Ik zit in klas", { waarde: o.klas || L.klas, verplicht: true }) + momentenBlok() +
         '<p class="lb-vast">Mijn CSF-coach: <b>' + esc(L.coachNaam || "nog niet toegewezen") + "</b> · Project: <b>" + esc(p.naam) + "</b></p>" +
-        veld("voorzieneTijd", "Voorziene tijd", { waarde: p.tijd, verplicht: true }) +
-        veld("motivatie", "Motivatie: ik koos voor dit project omdat …", { lang: true, verplicht: true }) +
-        crit + keuze("evaluatieGelezen", "Afgesproken evaluatie", ["Ik heb de afgesproken evaluatie gelezen en genoteerd."], { meer: true, verplicht: true }) +
-        veld("evaluatieExtra", "Extra afspraken met mijn coach", { lang: true, rijen: 2 }) +
-        veld("link", "Link naar mijn project (als je online werkt)", { hint: "Zet de link openbaar of geef je coach toegang. Je kan de link later nog toevoegen of wijzigen bovenaan je logboek." }),
-        "Bewaar mijn opstart");
+        veld("voorzieneTijd", "Voorziene tijd", { waarde: o.voorzieneTijd || p.tijd, verplicht: true }) +
+        veld("motivatie", "Motivatie: ik koos voor dit project omdat …", { lang: true, verplicht: true, waarde: o.motivatie }) +
+        crit + keuze("evaluatieGelezen", "Afgesproken evaluatie", ["Ik heb de afgesproken evaluatie gelezen en genoteerd."], { meer: true, verplicht: true, waarde: o.evaluatieGelezen }) +
+        veld("evaluatieExtra", "Extra afspraken met mijn coach", { lang: true, rijen: 2, waarde: o.evaluatieExtra }) +
+        veld("link", "Link naar mijn project (als je online werkt)", { waarde: o.link, hint: "Zet de link openbaar of geef je coach toegang. Je kan de link later nog toevoegen of wijzigen bovenaan je logboek." }),
+        oud ? "Bewaar mijn wijzigingen" : "Bewaar mijn opstart") +
+      (oud ? '<p><button type="button" class="btn donker lb-klein" data-lbtab="opstart">Annuleer</button></p>' : "");
     var fo = doel.querySelector("#lb-opstart");
     momentenKoppel(fo);
+    if (oud) vulMomenten(fo, o);
     bij(fo, function (d) {
       d.coach = L.coachNaam || "";
       var ms = leesMomenten(fo), kijkers = L.vakleerkrachten || [], eerst = Promise.resolve();
@@ -659,6 +722,10 @@
       if (mails.length) {
         kijkers = mails;
         eerst = F.setDoc(ref("leerlingen/" + mail()), { vakleerkrachten: kijkers }, { merge: true }).then(function () { L.vakleerkrachten = kijkers; });
+      }
+      if (oud) {
+        d.gewijzigd = nu(); if (o.gewisseldVan) d.gewisseldVan = o.gewisseldVan;
+        return eerst.then(function () { return F.updateDoc(ref("logboeken/" + id), { opstart: d, kijkers: kijkers }); });
       }
       var data = { leerling: mail(), naam: wieNaam() || L.naam || "", project: p.id, projectnaam: p.naam, gestart: nu(), status: "bezig", opstart: d, lessen: [], kijkers: kijkers };
       return eerst.then(function () { return F.setDoc(ref("logboeken/" + id), data); }).then(function () { MIJN.lbs = MIJN.lbs.filter(function (x) { return x.project !== p.id; }).concat([data]); });
@@ -676,7 +743,7 @@
       veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." });
     doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill turkoois">Begin van lesuur ' + n + '</span><p>Vul dit in bij het <b>begin</b> van het lesuur. Daarna gaat je project open.</p></div>' +
       formulier("lb-begin", inhoud, "Start lesuur " + n) +
-      (ls.length ? '<div class="lb-afsluiten"><h3>Is je project af?</h3><p>Vul dan je evaluatie en je reflectie in.</p><button type="button" class="btn licht" id="lb-naar-afsluiten">Mijn project is af</button></div>' : "") +
+      (ls.length ? '<div class="lb-afsluiten"><h3>Is je project af?</h3><p>Sla dan het begin over en vul je zelfevaluatie in.</p><button type="button" class="btn licht" id="lb-naar-afsluiten" data-lbtab="eval">Mijn project is af → zelfevaluatie</button></div>' : "") +
       geschiedenis;
     bij(doel.querySelector("#lb-begin"), function (d) {
       var nieuw = ls.concat([{ nr: n, datum: vandaag(), begin: { tijd: nu(), stappen: d.stappen, minuten: Number(d.minuten) || 0, plan: d.plan || "", vraagCoach: d.vraagCoach || "" } }]);
@@ -685,8 +752,6 @@
         project: p.id, projectnaam: p.naam, tekst: "Lesuur " + n + ": " + vr, datum: nu(), open: true, antwoord: "", gelezen: false }) : Promise.resolve();
       return vraagKlaar.then(function () { return F.updateDoc(ref("logboeken/" + id), { lessen: nieuw }); });
     });
-    var na = doel.querySelector("#lb-naar-afsluiten");
-    if (na) na.addEventListener("click", function () { afsluiten(doel, p, id, kopje); });
   }
 
   function einde(doel, p, id, ls, kopje, geschiedenis) {
@@ -736,11 +801,9 @@
       veld("goedBeter", "Wat ging er goed en wat kon er beter?", { lang: true, rijen: 2, verplicht: true }) +
       veld("volgendeKeer", "Wat zou ik de volgende keer anders aanpakken?", { lang: true, rijen: 2 }) +
       veld("inhalen", "Hoe lukte het zelfstandig verwerken van de gemiste leerstof?", { lang: true, rijen: 2 });
-    doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill groen">Afsluiting</span><p>Je werkte dit project af. Tijd om te reflecteren!</p></div>' +
-      formulier("lb-afsluit", inhoud, "Bewaar en sluit mijn project af") + '<p><button type="button" class="btn donker lb-klein" id="lb-terug">Terug: mijn project is nog niet af</button></p>';
+    doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill groen">Zelfevaluatie</span><p>Vul dit in als je project <b>af</b> is. Daarna sluit je project af en kijkt je coach het na.</p></div>' +
+      formulier("lb-afsluit", inhoud, "Bewaar en sluit mijn project af") + '<p><button type="button" class="btn donker lb-klein" id="lb-terug" data-lbtab="begin">Mijn project is nog niet af</button></p>';
     bij(doel.querySelector("#lb-afsluit"), function (d) { d.tijdstip = nu(); return F.updateDoc(ref("logboeken/" + id), { afsluiting: d, status: "afgerond" }); });
-    doel.querySelector("#lb-terug").addEventListener("click", herteken);
-    window.scrollTo(0, 0);
   }
 
   /* ---------- projectpagina: logboekstatus en vergrendelde lesuren ---------- */

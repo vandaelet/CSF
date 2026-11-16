@@ -86,10 +86,17 @@ const DB = {
   check(d[LB] && d[LB].opstart.dag === 'MA' && d[LB].opstart.coach === 'Van Huffel E.', 'opstart bewaard');
   check(JSON.stringify(d[LB].kijkers) === '["an@svsl.be"]', 'vakleerkracht mag meelezen');
   check(await p.locator('.lb-stappen').count() === 0, 'stappenplan nog niet zichtbaar voor het begin-logboek');
+  check(await p.locator('.lb-ltab').count() === 4 && (await p.textContent('.lb-ltab[aria-selected="true"]')).includes('Begin lesuur 1') && await p.locator('.lb-ltab.ok[data-lbtab="opstart"]').count() === 1, 'logboek in 4 tabbladen; na de opstart staat ‘Begin lesuur 1’ open');
+  await p.click('.lb-ltab[data-lbtab="einde"]'); check((await p.textContent('#lb-paneel')).includes('Vul eerst het begin van lesuur 1'), 'einde lesuur is vergrendeld tot het begin ingevuld is');
+  await p.click('.lb-ltab[data-lbtab="opstart"]'); await p.click('#lb-opstart-wijzig'); await p.waitForSelector('#lb-opstart');
+  check(await p.inputValue('#m-dag-0') === 'MA' && await p.inputValue('#motivatie') === 'Ik hou van speurwerk.', 'opstart wijzigen: bewaarde antwoorden staan al ingevuld');
+  await p.fill('#motivatie', 'Ik hou van speurwerk en proeven.'); await p.click('#lb-opstart button[type=submit]'); await p.waitForSelector('#lb-begin');
+  d = await fakedb(p); check(d[LB].opstart.motivatie === 'Ik hou van speurwerk en proeven.' && d[LB].opstart.dag === 'MA' && !!d[LB].opstart.gewijzigd && d[LB].lessen.length === 0, 'opstart gewijzigd zonder een nieuw logboek te starten');
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
   check(await p.locator('section.vel.lb-dicht').count() === 1 && (await p.textContent('.lb-projectblok')).includes('Vul eerst het begin'), 'eigen project blijft dicht tot het begin-logboek ingevuld is');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-begin');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
+  check((await p.textContent('.lb-ltab[aria-selected="true"]')).includes('Einde lesuur 1') && await p.locator('.lb-ltab.ok[data-lbtab="begin"]').count() === 1, 'na het begin staat ‘Einde lesuur 1’ open');
   check(await p.locator('[data-ld], .lb-vinklijst').count() === 0, 'de leidraad wordt niet meer afgevinkt in het logboek');
   check(await p.locator('.lb-naarproject a[href="#p-wetenschappen"]').count() >= 1 && await p.locator('[data-ldlink]').count() === 1, 'na het begin-logboek: link naar het project en (optioneel) naar de leidraad');
   d = await fakedb(p); check(!d['logboeken/peeters.lien@svsl.be__wetenschappen'].lessen[0].leidraad, 'de leidraad komt niet in het logboek');
@@ -112,6 +119,7 @@ const DB = {
   for (const [id, v] of [['weet', 'Inkt bestaat uit kleurstoffen.'], ['opdracht', 'De dader vinden.'], ['ideeen', 'Chromatografie, vingerafdrukken.'], ['besteIdee', 'Chromatografie'], ['schatting', '3 lesuren'], ['reden', 'Goed gepland.'], ['verloop', 'Vlot.']]) await p.fill('#' + id, v);
   await p.check('#tijd-0');
   await p.click('#lb-einde button[type=submit]'); await p.waitForSelector('#lb-begin');
+  check((await p.textContent('.lb-ltab[aria-selected="true"]')).includes('Begin lesuur 2'), 'na het einde van lesuur 1 volgt vanzelf ‘Begin lesuur 2’');
   check((await p.textContent('#lb-begin button[type=submit]')).includes('lesuur 2'), 'na het einde-logboek start lesuur 2');
 
   console.log('3. Coach: feedback geven');

@@ -199,6 +199,14 @@
   }
 
   /* ---------- Weergaven ---------- */
+  /* antwoordopties in een vaste, maar willekeurige volgorde (zelfde volgorde bij elk bezoek) */
+  function schud(n, sleutel) {
+    var h = 2166136261, i, idx = [];
+    for (i = 0; i < String(sleutel).length; i++) { h ^= String(sleutel).charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    for (i = 0; i < n; i++) idx.push(i);
+    for (i = n - 1; i > 0; i--) { h = (Math.imul(h, 1103515245) + 12345) >>> 0; var j = h % (i + 1), t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+    return idx;
+  }
   function zicht() { var P = CSF.portaal; return P && P.actief && P.zicht ? P.zicht() : "beide"; }
   function afsprakenKader(altijdOpen) {
     /* de eerste keer open; daarna ingeklapt (één klik om te herlezen) */
@@ -286,14 +294,14 @@
     if (eigenProj) terug = ["Mijn logboek", "#logboek-" + p.id];
     var test = (p.test || []).map(function (q, i) {
       return '<div class="tvraag" data-key="t_' + i + '" data-uitleg="' + esc(q[3]) + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + p.test.length + "</span>" + q[0] + '</p><div class="opties">' +
-        q[1].map(function (o, j) { return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
+        schud(q[1].length, p.id + "|" + q[0]).map(function (j) { var o = q[1][j]; return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
     }).join("");
     /* quizzen per fragment (bv. luisterquiz per filmclip) */
     var quizzen = (p.quizzen || []).map(function (qz, qa) {
       return '<details class="kaart quiz"><summary>' + esc(qz.titel) + '</summary>' + (qz.link ? '<p><a href="' + esc(qz.link) + '" target="_blank" rel="noopener">Bekijk het fragment ↗</a></p>' : "") + '<div class="test" data-soort="quiz">' +
         qz.vragen.map(function (q, i) {
           return '<div class="tvraag" data-key="q_' + qa + "_" + i + '" data-uitleg="' + esc(q[3] || "") + '"><p class="tq"><span class="tn">Vraag ' + (i + 1) + " van " + qz.vragen.length + "</span>" + q[0] + '</p><div class="opties">' +
-            q[1].map(function (o, j) { return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
+            schud(q[1].length, p.id + "|" + q[0]).map(function (j) { var o = q[1][j]; return '<button type="button" class="optie" data-ok="' + (j === q[2] ? 1 : 0) + '">' + o + "</button>"; }).join("") + '</div><p class="fb" aria-live="polite"></p></div>';
         }).join("") + '<p class="score" aria-live="polite"></p></div></details>';
     }).join("");
     var controle = (p.controle || []).map(function (c, i) {

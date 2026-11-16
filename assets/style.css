@@ -617,3 +617,21 @@ html { scroll-padding-top:96px; }
 .rl-deur .dd { margin-bottom:6px; }
 .rl-of { margin:10px 0 4px; }
 .lb-archieflink { margin:14px 0 0; font-size:.92rem; }
+/* logboek: vier tabbladen */
+.lb-ltabs { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin:14px 0 0; }
+.lb-ltab { display:flex; align-items:center; gap:8px; font:inherit; font-family:var(--f-kop); font-weight:700; font-size:.95rem; text-align:left; padding:10px 12px; border:1px solid var(--rand); border-bottom:0; border-radius:10px 10px 0 0; background:#f6fbfb; color:var(--grijs); cursor:pointer; }
+.lb-ltab:hover { color:var(--turkoois-donker); }
+.lb-ltab-nr { display:inline-grid; place-items:center; flex:none; width:26px; height:26px; border-radius:50%; background:var(--rand); color:var(--grijs); font-size:.8rem; }
+.lb-ltab.ok .lb-ltab-nr { background:#2e9d5b; color:#fff; }
+.lb-ltab.nu .lb-ltab-nr, .lb-ltab.kan .lb-ltab-nr { background:var(--oranje); color:#fff; }
+.lb-ltab.dicht { opacity:.7; }
+.lb-ltab.dicht .lb-ltab-nr { background:none; }
+.lb-ltab[aria-selected="true"] { background:var(--papier); color:var(--inkt); box-shadow:inset 0 3px 0 var(--oranje); position:relative; z-index:1; margin-bottom:-1px; }
+.lb-paneel { border:1px solid var(--rand); border-radius:0 0 var(--radius) var(--radius); padding:16px 18px; background:var(--papier); margin-bottom:14px; }
+.lb-paneel > .lb-form, .lb-paneel .lb-form { border:0; padding:0; margin:0; box-shadow:none; }
+.lb-paneelkop { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.lb-paneelkop p { margin:0; }
+.lb-slotmelding { display:flex; gap:12px; align-items:center; padding:18px; border-radius:10px; background:#f6fbfb; color:var(--grijs); }
+.lb-slotmelding span { font-size:1.4rem; }
+.lb-slotmelding p { margin:0; }
+@media (max-width:700px) { .lb-ltabs { grid-template-columns:1fr 1fr; } .lb-ltab { border-radius:10px; border-bottom:1px solid var(--rand); } .lb-ltab[aria-selected="true"] { margin-bottom:0; } .lb-paneel { border-radius:var(--radius); } }
