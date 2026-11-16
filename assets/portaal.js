@@ -907,10 +907,10 @@
 
   function tekenDashboard(doel) {
     var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
-    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"], ["test", "Testleerling"], ["wensen", "Aanpassingen aan de site" + (function () { var n = D.data.wensen.filter(function (w) { return w.status === "nieuw" || w.status === "bezig"; }).length; return n ? " (" + n + ")" : ""; })()]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
+    var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["week", "Weekoverzicht"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"], ["test", "Testleerling"], ["wensen", "Aanpassingen aan de site" + (function () { var n = D.data.wensen.filter(function (w) { return w.status === "nieuw" || w.status === "bezig"; }).length; return n ? " (" + n + ")" : ""; })()]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"], ["week", "Weekoverzicht"]];
     doel.innerHTML = (D.geweigerd && D.geweigerd.length ? '<div class="lb-melding rood"><b>De toegangsregels in Firebase zijn niet up-to-date.</b> ' + (rol.beheerder ? "Plak de volledige inhoud van <code>firestore.rules</code> uit GitHub in Firebase → Firestore Database → Rules en klik op Publish." : "Vraag de beheerder om de regels opnieuw te publiceren.") + ' <span class="hint">(geen toegang tot: ' + esc(D.geweigerd.join(", ")) + ")</span></div>" : "") +
       (function () {
-        var HOOFD = ["overzicht", "vragen", "leerlingen"], knop = function (t, k) { return '<button type="button" class="' + k + '" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; };
+        var HOOFD = ["overzicht", "vragen", "leerlingen", "week"], knop = function (t, k) { return '<button type="button" class="' + k + '" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; };
         var h = tabs.filter(function (t) { return HOOFD.indexOf(t[0]) >= 0; }), b = tabs.filter(function (t) { return HOOFD.indexOf(t[0]) < 0; });
         return '<div class="lb-tabs" role="tablist"><div class="chips">' + h.map(function (t) { return knop(t, "chip"); }).join("") + "</div>" +
           (b.length ? '<div class="lb-tabs2"><span class="hint">Beheer:</span>' + b.map(function (t) { return knop(t, "tab2"); }).join("") + "</div>" : "") + "</div>";
@@ -925,6 +925,7 @@
     if (D.tab === "zicht" && rol.coach) return tabZicht(z, doel);
     if (D.tab === "beheer" && rol.beheerder) return tabBeheer(z, doel);
     if (D.tab === "vak") return tabVak(z);
+    if (D.tab === "week") return tabWeek(z, doel);
     if (D.tab === "test" && rol.coach) return tabTest(z, doel);
     if (D.tab === "wensen" && rol.coach) return tabWensen(z, doel);
     tabOverzicht(z, doel);
@@ -979,6 +980,56 @@
       z.querySelector("#db-csv-les").addEventListener("click", function () { download("csf-lesuren-" + vandaag() + ".csv", lesRijen()); });
     }
     if (D.open) detail(z.querySelector("#db-detail"), z, doel);
+  }
+  /* ---------- weekoverzicht: wie doet wanneer CSF (automatisch uit de opstart van de logboeken) ---------- */
+  function weekItems() {
+    var d = D.data, ll = {};
+    d.leerlingen.forEach(function (l) { ll[l._id] = l; });
+    var uit = [];
+    d.logboeken.forEach(function (lb) {
+      var l = ll[lb.leerling], o = lb.opstart;
+      if (!l || l.actief === false || !o || lb.status === "afgerond" || lb.status === "geannuleerd") return;
+      var ms = o.momenten && o.momenten.length ? o.momenten : o.dag ? [{ dag: o.dag, lesuur: o.lesuur || "", vak: o.vak || "", leerkracht: o.vakleerkracht || "" }] : [];
+      ms.forEach(function (m) { if (m.dag) uit.push({ l: l, lb: lb, dag: m.dag, uur: String(m.lesuur || "?"), vak: m.vak || "", lk: m.leerkracht || "" }); });
+    });
+    return uit;
+  }
+  /* afdrukken: enkel het weekoverzicht, liggend A4 */
+  P.drukWeek = function (blad) {
+    var oud = document.getElementById("print-week"); if (oud) oud.remove();
+    var box = document.createElement("div"); box.id = "print-week"; box.innerHTML = blad.innerHTML; document.body.appendChild(box);
+    document.body.classList.add("print-week");
+    var klaar = function () { document.body.classList.remove("print-week"); box.remove(); window.removeEventListener("afterprint", klaar); };
+    window.addEventListener("afterprint", klaar);
+    window.print();
+  };
+  function tabWeek(z, doel) {
+    var alle = weekItems();
+    var r = alle.filter(function (x) {
+      if (rol.coach && D.coachFilter === "zonder" && x.l.coach) return false;
+      if (rol.coach && D.coachFilter !== "alle" && D.coachFilter !== "zonder" && x.l.coach !== D.coachFilter) return false;
+      return !D.klas || x.l.klas === D.klas;
+    });
+    var klassen = uniek(alle.map(function (x) { return x.l.klas || ""; })).sort();
+    var uren = LESUREN.slice(); r.forEach(function (x) { if (uren.indexOf(x.uur) < 0) uren.push(x.uur); });
+    var cel = function (dag, uur) {
+      var lijst = r.filter(function (x) { return x.dag === dag && x.uur === uur; }).sort(function (a, b) { return String(a.l.klas).localeCompare(String(b.l.klas)) || String(a.l.naam).localeCompare(String(b.l.naam), "nl"); });
+      return lijst.map(function (x) { return '<div class="wk-ll"><b>' + esc(x.l.naam || x.l._id) + '</b> <span class="wk-klas">' + esc(x.l.klas || "") + '</span><span class="wk-info">' + esc(String(x.lb.projectnaam || "").split(":")[0]) + (x.vak ? " · uit " + esc(x.vak) : "") + (x.lk ? " (" + esc(x.lk) + ")" : "") + "</span></div>"; }).join("");
+    };
+    var coachNm = rol.coach && D.coachFilter !== "alle" ? (D.coachFilter === "zonder" ? "zonder coach" : "coach " + coachNaam(D.coachFilter)) : "alle coaches";
+    var filters = '<div class="crij lb-filters wk-filters">' + (rol.coach ? '<label for="wk-coach" class="hint">Coach</label><select id="wk-coach"><option value="alle">Alle coaches</option>' +
+        D.data.coaches.map(function (c) { return '<option value="' + esc(c._id) + '"' + (D.coachFilter === c._id ? " selected" : "") + ">" + esc(c.naam || c._id) + "</option>"; }).join("") +
+        '<option value="zonder"' + (D.coachFilter === "zonder" ? " selected" : "") + ">Zonder coach</option></select>" : "") +
+      '<select id="wk-klas" aria-label="Klas"><option value="">Alle klassen</option>' + klassen.map(function (k) { return "<option" + (D.klas === k ? " selected" : "") + ">" + esc(k) + "</option>"; }).join("") + "</select>" +
+      '<button type="button" class="btn lb-klein" id="wk-print">🖨 Druk het weekoverzicht af</button></div>';
+    z.innerHTML = filters + '<div class="wk-blad"><h3 class="wk-titel">CSF-weekoverzicht <span class="hint">· ' + esc(coachNm) + (D.klas ? " · klas " + esc(D.klas) : "") + " · " + r.length + (r.length === 1 ? " lesuur" : " lesuren") + " · afgedrukt op " + datum(vandaag()) + "</span></h3>" +
+      (r.length ? '<table class="wk-tabel"><thead><tr><th>Lesuur</th>' + DAGEN.map(function (d) { return "<th>" + ({ MA: "Maandag", DI: "Dinsdag", WOE: "Woensdag", DO: "Donderdag", VRIJ: "Vrijdag" })[d] + "</th>"; }).join("") + "</tr></thead><tbody>" +
+        uren.map(function (u) { return '<tr><th scope="row">' + (u === "?" ? '<span class="hint">uur onbekend</span>' : esc(u)) + "</th>" + DAGEN.map(function (d) { return "<td>" + cel(d, u) + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table>"
+        : '<div class="lb-melding">Nog geen opstarten ingevuld. Zodra een leerling de opstart van zijn logboek invult, verschijnt hij hier automatisch.</div>') +
+      '<p class="hint wk-voet">Dit overzicht vult zich automatisch met de lessen die leerlingen in de opstart van hun logboek opgaven. Afgeronde en geannuleerde projecten staan er niet in.</p></div>';
+    var cs = z.querySelector("#wk-coach"); if (cs) cs.addEventListener("change", function () { D.coachFilter = cs.value; tabWeek(z, doel); });
+    z.querySelector("#wk-klas").addEventListener("change", function (e) { D.klas = e.target.value; tabWeek(z, doel); });
+    z.querySelector("#wk-print").addEventListener("click", function () { P.drukWeek(z.querySelector(".wk-blad")); });
   }
   /* ---------- open vragen van leerlingen ---------- */
   function tabVragen(z, doel) {
@@ -1052,6 +1103,7 @@
         var ls = lb.lessen || [], la = ls[ls.length - 1], nuBezig = lb.status !== "afgerond" && lb.status !== "geannuleerd" && la && !la.einde;
         return '<section class="lb-proj"><div class="lb-proj-kop"><h4>' + esc(lb.projectnaam) + '</h4><span class="lb-pill ' + st[0] + '">' + esc(st[1]) + "</span>" +
             (nuBezig ? '<span class="lb-pill groen">● bezig in lesuur ' + la.nr + (la.datum ? " (" + datum(la.datum) + ")" : "") + "</span>" : "") + "</div>" +
+          '<details class="lb-hist lb-opstart-boven"><summary>Opstart' + (lb.opstart && csfDagen(lb.opstart).length ? ' <span class="hint">· ' + esc((lb.opstart.momenten && lb.opstart.momenten.length ? lb.opstart.momenten.map(function (m) { return m.dag + " " + m.lesuur + "e uur"; }) : [lb.opstart.dag + (lb.opstart.lesuur ? " " + lb.opstart.lesuur + "e uur" : "")]).join(", ")) + "</span>" : !lb.opstart ? ' <span class="hint">· nog niet ingevuld</span>' : "") + "</summary>" + opstartHtml(lb.opstart || {}) + "</details>" +
           '<div class="lb-proj-acties">' + (pr ? '<a class="btn licht lb-klein" href="#p-' + esc(pr.id) + '" target="_blank" rel="noopener">Bekijk het project ↗</a>' : "") +
             (rol.coach && pr && pr.atelier ? '<a class="btn licht lb-klein" href="' + esc(pr.atelier) + "?leerling=" + encodeURIComponent(lb.leerling) + '" target="_blank" rel="noopener">📖 Open het boek van ' + voornaam + " in het schrijfatelier ↗</a>" : "") +
             (lb.opstart && lb.opstart.link ? '<a class="btn licht lb-klein" href="' + esc(lb.opstart.link) + '" target="_blank" rel="noopener">🔗 Online werk van de leerling ↗</a>' : "") + "</div>" +
@@ -1061,7 +1113,7 @@
           (lb.afsluiting ? '<h5 class="lb-sub">Evaluatie en reflectie</h5>' + afsluitingHtml(lb.afsluiting) : "") +
           '<h5 class="lb-sub">Lesuren <span class="hint">· laatste bovenaan</span></h5>' + (ls.length ? ls.slice().reverse().map(lesHtml).join("") : '<p class="hint">Nog geen lesuren.</p>') +
           (pr ? '<details class="lb-hist"><summary>Leerkaarten, test en controle</summary>' + scoreHtml(pr, res) + antwoordenHtml(pr, res) + "</details>" : "") +
-          '<details class="lb-hist"><summary>Opstart</summary>' + opstartHtml(lb.opstart || {}) + "</details></section>";
+          "</section>";
       }).join("") : '<p class="hint">Deze leerling heeft nog geen logboek gestart.</p>') +
       (rol.coach ? '<section class="lb-fbboven"><h4>Feedback aan ' + voornaam + "</h4>" + fbSamenvatting(fb) + (feedbackLijst(fb, { project: lbs.length > 1 }) || '<p class="hint">Nog geen feedback gegeven.</p>') + FBFORM + "</section>" : "") +
       "</div>";

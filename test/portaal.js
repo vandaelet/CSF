@@ -290,6 +290,10 @@ const DB = {
   await p.click('.db-rij[data-ll="mo@svsl.be"]'); await p.waitForSelector('.lb-detail');
   check((await p.textContent('.lb-detail')).includes('Leerkaarten 1/'), 'coach ziet de resultaten van de leerkaarten en vragen');
   await p.click('.db-rij[data-ll="peeters.lien@svsl.be"]'); await p.waitForSelector('.lb-detail [data-keur]');
+  check(await p.locator('.lb-proj > details.lb-opstart-boven').count() >= 1 && await p.locator('.lb-proj').first().evaluate(e => e.querySelector('details.lb-opstart-boven').compareDocumentPosition(e.querySelector('.lb-sub')) & Node.DOCUMENT_POSITION_FOLLOWING), 'detail: de openklapbare opstart staat bovenaan het project');
+  await p.click('[data-tab="week"]'); await p.waitForSelector('.wk-blad');
+  check(await p.locator('.wk-tabel .wk-ll').count() >= 1 && (await p.textContent('.wk-tabel')).includes('Taalbouwers'), 'weekoverzicht vult zich automatisch met de opstart');
+  await p.click('[data-tab="overzicht"]'); await p.selectOption('#db-coach', 'alle'); await p.click('.db-rij[data-ll="peeters.lien@svsl.be"]'); await p.waitForSelector('.lb-detail [data-keur]');
   await p.click('.lb-detail [data-keur]'); await wacht(500);
   d = await fakedb(p); check(d[LB].goedgekeurd === true, 'coach keurt het project goed');
   await aanmelden(p, '#start', MO); await p.waitForSelector('.afspraken'); await wacht(500);
