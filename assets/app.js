@@ -118,15 +118,14 @@
   }
   /* vaste menubalk: alles met één klik bereikbaar */
   function menu() {
-    var P = CSF.portaal, aan = P && P.actief, z = zicht(), h = location.hash || "#start", items = [["#start", "Start"]];
+    var P = CSF.portaal, aan = P && P.actief, z = zicht(), h = location.hash || "#start", items = [];
+    var coach = aan && P.isCoach && P.isCoach(), ll = aan && P.isLeerling && P.isLeerling();
+    /* leerling: de eerste pagina is zijn logboek · coach: het dashboard */
+    if (ll) items.push(["#start", "Mijn logboek"]); else if (coach) items.push(["#dashboard", "Dashboard"]); else items.push(["#start", "Start"]);
     if (z !== "oefen") items.push(["#overzicht", "Projecten"]);
     if (z !== "alle") items.push(["#oefenproject", "Oefenprojecten"]);
-    if (aan) {
-      var coach = P.isCoach && P.isCoach(), ll = P.isLeerling && P.isLeerling();
-      if (ll || !coach) items.push(["#logboek", ll || (P.aangemeld && P.aangemeld()) ? "Mijn logboek" : "Aanmelden"]);
-      if (coach) { items.push(["#dashboard", "Dashboard"]); items.push(["#coach", "Coachfiches"]); }
-    }
-    var actief = function (u) { return u === "#start" ? h === "#start" || h === "#" : h.indexOf(u) === 0 && !(u === "#coach" && h.indexOf("#coach") !== 0); };
+    if (coach) items.push(["#coach", "Coachfiches"]);
+    var actief = function (u) { return u === "#start" ? h === "#start" || h === "#" || (ll && h.indexOf("#logboek") === 0) : h.indexOf(u) === 0; };
     return '<nav class="menu" aria-label="Menu">' + items.map(function (it) { return '<a href="' + it[0] + '"' + (actief(it[0]) ? ' aria-current="page"' : "") + ">" + it[1] + "</a>"; }).join("") + "</nav>";
   }
   function kruimel(stukken) {
@@ -201,9 +200,10 @@
 
   /* ---------- Weergaven ---------- */
   function zicht() { var P = CSF.portaal; return P && P.actief && P.zicht ? P.zicht() : "beide"; }
-  function afsprakenKader() {
+  function afsprakenKader(altijdOpen) {
     /* de eerste keer open; daarna ingeklapt (één klik om te herlezen) */
     var gezien = false; try { gezien = localStorage.getItem("csf-afspraken-gezien") === "1"; localStorage.setItem("csf-afspraken-gezien", "1"); } catch (e) {}
+    if (altijdOpen) gezien = false;
     return '<details class="afspraken" id="verwacht"' + (gezien ? "" : " open") + '><summary class="afspraken-kop">CSF-afspraken</summary><div class="afspraken-grid">' +
       (CSF.verwachtingen || []).map(function (v) { return '<div><b>' + esc(v.titel) + "</b><ul>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("") + "</div></details>";
   }
@@ -598,7 +598,7 @@
   }
 
   /* ---------- Hulpstukken voor het portaal (assets/portaal.js) ---------- */
-  CSF.ui = { kop: kop, kruimel: kruimel, footer: footer, esc: esc, label: label, zoek: zoek, isFiche: isFiche, herteken: function () { teken(); } };
+  CSF.ui = { afspraken: afsprakenKader, zicht: zicht, kop: kop, kruimel: kruimel, footer: footer, esc: esc, label: label, zoek: zoek, isFiche: isFiche, herteken: function () { teken(); } };
 
   /* ---------- Router ---------- */
   function teken() {

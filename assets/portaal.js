@@ -237,7 +237,7 @@
   /* ---------- gemeenschappelijke stukken ---------- */
   function schil(titel, inhoud) {
     var ui = CSF.ui;
-    return '<div class="wrap">' + ui.kop() + ui.kruimel([["Start", "#start"], [titel]]) +
+    return '<div class="wrap">' + ui.kop() + (titel === "Mijn logboek" ? "" : ui.kruimel([["Start", "#start"], [titel]])) +
       '<div class="vel lb-vel"><h2 class="banner">' + esc(titel) + '</h2><div id="lb-account"></div><div id="lb-inhoud">' + inhoud + "</div></div>" + ui.footer() + "</div>";
   }
   function poort(tekst) {
@@ -456,6 +456,23 @@
 
   /* ---------- router: #logboek, #logboek-<id>, #dashboard ---------- */
   P.route = function (h, app) {
+    /* de eerste pagina: leerling → zijn logboek, coach → dashboard */
+    if ((h === "start" || h === "") && P.actief) {
+      app.innerHTML = schil("Mijn logboek", '<p class="hint">Even geduld …</p>');
+      laad().then(function () {
+        if (((location.hash || "#start").slice(1) || "start") !== "start") return;
+        if (!gebruiker) { var d0 = document.getElementById("lb-inhoud"); if (d0) { d0.innerHTML = poort("Welkom bij CSF! Meld je aan met je SVSL-account."); koppelLogin(d0); } return; }
+        if (!rol.leerling && (rol.coach || rol.vak.length)) return location.replace("#dashboard");
+        if (!rol.leerling) return location.replace("#logboek");
+        lijst("logboeken", ["leerling", "==", mail()]).then(function (lbs) {
+          MIJN = { lbs: lbs, geladen: true };
+          var hu = lopend(lbs);
+          if (((location.hash || "#start").slice(1) || "start") !== "start") return;
+          location.replace(hu ? "#logboek-" + hu.project : "#logboek");
+        }).catch(function () { location.replace("#logboek"); });
+      });
+      return true;
+    }
     var isLb = h === "logboek" || h.indexOf("logboek-") === 0, isDb = h === "dashboard";
     if (!isLb && !isDb) return false;
     var titel = isDb ? "Dashboard coaches" : "Mijn logboek";
@@ -485,7 +502,7 @@
     Promise.all([lijst("logboeken", ["leerling", "==", mail()]), lijst("feedback", ["leerling", "==", mail()], ["gelezen", "==", false]), lijst("vragen", ["leerling", "==", mail()]).catch(function () { return []; })]).then(function (r) {
       var lbs = r[0], fbOpen = r[1].length, antw = r[2].filter(function (v) { return !v.open && !v.gelezen; });
       MIJN = { lbs: lbs, geladen: true };
-      var hu = lopend(lbs), pf = portfolio(lbs), hp = hu ? project(hu.project) : null;
+      var hu = lopend(lbs), pf = portfolio(lbs).sort(function (a, b) { return String(b.goedgekeurdOp || "").localeCompare(String(a.goedgekeurdOp || "")); }), hp = hu ? project(hu.project) : null;
       return (hp ? P.laadRes(hp.id) : Promise.resolve(null)).then(function (res) {
         var st = hu ? status(hu, rol.leerling) : null;
         var gedaan = lbs.filter(function (lb) { return lb.status !== "geannuleerd"; }).map(function (lb) { return lb.project; });
@@ -496,35 +513,49 @@
           (antw.length ? '<div class="lb-melding groen">Je coach beantwoordde je vraag. Open <a href="#logboek-' + esc(antw[0].project) + '">je project</a> om het antwoord te lezen.</div>' : "") +
           (fbOpen ? '<div class="lb-melding oranje">Je hebt ' + fbOpen + " nieuwe feedback van je coach. Open je project om ze te lezen.</div>" : "") +
           "<p>Coach: <b>" + esc(rol.leerling.coachNaam || "nog niet toegewezen") + "</b> · Klas: <b>" + esc(rol.leerling.klas || "–") + "</b></p>" +
-          "<h3>Mijn project</h3>" +
+          (hu ? "<h3>Mijn project</h3>" : "") +
           (hu ? '<a class="lb-kaart lb-huidig" href="#logboek-' + esc(hu.project) + '"><b>' + esc(hu.projectnaam) + '</b><span class="hint">' + lu((hu.lessen || []).length) + " · gestart op " + datum(hu.gestart) + '</span><span class="lb-pill ' + st[0] + '">' + st[1] + "</span>" +
               (hp ? scoreHtml(hp, res) : "") + "</a>" +
               (hp ? '<p><a class="btn licht" href="#p-' + esc(hp.id) + '">Naar de projectpagina</a></p>' : "") +
               (hu.status === "afgerond" ? '<p class="hint">Je kan een nieuw project kiezen zodra je coach dit project goedkeurt.</p>' : "")
-            : '<p>Je hebt nog geen project. Kies hieronder je project. Daarna is dit het enige project waaraan je werkt, tot je coach het goedkeurt.</p><div class="crij"><select id="lb-nieuw" aria-label="Kies een project">' + opties + '</select><button type="button" class="btn" id="lb-start">Kies dit project</button></div>') +
-          "<h3>Mijn portfolio</h3>" + (pf.length ? '<div class="lb-kaarten">' + pf.map(function (lb) {
+            : rondleiding(pf, opties)) +
+          '<h3 id="archief">📁 Mijn vorige projecten</h3>' + (pf.length ? '<div class="lb-kaarten">' + pf.map(function (lb) {
             return '<a class="lb-kaart" href="#logboek-' + esc(lb.project) + '"><b>' + esc(lb.projectnaam) + '</b><span class="hint">' + lu((lb.lessen || []).length) + " · goedgekeurd op " + datum(lb.goedgekeurdOp) + '</span><span class="lb-pill groen">goedgekeurd</span></a>'; }).join("") + "</div>"
-            : '<p class="hint">Hier komen je afgewerkte en goedgekeurde projecten.</p>');
+            : '<p class="hint">Hier komen je afgewerkte en goedgekeurde projecten. Je kan ze altijd terugbekijken.</p>');
+        var rv = doel.querySelector("#rl-gelezen");
+        if (rv) rv.addEventListener("change", function () { doel.querySelectorAll(".rl-wacht").forEach(function (x) { x.classList.toggle("rl-dicht", !rv.checked); x.querySelectorAll("a,select,button").forEach(function (k) { if (k.tagName === "A") k.tabIndex = rv.checked ? 0 : -1; else k.disabled = !rv.checked; }); }); });
         var b2 = doel.querySelector("#lb-start");
         if (b2) b2.addEventListener("click", function () { location.hash = "#logboek-" + doel.querySelector("#lb-nieuw").value; });
       });
     }).catch(function (e) { melding(doel, "Je logboek kon niet laden. (" + esc(e && e.message) + ")", "rood"); });
   }
 
+  /* ---------- rondleiding voor wie (nog) geen project heeft ----------
+     Volledig (3 stappen) bij het eerste project en na een oefenproject; na een gewoon project enkel stap 2 en 3. */
+  function rondleiding(pf, opties) {
+    var vorige = pf[0] ? project(pf[0].project) : null, volledig = !vorige || vorige.soort !== "vak", z = CSF.ui.zicht();
+    var dicht = volledig ? " rl-wacht rl-dicht" : "", uit = volledig ? ' tabindex="-1"' : "", knopUit = volledig ? " disabled" : "";
+    var deuren = (z !== "oefen" ? '<a class="deur rl-deur" href="#overzicht"' + uit + '><span class="dt">Projectenoverzicht</span><span class="dd">Alle CSF-projecten, per vak.</span><span class="pijl">Bekijk de projecten →</span></a>' : "") +
+      (z !== "alle" ? '<a class="deur rl-deur" href="#oefenproject"' + uit + '><span class="dt">Oefenprojecten</span><span class="dd">Korte projecten van 2 lesuren voor het eerste jaar.</span><span class="pijl">Bekijk de oefenprojecten →</span></a>' : "");
+    var n = 0, stap = function (titel, inhoud, extra) { n++; return '<li class="rl-stap' + (extra || "") + '"><h4><span class="rl-nr">' + n + "</span>" + titel + "</h4>" + inhoud + "</li>"; };
+    return '<div class="rl"><p class="rl-intro">' + (volledig ? "<b>Welkom bij CSF!</b> Zo start je in drie stappen." : "<b>Klaar voor een nieuw project?</b> Zo kies je.") + '</p><ol class="rl-stappen">' +
+      (volledig ? stap("Lees de CSF-verwachtingen", CSF.ui.afspraken(true) + '<label class="lb-chip rl-vink"><input type="checkbox" id="rl-gelezen"> <span>Ik heb de CSF-verwachtingen gelezen.</span></label>') : "") +
+      stap("Kies een project", '<p>Bekijk de projectfiches. Klik bij het project van je keuze op <b>Kies dit project</b>.</p><div class="poort rl-poort' + (z === "beide" ? "" : " een") + '">' + deuren + "</div>" +
+        (opties ? '<p class="hint rl-of">Weet je al welk project je wil?</p><div class="crij"><select id="lb-nieuw" aria-label="Kies een project"' + knopUit + ">" + opties + '</select><button type="button" class="btn" id="lb-start"' + knopUit + ">Kies dit project</button></div>" : ""), dicht) +
+      stap("Je project staat vast in je logboek", "<p>Na je keuze vul je één keer de opstart in. Daarna staat je project vast in je logboek. Elk lesuur open je hier je logboek en werk je verder.</p><p>Pas als je project afgerond is en je coach het goedkeurt, kies je een nieuw project. Je vorige projecten vind je altijd terug onder <b>Mijn vorige projecten</b>.</p>", dicht) +
+      "</ol></div>";
+  }
+
   /* ---------- bovenaan het logboek: link naar het project (altijd te wijzigen) en ander project kiezen ---------- */
   function goedeLink(u) { return /^https?:\/\/\S+\.\S+/i.test(String(u || "").trim()); }
   function linkBlok(lb, p) {
-    var link = lb.opstart && lb.opstart.link, kan = lb.status !== "afgerond" && !lb.goedgekeurd;
-    var opties = kan ? CSF.projecten.filter(function (q) { return q.id !== p.id && P.ziet(q) && !CSF.ui.isFiche(q) && !MIJN.lbs.some(function (x) { return x.project === q.id && x.status !== "geannuleerd"; }); })
-      .sort(function (a, b) { return (a.soort === "vak") - (b.soort === "vak") || CSF.ui.label(a).localeCompare(CSF.ui.label(b), "nl"); }) : [];
+    /* van project wisselen kan niet meer: enkel de coach kan een project annuleren (dashboard) */
+    var link = lb.opstart && lb.opstart.link;
     return '<div class="lb-projectlink">' +
       (link ? '<p class="lb-linkrij"><span>🔗 <b>Link naar mijn project:</b> <a href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(link) + ' ↗</a></span><button type="button" class="btn licht lb-klein" data-pl="wijzig">Wijzig de link</button></p>'
         : '<p class="lb-linkrij"><span class="hint">Werk je online? Deel de link naar je project. Je coach ziet hem dan bovenaan je logboek.</span><button type="button" class="btn licht lb-klein" data-pl="wijzig">Voeg een link toe</button></p>') +
       '<div class="lb-pl-form" hidden><div class="crij"><input type="url" id="pl-link" value="' + esc(link || "") + '" placeholder="https://…" aria-label="Link naar mijn project"><button type="button" class="btn lb-klein" data-pl="bewaar">Bewaar</button>' +
       (link ? '<button type="button" class="btn donker lb-klein" data-pl="wis">Wis de link</button>' : "") + '</div><span class="hint">Zet de link openbaar of geef je coach toegang.</span></div>' +
-      (kan && opties.length ? '<details class="lb-ander"><summary>Ander project kiezen</summary><p class="hint">Je ingevulde lesuren en je opstart gaan mee naar het nieuwe project. Wat je bij dit project invulde (leerkaarten, vragen) blijft bij dit project.</p>' +
-        '<div class="crij"><select id="pl-ander" aria-label="Kies een ander project">' + opties.map(function (q) { return '<option value="' + esc(q.id) + '">' + esc((q.soort === "vak" ? CSF.ui.label(q) : "oefenproject") + " · " + q.naam.split(":")[0]) + "</option>"; }).join("") +
-        '</select><button type="button" class="btn lb-klein" data-pl="ander">Wissel naar dit project</button></div></details>' : "") +
       '<span class="fb" aria-live="polite"></span></div>';
   }
   function linkKoppel(doel) {
@@ -539,19 +570,6 @@
         out.textContent = "Bezig met bewaren …";
         F.updateDoc(ref("logboeken/" + c.id), { "opstart.link": u }).then(herteken).catch(function (err) { out.textContent = "Bewaren lukte niet. (" + (err.code || err.message) + ")"; });
         return;
-      }
-      if (actie === "ander") {
-        var nid = blok.querySelector("#pl-ander").value, np = project(nid); if (!np) return;
-        if (!window.confirm("Wissel van ‘" + c.p.naam.split(":")[0] + "’ naar ‘" + np.naam.split(":")[0] + "’? Je ingevulde lesuren gaan mee.")) return;
-        out.textContent = "Bezig met wisselen …";
-        var L = rol.leerling, oud = c.lb;
-        var lessen = (oud.lessen || []).map(function (x) { var y = Object.assign({}, x); delete y.leidraad; if (!y.ander) y.ander = oud.projectnaam; return y; });
-        var data = { leerling: mail(), naam: oud.naam || wieNaam(), project: np.id, projectnaam: np.naam, gestart: oud.gestart || nu(), status: "bezig", goedgekeurd: false,
-          opstart: Object.assign({}, oud.opstart || {}, { gewisseldVan: oud.projectnaam, gewisseldOp: nu() }), lessen: lessen, kijkers: L.vakleerkrachten || [] };
-        F.setDoc(ref("logboeken/" + mail() + "__" + np.id), data)
-          .then(function () { return F.updateDoc(ref("logboeken/" + c.id), { status: "geannuleerd", gewisseldNaar: np.id }); })
-          .then(function () { MIJN.lbs = MIJN.lbs.filter(function (x) { return x.project !== c.p.id && x.project !== np.id; }).concat([data]); location.hash = "#logboek-" + np.id; })
-          .catch(function (err) { out.textContent = "Wisselen lukte niet. (" + (err.code || err.message) + ")"; });
       }
     });
   }
@@ -582,7 +600,8 @@
       if (!lb) return opstart(doel, p, id, kopje);
       var ls = lb.lessen || [], laatste = ls[ls.length - 1], n = ls.length;
       var geschiedenis = (ls.length ? '<details class="lb-hist"><summary>Mijn lesuren (' + ls.length + ") · laatste bovenaan</summary>" + ls.slice().reverse().map(lesHtml).join("") + "</details>" : "") +
-        '<details class="lb-hist"><summary>Mijn opstart</summary>' + opstartHtml(lb.opstart || {}) + "</details>";
+        '<details class="lb-hist"><summary>Mijn opstart</summary>' + opstartHtml(lb.opstart || {}) + "</details>" +
+        (portfolio(r[3]).length ? '<p class="lb-archieflink"><a href="#logboek">📁 Mijn vorige projecten (' + portfolio(r[3]).length + ") terugbekijken</a></p>" : "");
       if (lb.status === "afgerond") {
         doel.innerHTML = kopje + (lb.goedgekeurd ? '<div class="lb-melding groen">Je coach keurde dit project goed op ' + datum(lb.goedgekeurdOp) + '. Het staat in je portfolio. Proficiat!</div>' : '<div class="lb-melding groen">Je project is afgerond. Proficiat! Je coach moet het nog goedkeuren. Daarna kies je een nieuw project.</div>') + '<h3>Evaluatie en reflectie</h3>' + afsluitingHtml(lb.afsluiting || {}) + geschiedenis;
         return;

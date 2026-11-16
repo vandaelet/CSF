@@ -603,3 +603,17 @@ html { scroll-padding-top:96px; }
   body.print-week .wk-tabel thead th, body.print-week .wk-tabel tbody th { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body.print-week .wk-tabel tr { break-inside:avoid; }
 }
+/* rondleiding voor wie nog geen project heeft */
+.rl-intro { font-size:1.05rem; margin:4px 0 10px; }
+.rl-stappen { list-style:none; margin:0; padding:0; counter-reset:none; }
+.rl-stap { position:relative; border:1px solid var(--rand); border-radius:var(--radius); padding:14px 18px 12px; margin:0 0 12px; background:var(--papier); transition:opacity .2s; }
+.rl-stap h4 { display:flex; align-items:center; gap:10px; margin:0 0 8px; font-size:1.1rem; color:var(--turkoois-donker); }
+.rl-nr { display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--oranje); color:#fff; font-family:var(--f-kop); font-weight:700; flex:none; }
+.rl-stap .afspraken { margin:6px 0 10px; }
+.rl-vink { font-weight:700; }
+.rl-dicht { opacity:.45; }
+.rl-dicht a, .rl-dicht button, .rl-dicht select { pointer-events:none; }
+.rl-poort { margin:8px 0 6px; }
+.rl-deur .dd { margin-bottom:6px; }
+.rl-of { margin:10px 0 4px; }
+.lb-archieflink { margin:14px 0 0; font-size:.92rem; }
