@@ -407,14 +407,19 @@
   }
   /* één lesuur als kaart: begin links, einde rechts (de leidraad hoort niet meer in het logboek) */
   function lesHtml(l) {
-    var b = l.begin || {}, e = l.einde || {}, eerste = l.nr === 1 && (e.weet || e.opdracht || e.verloop);
+    var b = l.begin || {}, e = l.einde || {}, eerste = l.nr === 1;
+    /* oudere logboeken bewaarden de planning nog bij het einde */
+    var g = function (k) { return b[k] != null && b[k] !== "" ? b[k] : e[k]; };
     var werkwijze = e.geslaagd ? '<span class="lb-pill ' + (/NIET/.test(e.geslaagd) ? "rood" : "groen") + '">' + esc(e.geslaagd.toLowerCase()) + "</span>" : "";
-    var beginDl = tabel([rij("Plan voor vandaag", b.plan), b.stappen && b.stappen.length ? '<div class="lb-r"><dt>TASC-stappen</dt><dd>' + chips(b.stappen) + "</dd></div>" : "",
-      rij("Voorziene tijd", b.minuten ? b.minuten + " minuten" : ""), rij("Vraag aan de coach", b.vraagCoach)]) || '<p class="hint">Niets ingevuld.</p>';
+    var tasc = b.stappen && b.stappen.length ? '<div class="lb-r"><dt>TASC-stappen</dt><dd>' + chips(b.stappen) + "</dd></div>" : "";
+    var beginDl = (eerste
+      ? tabel([rij("Wat weet ik al?", g("weet")), rij("De opdracht", g("opdracht")), rij("Nodig om te starten", g("nodig")), rij("Wat doe ik eerst?", g("eerst")), tasc,
+          rij("Voorziene tijd", b.minuten ? b.minuten + " minuten" : ""), rij("Totaalproject geschat op", g("schatting")), rij("Vraag aan de coach", b.vraagCoach)])
+      : tabel([rij("Gemiste leerstof", g("gemist")), rij("Zo haal ik ze in", g("ingehaald")), rij("Plan voor vandaag", b.plan), tasc,
+          rij("Voorziene tijd", b.minuten ? b.minuten + " minuten" : ""), rij("Vraag aan de coach", b.vraagCoach)])) || '<p class="hint">Niets ingevuld.</p>';
     var eindeDl = !l.einde ? '<p class="hint">Nog niet ingevuld.</p>' : eerste
-      ? tabel([rij("Wat weet ik al?", e.weet), rij("De opdracht", e.opdracht), rij("Mijn ideeën", e.ideeen), rij("Het beste idee", e.besteIdee), rij("Nodig om te starten", e.nodig),
-          rij("Wat doe ik eerst?", e.eerst), rij("Totaalproject geschat op", e.schatting), rij("Genoeg tijd?", e.tijd), rij("Reden", e.reden), rij("Moeilijk", e.moeilijk), rij("Zo verliep de eerste sessie", e.verloop), rij("Vraag aan de coach", e.vraagCoach)])
-      : tabel([e.geslaagd ? '<div class="lb-r"><dt>Mijn manier van werken</dt><dd>' + werkwijze + "</dd></div>" : "", rij("Mijn eigen feedback", e.geslaagdWaarom), rij("Gemiste leerstof", e.gemist), rij("Zo ingehaald", e.ingehaald),
+      ? tabel([rij("Mijn ideeën", e.ideeen), rij("Het beste idee", e.besteIdee), rij("Genoeg tijd?", e.tijd), rij("Reden", e.reden), rij("Moeilijk", e.moeilijk), rij("Zo verliep de eerste sessie", e.verloop), rij("Vraag aan de coach", e.vraagCoach)])
+      : tabel([rij("Wat ik vandaag deed", e.gedaan), e.geslaagd ? '<div class="lb-r"><dt>Mijn manier van werken</dt><dd>' + werkwijze + "</dd></div>" : "", rij("Mijn eigen feedback", e.geslaagdWaarom),
           rij("Nog vragen", e.vragen), rij("Vragen gesteld", e.via), rij("Genoeg tijd?", e.tijd), rij("Reden", e.reden), rij("Moeilijk", e.moeilijk), rij("Vraag aan de coach", e.vraagCoach)]);
     return '<article class="lb-les"><header class="lb-les-kop"><span class="lb-les-nr">Lesuur ' + l.nr + '</span><span class="lb-les-dat">' + datum(l.datum) + "</span>" +
       (l.ander ? '<span class="hint">bij het vorige project ' + esc(String(l.ander).split(":")[0]) + "</span>" : "") +
@@ -648,7 +653,8 @@
         if (staat === "begin") return begin(paneel, p, id, ls, "", "", lb);
         var b = laatste.begin || {};
         paneel.innerHTML = '<div class="lb-melding groen">✓ Je startte lesuur ' + N + (b.tijd ? " om " + String(b.tijd).slice(11, 16) : "") + '. Vul op het einde van het lesuur het tabblad <b>Einde lesuur ' + N + "</b> in.</div>" +
-          tabel([rij("Plan voor vandaag", b.plan), rij("TASC-stappen", b.stappen), rij("Voorziene minuten", b.minuten), rij("Vraag aan mijn coach", b.vraagCoach)]) +
+          tabel([rij("Wat weet ik al?", b.weet), rij("De opdracht", b.opdracht), rij("Nodig om te starten", b.nodig), rij("Wat doe ik eerst?", b.eerst), rij("Gemiste leerstof", b.gemist), rij("Zo haal ik ze in", b.ingehaald),
+            rij("Plan voor vandaag", b.plan), rij("TASC-stappen", b.stappen), rij("Voorziene minuten", b.minuten), rij("Totaalproject geschat op", b.schatting), rij("Vraag aan mijn coach", b.vraagCoach)]) +
           '<p><button type="button" class="btn" data-lbtab="einde">Naar einde lesuur ' + N + " →</button></p>";
         return;
       }
@@ -734,19 +740,27 @@
 
   function begin(doel, p, id, ls, kopje, geschiedenis) {
     var n = ls.length + 1, eerste = n === 1;
+    /* begin = plannen; einde = terugblikken */
     var inhoud = '<p class="lb-vast">Datum: <b>' + datum(vandaag()) + "</b></p>" + (eerste
-      ? keuze("stappen", "Deze stappen zet ik vandaag (TASC)", TASC1, { meer: true, verplicht: true, waarde: TASC1, lijst: true }) +
-        veld("minuten", "Ik voorzie hiervoor (minuten)", { type: "number", waarde: 50, verplicht: true })
-      : keuze("stappen", "Aan deze TASC-stappen werk ik vandaag", TASC2, { meer: true, verplicht: true, lijst: true }) +
-        veld("minuten", "Projecttijd voor deze stappen (minuten)", { type: "number", waarde: 50, verplicht: true }) +
-        veld("plan", "Wat ga ik vandaag doen?", { lang: true, verplicht: true })) +
+      ? "<h4>Ik plan mijn project</h4>" + veld("weet", "Wat weet ik al van dit onderwerp?", { lang: true, rijen: 2, verplicht: true }) +
+        veld("opdracht", "Wat is de opdracht?", { lang: true, rijen: 2, verplicht: true }) +
+        veld("nodig", "Wat heb ik nodig om te kunnen starten?", { lang: true, rijen: 2 }) + veld("eerst", "Wat doe ik eerst?", { lang: true, rijen: 2, verplicht: true }) +
+        "<h4>Ik plan dit lesuur</h4>" + keuze("stappen", "Deze TASC-stappen zet ik vandaag", TASC1, { meer: true, verplicht: true, lijst: true }) +
+        veld("minuten", "Ik voorzie hiervoor (minuten)", { type: "number", waarde: 50, verplicht: true }) +
+        veld("schatting", "Ik schat dat ik mijn totaalproject kan afwerken in … (uur/minuten)", { verplicht: true })
+      : "<h4>Gemiste leerstof</h4>" + veld("gemist", "Vorige keer miste ik deze leerstof:", { lang: true, rijen: 2, verplicht: true, hint: "Miste je niets? Schrijf ‘niets’." }) +
+        veld("ingehaald", "Zo haal ik ze zelfstandig in:", { lang: true, rijen: 2, verplicht: true }) +
+        "<h4>Ik plan dit lesuur</h4>" + veld("plan", "Wat ga ik vandaag doen?", { lang: true, verplicht: true }) +
+        keuze("stappen", "Aan deze TASC-stappen werk ik vandaag", TASC2, { meer: true, verplicht: true, lijst: true }) +
+        veld("minuten", "Projecttijd voor deze stappen (minuten)", { type: "number", waarde: 50, verplicht: true })) +
       veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." });
     doel.innerHTML = kopje + '<div class="lb-stap"><span class="lb-pill turkoois">Begin van lesuur ' + n + '</span><p>Vul dit in bij het <b>begin</b> van het lesuur. Daarna gaat je project open.</p></div>' +
       formulier("lb-begin", inhoud, "Start lesuur " + n) +
       (ls.length ? '<div class="lb-afsluiten"><h3>Is je project af?</h3><p>Sla dan het begin over en vul je zelfevaluatie in.</p><button type="button" class="btn licht" id="lb-naar-afsluiten" data-lbtab="eval">Mijn project is af → zelfevaluatie</button></div>' : "") +
       geschiedenis;
     bij(doel.querySelector("#lb-begin"), function (d) {
-      var nieuw = ls.concat([{ nr: n, datum: vandaag(), begin: { tijd: nu(), stappen: d.stappen, minuten: Number(d.minuten) || 0, plan: d.plan || "", vraagCoach: d.vraagCoach || "" } }]);
+      var bd = Object.assign({}, d, { tijd: nu(), minuten: Number(d.minuten) || 0, plan: d.plan || "", vraagCoach: d.vraagCoach || "" });
+      var nieuw = ls.concat([{ nr: n, datum: vandaag(), begin: bd }]);
       var vr = String(d.vraagCoach || "").trim().slice(0, 1000), ll = rol.leerling;
       var vraagKlaar = vr ? F.setDoc(ref("vragen/" + nieuwId()), { leerling: mail(), naam: ll.naam || wieNaam(), klas: ll.klas || "", coach: ll.coach || "", coachNaam: ll.coachNaam || "",
         project: p.id, projectnaam: p.naam, tekst: "Lesuur " + n + ": " + vr, datum: nu(), open: true, antwoord: "", gelezen: false }) : Promise.resolve();
@@ -757,20 +771,16 @@
   function einde(doel, p, id, ls, kopje, geschiedenis) {
     var l = ls[ls.length - 1], n = l.nr, eerste = n === 1;
     var inhoud = eerste
-      ? "<h4>Uitwerking van de stappen</h4>" + veld("weet", "Wat weet ik van dit onderwerp?", { lang: true, verplicht: true }) + veld("opdracht", "Wat is de opdracht?", { lang: true, verplicht: true }) +
-        veld("ideeen", "Hoeveel ideeën kan ik bedenken? Noteer ze.", { lang: true, verplicht: true }) + veld("besteIdee", "Wat is het beste idee?", { lang: true, verplicht: true }) +
-        veld("nodig", "Wat heb ik nodig om te kunnen starten?", { lang: true, rijen: 2 }) + veld("eerst", "Wat doe ik eerst?", { lang: true, rijen: 2 }) +
-        veld("schatting", "Ik schat dat ik mijn totaalproject kan afwerken in … (uur/minuten)", { verplicht: true }) +
-        "<h4>Evaluatie</h4>" + keuze("tijd", "Ik had … om deze opdracht vandaag uit te voeren.", TIJD, { verplicht: true }) +
+      ? "<h4>Mijn ideeën</h4>" + veld("ideeen", "Welke ideeën bedacht ik? Noteer ze.", { lang: true, verplicht: true }) + veld("besteIdee", "Wat is het beste idee?", { lang: true, verplicht: true }) +
+        "<h4>Hoe ging het?</h4>" + keuze("tijd", "Ik had … om deze opdracht vandaag uit te voeren.", TIJD, { verplicht: true }) +
         veld("reden", "De reden hiervoor is:", { lang: true, rijen: 2, verplicht: true }) + veld("moeilijk", "Dit was voor mij moeilijk:", { lang: true, rijen: 2 }) +
         veld("verloop", "Zo verliep mijn eerste CSF-sessie:", { lang: true, rijen: 2, verplicht: true }) +
         "<h4>Vragen</h4>" + veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." })
-      : "<h4>Ingehaalde leerstof</h4>" + veld("gemist", "Ik miste deze leerstof:", { lang: true, rijen: 2, verplicht: true }) +
-        veld("ingehaald", "Ik haalde deze zelfstandig in op deze manier:", { lang: true, rijen: 2, verplicht: true }) +
-        keuze("vragen", "Ik had nog vragen.", ["JA", "NEEN"], { verplicht: true }) + keuze("via", "Ik stelde mijn vragen aan mijn vakleerkracht", ["via mail", "mondeling", "niet nodig"]) +
-        veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." }) +
-        keuze("geslaagd", "Mijn manier van werken lijkt me dus", ["GESLAAGD", "NIET GESLAAGD"], { verplicht: true }) +
-        veld("geslaagdWaarom", "Mijn eigen feedback: waarom vind ik dat? Wat hou ik zo, wat doe ik volgende keer anders?", { lang: true, rijen: 3, verplicht: true });
+      : "<h4>Wat heb ik gedaan?</h4>" + veld("gedaan", "Wat heb ik vandaag gedaan?", { lang: true, rijen: 2, verplicht: true }) +
+        "<h4>Hoe ging het?</h4>" + keuze("geslaagd", "Mijn manier van werken vind ik", ["GESLAAGD", "NIET GESLAAGD"], { verplicht: true }) +
+        veld("geslaagdWaarom", "Mijn eigen feedback: waarom vind ik dat? Wat hou ik zo, wat doe ik volgende keer anders?", { lang: true, rijen: 3, verplicht: true }) +
+        "<h4>Vragen</h4>" + keuze("vragen", "Ik had nog vragen over de gemiste leerstof.", ["JA", "NEEN"], { verplicht: true }) + keuze("via", "Ik stelde mijn vragen aan mijn vakleerkracht", ["via mail", "mondeling", "niet nodig"]) +
+        veld("vraagCoach", "Mijn vraag aan mijn CSF-coach (mag leeg blijven)", { lang: true, rijen: 2, hint: "Je coach ziet je vraag meteen bij ‘Open vragen’ en antwoordt in je logboek." });
     doel.innerHTML = kopje + '<div class="lb-nu"><div><span class="lb-pill oranje">Lesuur ' + n + ' loopt</span><h3>Werk verder aan je project</h3>' +
       '<p class="hint">Klaar? Sluit je project: je komt vanzelf terug in je logboek. Vul dan hieronder het einde van je logboek in.</p></div>' +
       '<div class="lb-nu-acties lb-naarproject"><a class="btn" href="#p-' + esc(p.id) + '">Ga naar mijn project →</a><a class="lb-zacht" href="#p-' + esc(p.id) + '" data-ldlink="1">Leidraad van dit lesuur bekijken (mag)</a></div></div>' +
@@ -1146,13 +1156,13 @@
     }));
   }
   function lesRijen() {
-    var kop = ["Leerling", "E-mail", "Project", "Lesuur", "Datum", "Stappen", "Minuten", "Plan", "Einde ingevuld", "Tijd", "Reden", "Moeilijk", "Gemiste leerstof", "Zo ingehaald", "Nog vragen", "Werkwijze"];
+    var kop = ["Leerling", "E-mail", "Project", "Lesuur", "Datum", "Stappen", "Minuten", "Plan", "Einde ingevuld", "Tijd", "Reden", "Moeilijk", "Gemiste leerstof", "Zo ingehaald", "Nog vragen", "Werkwijze", "Vandaag gedaan"];
     var out = [kop];
     D.data.logboeken.forEach(function (lb) {
       if (isTest(lb.leerling)) return;
       (lb.lessen || []).forEach(function (l) {
         var b = l.begin || {}, e = l.einde || {};
-        out.push([lb.naam || "", lb.leerling, lb.projectnaam, l.nr, l.datum, (b.stappen || []).join(" | "), b.minuten || "", b.plan || "", l.einde ? "ja" : "nee", e.tijd || "", e.reden || "", e.moeilijk || "", e.gemist || "", e.ingehaald || "", e.vragen || "", e.geslaagd || ""]);
+        out.push([lb.naam || "", lb.leerling, lb.projectnaam, l.nr, l.datum, (b.stappen || []).join(" | "), b.minuten || "", b.plan || "", l.einde ? "ja" : "nee", e.tijd || "", e.reden || "", e.moeilijk || "", b.gemist || e.gemist || "", b.ingehaald || e.ingehaald || "", e.vragen || "", e.geslaagd || "", e.gedaan || ""]);
       });
     });
     return out;

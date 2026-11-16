@@ -95,7 +95,11 @@ const DB = {
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.lb-projectblok a'); await wacht(300);
   check(await p.locator('section.vel.lb-dicht').count() === 1 && (await p.textContent('.lb-projectblok')).includes('Vul eerst het begin'), 'eigen project blijft dicht tot het begin-logboek ingevuld is');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-begin');
+  check(await p.locator('#lb-begin input[name="stappen"]:checked').count() === 0 && await p.locator('#lb-begin #weet').count() === 1 && await p.locator('#lb-begin #schatting').count() === 1, 'begin lesuur 1: plannen (wat weet ik, opdracht, schatting) en TASC-stappen niet vooraf aangevinkt');
+  for (const [id, v] of [['weet', 'Inkt bestaat uit kleurstoffen.'], ['opdracht', 'De dader vinden.'], ['eerst', 'Materiaal klaarzetten.'], ['schatting', '3 lesuren']]) await p.fill('#' + id, v);
+  await p.check('#stappen-0'); await p.check('#stappen-1');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
+  d = await fakedb(p); check(d[LB].lessen[0].begin.weet === 'Inkt bestaat uit kleurstoffen.' && d[LB].lessen[0].begin.schatting === '3 lesuren', 'de planning wordt bij het begin van het lesuur bewaard');
   check((await p.textContent('.lb-ltab[aria-selected="true"]')).includes('Einde lesuur 1') && await p.locator('.lb-ltab.ok[data-lbtab="begin"]').count() === 1, 'na het begin staat ‘Einde lesuur 1’ open');
   check(await p.locator('[data-ld], .lb-vinklijst').count() === 0, 'de leidraad wordt niet meer afgevinkt in het logboek');
   check(await p.locator('.lb-naarproject a[href="#p-wetenschappen"]').count() >= 1 && await p.locator('[data-ldlink]').count() === 1, 'na het begin-logboek: link naar het project en (optioneel) naar de leidraad');
@@ -116,7 +120,8 @@ const DB = {
   await p.goto(B + '#logboek'); await p.waitForSelector('.lb-kaart');
   check((await p.textContent('.lb-kaart')).includes('bezig'), 'mijn logboek: project staat op bezig');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('#lb-einde');
-  for (const [id, v] of [['weet', 'Inkt bestaat uit kleurstoffen.'], ['opdracht', 'De dader vinden.'], ['ideeen', 'Chromatografie, vingerafdrukken.'], ['besteIdee', 'Chromatografie'], ['schatting', '3 lesuren'], ['reden', 'Goed gepland.'], ['verloop', 'Vlot.']]) await p.fill('#' + id, v);
+  check(await p.locator('#lb-einde #weet, #lb-einde #schatting').count() === 0, 'einde lesuur 1: enkel terugblikken');
+  for (const [id, v] of [['ideeen', 'Chromatografie, vingerafdrukken.'], ['besteIdee', 'Chromatografie'], ['reden', 'Goed gepland.'], ['verloop', 'Vlot.']]) await p.fill('#' + id, v);
   await p.check('#tijd-0');
   await p.click('#lb-einde button[type=submit]'); await p.waitForSelector('#lb-begin');
   check((await p.textContent('.lb-ltab[aria-selected="true"]')).includes('Begin lesuur 2'), 'na het einde van lesuur 1 volgt vanzelf ‘Begin lesuur 2’');
@@ -162,9 +167,9 @@ const DB = {
   await p.waitForSelector('.lb-vragen .lb-pill.oranje');
   d = await fakedb(p); const VR = Object.entries(d).filter(([k]) => k.startsWith('vragen/'));
   check(VR.length === 1 && VR[0][1].open === true && VR[0][1].coach === 'els@svsl.be' && VR[0][1].project === 'wetenschappen', 'vraag aan de coach bewaard');
-  await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.'); await p.fill('#vraagCoach', 'Mag ik met een vergrootglas werken?');
+  await p.fill('#gemist', 'Breuken'); await p.fill('#ingehaald', 'Cursus lezen.'); await p.check('#stappen-0'); await p.fill('#plan', 'Chromatogrammen meten.'); await p.fill('#vraagCoach', 'Mag ik met een vergrootglas werken?');
   await p.click('#lb-begin button[type=submit]'); await p.waitForSelector('#lb-einde');
-  await p.fill('#gemist', 'Breuken'); await p.fill('#ingehaald', 'Cursus gelezen.'); await p.check('#vragen-1'); await p.check('#geslaagd-0');
+  await p.fill('#gedaan', 'Drie chromatogrammen gemaakt.'); await p.check('#vragen-1'); await p.check('#geslaagd-0');
   await p.click('#lb-einde button[type=submit]'); await wacht(200);
   check(await p.locator('#geslaagdWaarom.lb-mist, .lb-mist #geslaagdWaarom').count() + await p.locator('.lb-mist').count() > 0 && await p.locator('#lb-naar-afsluiten').count() === 0, 'eigen feedback bij geslaagd of niet geslaagd is verplicht');
   await p.fill('#geslaagdWaarom', 'Ik werkte rustig door en volgde mijn planning.'); await p.fill('#vraagCoach', 'Hoe lang moet mijn rapport zijn?');
