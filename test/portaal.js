@@ -264,6 +264,9 @@ const DB = {
   check(await p.locator('.deur[href="#oefenproject"]').count() === 1 && await p.locator('.deur[href="#overzicht"]').count() === 1, '1e jaar (Mo, 1B): oefenprojecten eerste jaar en alle projecten');
   check(await p.locator('.afspraken').evaluate(e => e.getBoundingClientRect().top) < await p.locator('.poort').evaluate(e => e.getBoundingClientRect().top), 'afspraken staan vóór de projecten');
   check((await p.textContent('.mijnproject')).includes('Taalbouwers'), 'logboek meteen gekoppeld: startpagina toont mijn project');
+  check(await p.locator('header .menu a[href="#logboek"]').count() === 1 && await p.locator('header .menu a[href="#dashboard"]').count() === 0, 'menubalk: leerling ziet Mijn logboek, geen dashboard');
+  await p.goto(B + '#overzicht'); await p.goto(B + '#start'); await p.waitForSelector('.afspraken');
+  check(await p.locator('details.afspraken[open]').count() === 0, 'afspraken zijn ingeklapt na de eerste keer');
   await p.goto(B + '#p-wetenschappen'); await p.waitForSelector('.kiesblok'); await wacht(300);
   check(await p.locator('.ptab').count() === 0 && (await p.textContent('.lb-projectblok')).includes('Je werkt aan'), 'ander project: enkel de projectfiche');
   await p.goto(B + '#logboek-wetenschappen'); await p.waitForSelector('.lb-melding');

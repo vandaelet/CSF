@@ -139,6 +139,8 @@
     return "fiche";
   };
   P.isLeerling = function () { return !!rol.leerling; };
+  P.isCoach = function () { return !!(rol.coach || (rol.vak && rol.vak.length)); };
+  P.aangemeld = function () { return !!gebruiker; };
 
   /* ---------- aanmeldpoort voor de hele site ---------- */
   P.poortNodig = function (h) {
@@ -907,8 +909,13 @@
     var nVragen = D.data.vragen.filter(function (v) { return v.open; }).length;
     var tabs = rol.coach ? [["overzicht", "Overzicht"], ["vragen", "Open vragen" + (nVragen ? " (" + nVragen + ")" : "")], ["leerlingen", "CSF-leerlingen"], ["klaslijst", "Klaslijsten"], ["zicht", "Zichtbaarheid"], ["vak", "Vakleerkrachten"], ["projecten", "Projecten"], ["test", "Testleerling"], ["wensen", "Aanpassingen aan de site" + (function () { var n = D.data.wensen.filter(function (w) { return w.status === "nieuw" || w.status === "bezig"; }).length; return n ? " (" + n + ")" : ""; })()]].concat(rol.beheerder ? [["beheer", "Coaches en instellingen"]] : []) : [["overzicht", "Mijn CSF-leerlingen"]];
     doel.innerHTML = (D.geweigerd && D.geweigerd.length ? '<div class="lb-melding rood"><b>De toegangsregels in Firebase zijn niet up-to-date.</b> ' + (rol.beheerder ? "Plak de volledige inhoud van <code>firestore.rules</code> uit GitHub in Firebase → Firestore Database → Rules en klik op Publish." : "Vraag de beheerder om de regels opnieuw te publiceren.") + ' <span class="hint">(geen toegang tot: ' + esc(D.geweigerd.join(", ")) + ")</span></div>" : "") +
-      '<div class="chips lb-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" class="chip" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; }).join("") +
-      '</div><div id="db-inhoud"></div>';
+      (function () {
+        var HOOFD = ["overzicht", "vragen", "leerlingen"], knop = function (t, k) { return '<button type="button" class="' + k + '" role="tab" data-tab="' + t[0] + '" aria-pressed="' + (D.tab === t[0]) + '">' + t[1] + "</button>"; };
+        var h = tabs.filter(function (t) { return HOOFD.indexOf(t[0]) >= 0; }), b = tabs.filter(function (t) { return HOOFD.indexOf(t[0]) < 0; });
+        return '<div class="lb-tabs" role="tablist"><div class="chips">' + h.map(function (t) { return knop(t, "chip"); }).join("") + "</div>" +
+          (b.length ? '<div class="lb-tabs2"><span class="hint">Beheer:</span>' + b.map(function (t) { return knop(t, "tab2"); }).join("") + "</div>" : "") + "</div>";
+      })() +
+      '<div id="db-inhoud"></div>';
     doel.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { D.tab = b.dataset.tab; D.open = null; tekenDashboard(doel); }); });
     var z = doel.querySelector("#db-inhoud");
     if (D.tab === "leerlingen" && rol.coach) return tabLeerlingen(z, doel);
@@ -923,29 +930,38 @@
     tabOverzicht(z, doel);
   }
 
+  function aandacht(x) { return x.teken[0] === "uit" || x.st[0] === "rood" || (x.st[0] === "oranje" && !/bezig/.test(x.st[1])) || x.vragen > 0 || x.fbAntw; }
+  function bolletjes(lb) {
+    var ls = lb ? lb.lessen || [] : [];
+    if (!ls.length) return '<span class="hint">–</span>';
+    return '<span class="lb-bol-rij" aria-label="' + ls.length + ' lesuren">' + ls.map(function (l, i) { var ok = !!l.einde; return '<span class="lb-bol ' + (ok ? "ok" : "half") + '" title="Lesuur ' + (i + 1) + " · " + datum(l.datum) + (ok ? " · ingevuld" : " · einde ontbreekt") + '"></span>'; }).join("") + '</span> <span class="hint">' + ls.length + "</span>";
+  }
   function tabOverzicht(z, doel) {
     var d = D.data, alle = rijen();
     var r = alle.filter(function (x) {
       if (D.coachFilter === "zonder" && x.l.coach) return false;
       if (D.coachFilter !== "alle" && D.coachFilter !== "zonder" && x.l.coach !== D.coachFilter) return false;
+      if (D.aandacht && !aandacht(x)) return false;
       var q = D.zoek.toLowerCase(); return !q || (x.l.naam + " " + x.l._id + " " + (x.l.klas || "")).toLowerCase().indexOf(q) >= 0;
     }).sort(function (a, b) { return RANG[a.st[0]] - RANG[b.st[0]] || String(a.l.naam).localeCompare(String(b.l.naam), "nl"); });
     var rood = alle.filter(function (x) { return x.st[0] === "rood"; }).length;
     var filters = rol.coach ? '<div class="crij lb-filters"><label for="db-coach" class="hint">Coach</label><select id="db-coach"><option value="alle">Alle coaches</option>' +
       d.coaches.map(function (c) { return '<option value="' + esc(c._id) + '"' + (D.coachFilter === c._id ? " selected" : "") + ">" + esc(c.naam || c._id) + "</option>"; }).join("") +
-      '<option value="zonder"' + (D.coachFilter === "zonder" ? " selected" : "") + '>Zonder coach</option></select><input type="search" id="db-zoek" placeholder="Zoek een leerling" value="' + esc(D.zoek) + '" aria-label="Zoek een leerling"></div>' : "";
+      '<option value="zonder"' + (D.coachFilter === "zonder" ? " selected" : "") + '>Zonder coach</option></select><input type="search" id="db-zoek" placeholder="Zoek een leerling" value="' + esc(D.zoek) + '" aria-label="Zoek een leerling"><label class="lb-chip"><input type="checkbox" id="db-aandacht"' + (D.aandacht ? " checked" : "") + '><span>Enkel wie aandacht nodig heeft (' + alle.filter(aandacht).length + ")</span></label></div>" : "";
     var uit = r.filter(function (x) { return x.teken[0] === "uit"; }).length;
-    z.innerHTML = '<p class="hint lb-legende"><span class="lb-item"><span class="lb-teken ok">✓</span> logboek in orde</span><span class="lb-item"><span class="lb-teken uit">!</span> online geweest op de CSF-dag zonder logboek, of einde-logboek ontbreekt</span>' + (uit ? "<b>" + uit + " met een uitroepteken</b>" : "") + "</p>" +
+    z.innerHTML = '<p class="hint lb-legende"><span class="lb-item"><span class="lb-teken ok">✓</span> in orde</span><span class="lb-item"><span class="lb-teken uit">!</span> logboek ontbreekt</span><span class="lb-item"><span class="lb-bol ok"></span> lesuur ingevuld</span><span class="lb-item"><span class="lb-bol half"></span> einde ontbreekt</span>' + (uit ? "<b>" + uit + " met een uitroepteken</b>" : "") + '<span class="lb-item">Klik op een leerling voor het logboek.</span></p>' +
       (rood ? '<div class="lb-melding rood">' + rood + (rood > 1 ? " leerlingen hebben" : " leerling heeft") + " een ontbrekend logboek.</div>" : "") + filters +
-      (rol.coach ? '<div class="crij lb-export"><button type="button" class="btn licht lb-klein" id="db-kopieer">Kopieer overzicht voor Google Sheets</button><button type="button" class="btn licht lb-klein" id="db-csv">Download overzicht (CSV)</button><button type="button" class="btn licht lb-klein" id="db-csv-les">Download alle lesuren (CSV)</button><span class="fb" id="db-exportfb" aria-live="polite"></span></div>' : "") +
-      '<div class="lb-tabelwrap"><table class="lb-overzicht"><thead><tr><th><span class="sr">Teken</span></th><th>Leerling</th><th>Klas</th><th>Coach</th><th>Project</th><th>Lesuren</th><th>Laatste logboek</th><th>Status</th><th>Feedback en vragen</th></tr></thead><tbody>' +
+            '<div class="lb-tabelwrap"><table class="lb-overzicht"><thead><tr><th><span class="sr">Teken</span></th><th>Leerling</th><th>Klas</th><th>Coach</th><th>Project</th><th>Lesuren</th><th>Laatste logboek</th><th>Status</th><th>Feedback en vragen</th></tr></thead><tbody>' +
       (r.length ? r.map(function (x) {
         return '<tr class="db-rij' + (D.open === x.l._id ? " open" : "") + '" data-ll="' + esc(x.l._id) + '" tabindex="0"><td class="lb-tekencel">' + tekenHtml(x.teken) + '</td><td><b>' + esc(x.l.naam || x.l._id) + '</b>' + (isTest(x.l._id) ? ' <span class="lb-pill oranje">test</span>' : "") + '<br><span class="hint">' + esc(x.l._id) + "</span></td><td>" + esc(x.l.klas || "–") +
-          "</td><td>" + esc(x.l.coachNaam || "–") + "</td><td>" + (x.hoofd ? esc(x.hoofd.projectnaam.split(":")[0]) : "–") + "</td><td>" + (x.hoofd ? (x.hoofd.lessen || []).length : 0) +
+          "</td><td>" + esc(x.l.coachNaam || "–") + "</td><td>" + (x.hoofd ? esc(x.hoofd.projectnaam.split(":")[0]) : "–") + "</td><td>" + bolletjes(x.hoofd) +
           "</td><td>" + datum(x.laatste) + '</td><td><span class="lb-pill ' + x.st[0] + '">' + esc(x.st[1]) + "</span></td><td>" + (x.fbOpen ? '<span class="lb-pill oranje">' + x.fbOpen + " ongelezen</span>" : "") + (x.fbAntw ? ' <span class="lb-pill turkoois">nieuw antwoord op feedback</span>' : "") + (x.vragen ? ' <span class="lb-pill turkoois">' + x.vragen + (x.vragen > 1 ? " vragen" : " vraag") + "</span>" : "") + "</td></tr>";
       }).join("") : '<tr><td colspan="9" class="hint">Geen leerlingen gevonden.' + (rol.coach ? " Voeg leerlingen toe in het tabblad Leerlingen." : "") + "</td></tr>") +
-      '</tbody></table></div><div id="db-detail"></div>';
+      '</tbody></table></div>' +
+      (rol.coach ? '<div class="lb-export"><span class="hint">Exporteren:</span><button type="button" class="tab2" id="db-kopieer">Kopieer voor Google Sheets</button><button type="button" class="tab2" id="db-csv">Overzicht (CSV)</button><button type="button" class="tab2" id="db-csv-les">Alle lesuren (CSV)</button><span class="fb" id="db-exportfb" aria-live="polite"></span></div>' : "") +
+      '<div id="db-detail"></div>';
     var cs = z.querySelector("#db-coach"); if (cs) cs.addEventListener("change", function () { D.coachFilter = cs.value; tabOverzicht(z, doel); });
+    var ad = z.querySelector("#db-aandacht"); if (ad) ad.addEventListener("change", function () { D.aandacht = ad.checked; tabOverzicht(z, doel); });
     var zk = z.querySelector("#db-zoek"); if (zk) zk.addEventListener("input", function () { D.zoek = zk.value; var pos = zk.selectionStart; tabOverzicht(z, doel); var n = z.querySelector("#db-zoek"); n.focus(); n.setSelectionRange(pos, pos); });
     z.querySelectorAll(".db-rij").forEach(function (tr) {
       var open = function () { D.open = D.open === tr.dataset.ll ? null : tr.dataset.ll; tabOverzicht(z, doel); var det = z.querySelector("#db-detail"); if (D.open && det) det.scrollIntoView({ behavior: "smooth", block: "start" }); };

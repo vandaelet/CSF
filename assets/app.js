@@ -114,9 +114,23 @@
   /* ---------- Gedeelde stukken ---------- */
   function kop() {
     return '<header class="top"><img src="' + logo() + '" alt="' + esc(CSF.school) + '"><div><div class="k">' + esc(CSF.werkgroep) +
-      '</div><h1><a href="#start">' + esc(CSF.titel) + "</a></h1></div></header>";
+      '</div><h1><a href="#start">' + esc(CSF.titel) + "</a></h1></div>" + menu() + "</header>";
+  }
+  /* vaste menubalk: alles met één klik bereikbaar */
+  function menu() {
+    var P = CSF.portaal, aan = P && P.actief, z = zicht(), h = location.hash || "#start", items = [["#start", "Start"]];
+    if (z !== "oefen") items.push(["#overzicht", "Projecten"]);
+    if (z !== "alle") items.push(["#oefenproject", "Oefenprojecten"]);
+    if (aan) {
+      var coach = P.isCoach && P.isCoach(), ll = P.isLeerling && P.isLeerling();
+      if (ll || !coach) items.push(["#logboek", ll || (P.aangemeld && P.aangemeld()) ? "Mijn logboek" : "Aanmelden"]);
+      if (coach) { items.push(["#dashboard", "Dashboard"]); items.push(["#coach", "Coachfiches"]); }
+    }
+    var actief = function (u) { return u === "#start" ? h === "#start" || h === "#" : h.indexOf(u) === 0 && !(u === "#coach" && h.indexOf("#coach") !== 0); };
+    return '<nav class="menu" aria-label="Menu">' + items.map(function (it) { return '<a href="' + it[0] + '"' + (actief(it[0]) ? ' aria-current="page"' : "") + ">" + it[1] + "</a>"; }).join("") + "</nav>";
   }
   function kruimel(stukken) {
+    if (stukken.length < 2) return "";
     return '<nav class="kruimel" aria-label="Je bent hier">' + stukken.map(function (s, i) {
       var last = i === stukken.length - 1;
       return (i ? '<span class="sep">›</span>' : "") + (last ? "<b>" + esc(s[0]) + "</b>" : '<a href="' + s[1] + '">' + esc(s[0]) + "</a>");
@@ -188,8 +202,10 @@
   /* ---------- Weergaven ---------- */
   function zicht() { var P = CSF.portaal; return P && P.actief && P.zicht ? P.zicht() : "beide"; }
   function afsprakenKader() {
-    return '<div class="afspraken" id="verwacht"><div class="afspraken-kop">CSF-afspraken</div><div class="afspraken-grid">' +
-      (CSF.verwachtingen || []).map(function (v) { return '<div><b>' + esc(v.titel) + "</b><ul>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("") + "</div></div>";
+    /* de eerste keer open; daarna ingeklapt (één klik om te herlezen) */
+    var gezien = false; try { gezien = localStorage.getItem("csf-afspraken-gezien") === "1"; localStorage.setItem("csf-afspraken-gezien", "1"); } catch (e) {}
+    return '<details class="afspraken" id="verwacht"' + (gezien ? "" : " open") + '><summary class="afspraken-kop">CSF-afspraken</summary><div class="afspraken-grid">' +
+      (CSF.verwachtingen || []).map(function (v) { return '<div><b>' + esc(v.titel) + "</b><ul>" + v.punten.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("") + "</div></details>";
   }
   function vStart() {
     var oef = oefen(), P = CSF.portaal, z = zicht(), hu = P && P.actief && P.huidig ? P.huidig() : null, hp = hu ? zoek(hu) : null;
@@ -398,9 +414,9 @@
   }
 
   function footer() {
-    return '<footer>Je werkt zelfstandig. Alles staat in je werkbundel en op deze site. Controleer je antwoorden bij ‘Controleer je oplossing’ in elk project.' +
-      '<span class="voor-coach">' + (CSF.portaal && CSF.portaal.actief ? '<a class="btn licht" href="#logboek">Mijn logboek</a> <a class="btn donker" href="#dashboard">Dashboard coaches</a> ' : "") +
-      '<a class="btn donker" href="#coach">Coachfiches (enkel voor coaches)</a></span></footer>';
+    var P = CSF.portaal, coach = P && P.actief && P.isCoach && P.isCoach();
+    return '<footer><span>Je werkt zelfstandig. Alles staat in je werkbundel en op deze site.</span>' +
+      (coach ? "" : '<span class="voor-coach">Voor coaches: ' + (P && P.actief ? '<a href="#dashboard">dashboard</a> · ' : "") + '<a href="#coach">coachfiches</a></span>') + "</footer>";
   }
 
   /* ---------- Coachfiches: versleuteld, enkel te openen met de coachcode ---------- */
