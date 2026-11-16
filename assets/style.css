@@ -635,3 +635,6 @@ html { scroll-padding-top:96px; }
 .lb-slotmelding span { font-size:1.4rem; }
 .lb-slotmelding p { margin:0; }
 @media (max-width:700px) { .lb-ltabs { grid-template-columns:1fr 1fr; } .lb-ltab { border-radius:10px; border-bottom:1px solid var(--rand); } .lb-ltab[aria-selected="true"] { margin-bottom:0; } .lb-paneel { border-radius:var(--radius); } }
+/* dashboard: keuze voor het wekelijkse Smartschoolbericht */
+.db-weekbericht { margin:22px 0 0; padding-top:12px; border-top:1px solid var(--rand); font-size:.9rem; }
+.db-weekbericht .lb-chip { font-weight:400; }

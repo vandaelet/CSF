@@ -141,6 +141,11 @@ service cloud.firestore {
       allow delete: if coach() || wie(id.split('__')[0]);
     }
     // instellingen (o.a. de coachcode voor de coachfiches): enkel coaches lezen, de beheerder schrijft; coaches ook de zichtbaarheid en de vakleerkrachten
+    // voorkeuren van een leerkracht (bv. het wekelijkse Smartschoolbericht uitzetten): enkel hijzelf
+    match /voorkeuren/{email} {
+      allow read: if aangemeld() && (mail() == email || coach());
+      allow write: if aangemeld() && mail() == email && request.resource.data.keys().hasOnly(['weekbericht', 'gewijzigd']);
+    }
     match /instellingen/{id} {
       allow read: if coach() || (aangemeld() && id in ['zichtbaarheid', 'klassen', 'vakleerkrachten']);
       allow write: if beheerder() || (coach() && id in ['zichtbaarheid', 'vakleerkrachten']);

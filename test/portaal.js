@@ -307,6 +307,10 @@ const DB = {
   check((await p.textContent('.lb-detail')).includes('Leerkaarten 1/'), 'coach ziet de resultaten van de leerkaarten en vragen');
   await p.click('.db-rij[data-ll="peeters.lien@svsl.be"]'); await p.waitForSelector('.lb-detail [data-keur]');
   check(await p.locator('.lb-proj > details.lb-opstart-boven').count() >= 1 && await p.locator('.lb-proj').first().evaluate(e => e.querySelector('details.lb-opstart-boven').compareDocumentPosition(e.querySelector('.lb-sub')) & Node.DOCUMENT_POSITION_FOLLOWING), 'detail: de openklapbare opstart staat bovenaan het project');
+  await p.waitForSelector('#wb-aan'); check(await p.isChecked('#wb-aan'), 'dashboard: weekbericht staat standaard aan');
+  await p.uncheck('#wb-aan'); await wacht(400); d = await fakedb(p);
+  check(Object.entries(d).some(([k, v]) => k.startsWith('voorkeuren/') && v.weekbericht === false), 'leerkracht zet het weekbericht uit');
+  await p.check('#wb-aan'); await wacht(300);
   await p.click('[data-tab="week"]'); await p.waitForSelector('.wk-blad');
   check(await p.locator('.wk-tabel .wk-ll').count() >= 1 && (await p.textContent('.wk-tabel')).includes('Taalbouwers'), 'weekoverzicht vult zich automatisch met de opstart');
   await p.click('[data-tab="overzicht"]'); await p.selectOption('#db-coach', 'alle'); await p.click('.db-rij[data-ll="peeters.lien@svsl.be"]'); await p.waitForSelector('.lb-detail [data-keur]');

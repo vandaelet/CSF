@@ -1007,7 +1007,8 @@
         return '<div class="lb-tabs" role="tablist"><div class="chips">' + h.map(function (t) { return knop(t, "chip"); }).join("") + "</div>" +
           (b.length ? '<div class="lb-tabs2"><span class="hint">Beheer:</span>' + b.map(function (t) { return knop(t, "tab2"); }).join("") + "</div>" : "") + "</div>";
       })() +
-      '<div id="db-inhoud"></div>';
+      '<div id="db-inhoud"></div><div id="db-weekbericht" class="db-weekbericht"></div>';
+    weekberichtKeuze(doel.querySelector("#db-weekbericht"));
     doel.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { D.tab = b.dataset.tab; D.open = null; tekenDashboard(doel); }); });
     var z = doel.querySelector("#db-inhoud");
     if (D.tab === "leerlingen" && rol.coach) return tabLeerlingen(z, doel);
@@ -1699,6 +1700,20 @@
     });
   }
 
+  /* elke leerkracht kiest zelf of hij het wekelijkse Smartschoolbericht wil (standaard aan) */
+  function weekberichtKeuze(vak) {
+    if (!vak || TEST) return;
+    haal("voorkeuren/" + mail()).then(function (s) {
+      var aan = !(s.exists() && s.data().weekbericht === false);
+      vak.innerHTML = '<label class="lb-chip"><input type="checkbox" id="wb-aan"' + (aan ? " checked" : "") + '><span>📨 Stuur mij elke week een Smartschoolbericht met de gemiste leerstof van de CSF-leerlingen uit mijn lessen</span></label><span class="fb" aria-live="polite"></span>';
+      var c = vak.querySelector("#wb-aan"), fb = vak.querySelector(".fb");
+      c.addEventListener("change", function () {
+        F.setDoc(ref("voorkeuren/" + mail()), { weekbericht: c.checked, gewijzigd: nu() })
+          .then(function () { fb.textContent = c.checked ? "Je krijgt het weekbericht." : "Je krijgt geen weekbericht meer."; })
+          .catch(function (e) { c.checked = !c.checked; fb.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
+      });
+    }).catch(function () { vak.innerHTML = ""; });
+  }
   function tabBeheer(z, doel) {
     var d = D.data;
     z.innerHTML = "<h3>Coaches</h3><p class=\"hint\">Alleen wie hier staat, kan het dashboard en de coachfiches openen. Elke coach ziet alle leerlingen.</p>" +
@@ -1711,7 +1726,17 @@
       "<h3>Herinnering per e-mail</h3><p class=\"hint\">Elke schooldag om 16 uur krijgt een leerling een e-mail als hij die dag CSF had en zijn logboek niet volledig invulde. Dat geldt enkel voor leerlingen met ‘Logboek elke les’ aangevinkt. Het script staat in de map <code>herinnering</code> (zie LEESMIJ.md).</p>" +
       '<label class="lb-chip" for="her-aan"><input type="checkbox" id="her-aan"' + (d.herinnering.aan ? " checked" : "") + "><span>Herinneringen versturen</span></label>" +
       '<div class="lb-veld"><label for="her-vrij">Vrije dagen en vakanties</label><textarea id="her-vrij" rows="5" placeholder="2026-11-02 2026-11-08&#10;2026-11-11">' + esc(d.herinnering.vrij || "") + '</textarea><span class="hint">Eén dag of periode per regel: een datum, of een begin- en einddatum. Op die dagen vertrekt geen herinnering.</span></div>' +
-      '<div class="lb-acties"><button type="button" class="btn" id="her-bewaar">Bewaar</button><span class="fb" id="her-fb" aria-live="polite"></span></div>';
+      '<div class="lb-acties"><button type="button" class="btn" id="her-bewaar">Bewaar</button><span class="fb" id="her-fb" aria-live="polite"></span></div>' +
+      "<h3>Wekelijks Smartschoolbericht aan de vakleerkrachten</h3><p class=\"hint\">Eén keer per week krijgt elke vakleerkracht één Smartschoolbericht met de leerstof die zijn CSF-leerlingen in zijn les misten, hoe ze die inhalen en aan welk project ze werken. Leerkrachten kunnen het zelf uitzetten onderaan hun dashboard. Het script staat in de map <code>weekbericht</code> (zie LEESMIJ.md).</p>" +
+      '<label class="lb-chip" for="wbr-aan"><input type="checkbox" id="wbr-aan" disabled><span>Weekberichten versturen</span></label><span class="fb" id="wbr-fb" aria-live="polite"></span>';
+    haal("instellingen/weekbericht").then(function (s) {
+      var c = z.querySelector("#wbr-aan"); if (!c) return; c.checked = s.exists() && s.data().aan === true; c.disabled = false;
+      c.addEventListener("change", function () {
+        var out = z.querySelector("#wbr-fb");
+        F.setDoc(ref("instellingen/weekbericht"), { aan: c.checked }).then(function () { out.textContent = c.checked ? "Aan: het script verstuurt de weekberichten." : "Uit: er vertrekken geen weekberichten."; })
+          .catch(function (e) { c.checked = !c.checked; out.textContent = "Bewaren lukte niet. (" + (e.code || e.message) + ")"; });
+      });
+    }).catch(function () {});
     var fb = z.querySelector("#coach-fb2");
     z.querySelector("#coach-voegtoe").addEventListener("click", function () {
       var email = z.querySelector("#coach-mail").value.trim().toLowerCase(), naam = z.querySelector("#coach-naam").value.trim();

@@ -186,6 +186,26 @@ Vink je ‘Logboek elke les’ uit, dan vult de leerling zijn logboek nog in. Hi
 
 De mails vertrekken vanaf jouw schooladres. Vul elk schooljaar de vrije dagen en vakanties opnieuw in.
 
+## Wekelijks Smartschoolbericht aan de vakleerkrachten
+
+Eén keer per week (standaard vrijdag rond 15 uur) krijgt elke vakleerkracht één Smartschoolbericht. Het bevat per leerling de leerstof die hij in die les miste, hoe hij ze inhaalt, of hij nog vragen heeft en aan welk project hij werkt (met een link). De gegevens komen uit het begin van lesuur 2, 3, … van het logboek. De leerkracht is die van de les die de leerling verliet op de dag van zijn vorige CSF-lesuur (uit de opstart). Schreef de leerling ‘niets’, dan vertrekt er niets.
+
+Een leerkracht zet het bericht zelf uit onderaan zijn dashboard. De beheerder zet alles aan of uit in **Dashboard → Coaches en instellingen**.
+
+**Nodig van de Smartschool-beheerder:** de webservices aanzetten (Algemene configuratie → Webservices), een wachtwoord instellen en de toegang voor alle IP-adressen toelaten (Google gebruikt wisselende adressen). De Smartschool-gebruikersnaam van een leerkracht is meestal het deel vóór @ van zijn e-mailadres. Is dat bij iemand anders, vul het dan in bij `AFWIJKEND` bovenaan de code.
+
+**Eén keer installeren** (met het schoolaccount dat eigenaar is van het Firebase-project):
+1. Ga naar **script.google.com** en klik **Nieuw project**. Geef het de naam `CSF weekbericht`.
+2. Klik links op het tandwiel (**Projectinstellingen**) en vink **appsscript.json-manifestbestand weergeven in editor** aan.
+3. Scroll op dezelfde pagina naar **Scripteigenschappen** → **Scripteigenschap toevoegen**: eigenschap `SMARTSCHOOL_CODE`, waarde = het wachtwoord van de webservices. Bewaar.
+4. Klik links op **Editor**. Open `Code.gs`, wis alles en plak de inhoud van `weekbericht/Code.gs`. Vul bovenaan `SCHOOL` in (het eerste deel van jullie Smartschool-adres).
+5. Open `appsscript.json`, wis alles en plak de inhoud van `weekbericht/appsscript.json`. Bewaar.
+6. Kies de functie **proef** en klik **Uitvoeren**. Geef toestemming. Je krijgt één e-mail met alle berichten van deze week zoals ze zouden vertrekken. Er vertrekt niets naar Smartschool.
+7. Vul in de functie **testSmartschool** je eigen Smartschool-gebruikersnaam in, bewaar en voer ze uit. Je krijgt een testbericht in Smartschool.
+8. Kies de functie **installeer** en klik **Uitvoeren**. Zet daarna in het dashboard → **Coaches en instellingen** het vinkje **Weekberichten versturen** aan.
+
+Na elke verzending krijg je een kort verslag per e-mail als er iets mislukte of als een leerkracht geen e-mailadres had.
+
 ## Firebase koppelen (één keer)
 
 1. Ga met je schoolaccount naar **console.firebase.google.com** en klik **Create a project** (of **Add project**). Naam: `campus-lievegem-csf`. Google Analytics mag uit.
